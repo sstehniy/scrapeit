@@ -1,0 +1,16 @@
+# Config file for air
+[build]
+bin = "main"                    # output binary name
+cmd = "go build -o main ./cmd"  # command to build your application
+full_bin = "APP_ENV=dev ./main" # full command to run your binary with environment variables
+log = "air.log"
+
+[dirs]
+watch = ["."]
+exclude = ["vendor", "tmp", "logs"]
+
+[events]
+notify = ["go"]
+
+[log]
+color = "true"

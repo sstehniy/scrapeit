@@ -1,7 +1,15 @@
+import { useEffect } from "react";
 import "./App.css";
+import axios from "axios";
 
 function App() {
-  return <>hello world</>;
+  useEffect(() => {
+    axios.get(`/api/scrape`).then((data) => {
+      console.log(data);
+    });
+  }, []);
+
+  return <>hello worldasdfljadslfkj</>;
 }
 
 export default App;

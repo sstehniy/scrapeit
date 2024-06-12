@@ -10,9 +10,10 @@
     "preview": "vite preview",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write .",
-    "before-commit": "bun run lint:fix && bun run format"
+    "before-commit": "npm run lint:fix && npm run format"
   },
   "dependencies": {
+    "axios": "^1.7.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

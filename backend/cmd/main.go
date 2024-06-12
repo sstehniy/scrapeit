@@ -10,6 +10,9 @@ import (
 func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:5173"},
+	}))
 	e.Use(middleware.Recover())
 
 	// Routes

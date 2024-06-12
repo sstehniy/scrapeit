@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"scrapeit/internal/scraper"
@@ -15,6 +16,7 @@ func Home(c echo.Context) error {
 func Scrape(c echo.Context) error {
 	result, err := scraper.Scrape()
 	if err != nil {
+		fmt.Println("error scraping:", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, result)

@@ -18,6 +18,7 @@ func main() {
 	// Routes
 	e.GET("/", handlers.Home)
 	e.GET("/scrape", handlers.Scrape)
+	e.GET("/scrape-groups", handlers.GetScrapingGroups)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

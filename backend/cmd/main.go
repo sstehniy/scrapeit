@@ -19,6 +19,7 @@ func main() {
 	e.GET("/", handlers.Home)
 	e.GET("/scrape", handlers.Scrape)
 	e.GET("/scrape-groups", handlers.GetScrapingGroups)
+	e.POST("/scrape-groups", handlers.CreateScrapingGroup)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

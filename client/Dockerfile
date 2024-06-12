@@ -1,11 +1,13 @@
 # Use the official Node.js image
-FROM node:latest
+FROM node:alpine
 
 # Set the working directory
 WORKDIR /app
 
 # Copy the package.json and package-lock.json files to the working directory
 COPY package.json package-lock.json ./
+
+RUN rm -rf node_modules
 
 # Install dependencies
 RUN npm install --legacy-peer-deps

@@ -4,10 +4,14 @@ import axios from "axios";
 import { ScrapeGroup } from "./types";
 import { CreateGroupModal } from "./components/modals/CreateGroup";
 import { toast } from "react-toastify";
+import { GroupCard } from "./components/GroupCard";
 
 function App() {
   const [scrapeGroups, setScrapeGroups] = useState<ScrapeGroup[] | null>(null);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [groupToConfigure, setGroupToConfigure] = useState<ScrapeGroup | null>(
+    null,
+  );
   useEffect(() => {
     axios.get(`/api/scrape-groups`).then((data) => {
       setScrapeGroups(data.data);
@@ -24,6 +28,7 @@ function App() {
         setScrapeGroups((prev) =>
           prev ? [...prev, response.data] : [response.data],
         );
+        setGroupToConfigure(response.data);
       })
       .catch((error) => {
         console.error(error);
@@ -41,13 +46,7 @@ function App() {
       </button>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
         {scrapeGroups?.map((group) => (
-          <div
-            key={group.id}
-            className="bg-white shadow-md rounded p-4 flex flex-col"
-          >
-            <h2 className="text-xl font-bold">{group.name}</h2>
-            <p className="text-gray-500">{group.url}</p>
-          </div>
+          <GroupCard key={group.id} group={group} />
         ))}
       </div>
       <CreateGroupModal

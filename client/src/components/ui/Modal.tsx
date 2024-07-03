@@ -57,7 +57,7 @@ export const Modal: FC<ModalProps> = ({
     }
 
     if (typeof title === "string") {
-      return <h3 className="font-bold text-lg">{title}</h3>;
+      return <h3 className="font-bold text-xl mb-2">{title}</h3>;
     }
 
     return title;
@@ -78,8 +78,8 @@ export const Modal: FC<ModalProps> = ({
         >
           ✕
         </button>
-        <div className="border-b-2 border-secondary">{getModalTitle()}</div>
-        <div className="p-4">{content}</div>
+        {getModalTitle()}
+        <div className="py-4">{content}</div>
         <div className="modal-action gap-2">
           {actions.map((action, index) => (
             <button

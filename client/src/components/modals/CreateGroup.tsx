@@ -14,15 +14,16 @@ export const CreateGroupModal: FC<CreateGroupModalProps> = ({
 
   const getCreateGroupContent = () => {
     return (
-      <div className="space-y-4">
-        <label className="block text-sm font-medium text-gray-700">Name</label>
+      <div className="space-y-2">
+        <label className="block font-medium text-gray-500">Name</label>
         <input
           type="text"
           name="name"
           id="name"
-          className="mt-1 p-2 border border-gray-300 rounded w-full"
+          className="p-2 border border-gray-300 rounded w-full "
           value={name}
           onChange={(e) => setName(e.target.value)}
+          required
         />
       </div>
     );
@@ -47,6 +48,7 @@ export const CreateGroupModal: FC<CreateGroupModalProps> = ({
             setName("");
           },
           className: "bg-blue-500 text-white",
+          disabled: !name.trim(),
         },
       ]}
     />

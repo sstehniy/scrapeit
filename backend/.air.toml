@@ -1,16 +1,20 @@
-# Config file for air
+# .air.toml
+root = "."
+tmp_dir = "tmp"
+
 [build]
-bin = "main"                    # output binary name
-cmd = "go build -o main ./cmd"  # command to build your application
-full_bin = "APP_ENV=dev ./main" # full command to run your binary with environment variables
-log = "air.log"
-
-[dirs]
-watch = ["."]
-exclude = ["vendor", "tmp", "logs"]
-
-[events]
-notify = ["go"]
+cmd = "go build -o main ./cmd"              # command to build your application
+full_bin = "APP_ENV=dev ./main"             # full command to run your binary with environment variables
+delay = 1000
+exclude_dir = ["assets", "tmp", "vendor"]
+include_ext = ["go", "tpl", "tmpl", "html"]
+exclude_regex = ["_test\\.go"]
 
 [log]
-color = "true"
+time = false
+
+[color]
+main = "yellow"
+watcher = "cyan"
+build = "green"
+runner = "magenta"

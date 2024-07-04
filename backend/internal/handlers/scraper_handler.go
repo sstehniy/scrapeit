@@ -10,7 +10,7 @@ import (
 )
 
 func Home(c echo.Context) error {
-	return c.String(http.StatusOK, "Welcome to the Golang Scraper API!")
+	return c.String(http.StatusOK, "Welcome to the Golang Scraper API!adsfa")
 }
 
 func Scrape(c echo.Context) error {

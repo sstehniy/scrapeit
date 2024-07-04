@@ -1,1 +1,46 @@
-[{"id":"1","name":"Example Group 1","url":"https://example1.com","fields":[],"endpoints":[]},{"id":"3cf7a24c-8386-48b2-b96b-eee8a5db7b57","name":"new group","url":"","fields":[],"endpoints":[]}]
+[
+  {
+    "id": "1",
+    "name": "Example Group 1",
+    "fields": [
+      {
+        "id": "1",
+        "name": "title",
+        "type": "text"
+      },
+      {
+        "id": "2",
+        "name": "description",
+        "type": "text"
+      },
+      {
+        "id": "3",
+        "name": "price",
+        "type": "text"
+      }
+    ],
+    "endpoints": [
+      {
+        "id": "1",
+        "name": "autoscout",
+        "url": "https://www.autoscout24.de/lst/volkswagen/passat-cc?atype=C&cy=D&desc=0&fregfrom=2005&ocs_listing=include&page=1&priceto=8000&sort=age",
+        "paginationConfig": {
+          "type": "url_parameter",
+          "parameter": "page",
+          "start": 1,
+          "end": 3
+        },
+        "mainElementSelector": ".ListItem_wrapper__TxHWu",
+        "detailFieldSelectors": [
+          {}
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3cf7a24c-8386-48b2-b96b-eee8a5db7b57",
+    "name": "new group",
+    "fields": [],
+    "endpoints": []
+  }
+]

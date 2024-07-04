@@ -6,7 +6,6 @@ import "time"
 type ScrapeGroup struct {
 	ID        string     `json:"id"`
 	Name      string     `json:"name"`
-	URL       string     `json:"url"`
 	Fields    []Field    `json:"fields"`
 	Endpoints []Endpoint `json:"endpoints"`
 }
@@ -32,7 +31,6 @@ type Endpoint struct {
 	ID                   string           `json:"id"`
 	Name                 string           `json:"name"`
 	URL                  string           `json:"url"`
-	SearchConfig         []SearchConfig   `json:"searchConfig"`
 	PaginationConfig     PaginationConfig `json:"paginationConfig"`
 	MainElementSelector  string           `json:"mainElementSelector"`
 	DetailFieldSelectors []FieldSelector  `json:"detailFieldSelectors"`
@@ -44,13 +42,10 @@ type Endpoint struct {
 
 // PaginationConfig represents pagination configuration for an endpoint
 type PaginationConfig struct {
-	Type         string `json:"type"`
-	Parameter    string `json:"parameter,omitempty"`
-	Start        int    `json:"start,omitempty"`
-	End          int    `json:"end,omitempty"`
-	NextSelector string `json:"nextSelector,omitempty"`
-	PrevSelector string `json:"prevSelector,omitempty"`
-	MaxPages     int    `json:"maxPages,omitempty"`
+	Type      string `json:"type"`
+	Parameter string `json:"parameter,omitempty"`
+	Start     int    `json:"start,omitempty"`
+	End       int    `json:"end,omitempty"`
 }
 
 // ScrapeStatus defines the status of a scrape
@@ -63,6 +58,7 @@ const (
 
 // FieldSelector represents a selector for a field
 type FieldSelector struct {
+	ID             string `json:"id"`
 	FieldID        string `json:"fieldId"`
 	Selector       string `json:"selector"`
 	AttributeToGet string `json:"attributeToGet"`
@@ -74,4 +70,17 @@ type SearchConfig struct {
 	Name  string `json:"name"`
 	Param string `json:"param"`
 	Value string `json:"value"`
+}
+
+type FieldSelectorsResponse struct {
+	Field          string `json:"field"`
+	Selector       string `json:"selector"`
+	Regex          string `json:"regex"`
+	AttributeToGet string `json:"attributeToGet"`
+}
+
+type FieldSelectorsRequest struct {
+	URL                         string   `json:"url"`
+	MainElementSelector         string   `json:"mainElementSelector"`
+	FieldsToExtractSelectorsFor []string `json:"fieldsToExtractSelectorsFor"`
 }

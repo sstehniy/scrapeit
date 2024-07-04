@@ -20,8 +20,7 @@ func main() {
 	e.GET("/scrape", handlers.Scrape)
 	e.GET("/scrape-groups", handlers.GetScrapingGroups)
 	e.POST("/scrape-groups", handlers.CreateScrapingGroup)
+	e.POST("/extract-selectors", handlers.ExtractSelectorsHandler)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
-
-func connectToDb() error

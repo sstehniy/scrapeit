@@ -1,12 +1,12 @@
 # Use an official Go runtime as a parent image
 FROM golang:1.18-alpine
 
-# Install necessary packages and air
-RUN apk update && apk add --no-cache git bash curl && \
-  curl -sSfL https://raw.githubusercontent.com/air-verse/air/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
-
 # Set the Current Working Directory inside the container
 WORKDIR /app
+
+# Install Air for hot-reloading
+RUN apk update && apk add --no-cache git bash curl && \
+  curl -sSfL https://raw.githubusercontent.com/air-verse/air/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
 
 # Copy go.mod and go.sum files first to leverage Docker cache
 COPY go.mod go.sum ./
@@ -24,5 +24,5 @@ RUN chmod +x /bin/wait-for-it.sh
 # Expose port 8080 to the outside world
 EXPOSE 8080
 
-# Command to run the executable
+# Command to run Air for hot-reloading
 CMD ["wait-for-it.sh", "chromium", "3000", "--", "air"]

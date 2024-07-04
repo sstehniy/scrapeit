@@ -1,7 +1,6 @@
 export type ScrapeGroup = {
   id: string;
   name: string;
-  url: string;
   fields: Field[];
   endpoints: Endpoint[];
 };
@@ -22,7 +21,6 @@ type Endpoint = {
   id: string;
   name: string;
   url: string;
-  searchConfig: SearchConfig[];
   paginationConfig: PaginationConfig;
   mainElementSelector: string;
   detailFieldSelectors: FieldSelector[];
@@ -32,19 +30,12 @@ type Endpoint = {
   status?: ScrapeStatus;
 };
 
-type PaginationConfig =
-  | {
-      type: "url";
-      parameter: string;
-      start: number;
-      end: number;
-    }
-  | {
-      type: "selectors";
-      nextSelector: string;
-      prevSelector: string;
-      maxPages: number;
-    };
+type PaginationConfig = {
+  type: "url_parameter";
+  parameter: string;
+  start: number;
+  end: number;
+};
 
 enum ScrapeStatus {
   SUCCESS = "success",
@@ -52,15 +43,9 @@ enum ScrapeStatus {
 }
 
 type FieldSelector = {
+  id: string;
   fieldId: string;
   selector: string;
   // e.g href, src, innerText, data-*
   attributeToGet: string;
-};
-
-type SearchConfig = {
-  id: string;
-  name: string;
-  param: string;
-  value: string;
 };

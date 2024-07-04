@@ -79,7 +79,6 @@ func CreateScrapingGroup(c echo.Context) error {
 		newGroup = &models.ScrapeGroup{
 			ID:        uuid.New().String(),
 			Name:      name,
-			URL:       "",
 			Fields:    []models.Field{},
 			Endpoints: []models.Endpoint{},
 		}

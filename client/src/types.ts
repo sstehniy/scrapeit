@@ -1,14 +1,17 @@
-export type ScrapeGroup = {
+type ScrapeGroup = {
   id: string;
   name: string;
   fields: Field[];
   endpoints: Endpoint[];
+  withThumbnail: boolean;
 };
 
 type Field = {
   id: string;
   name: string;
+  key: string;
   type: FieldType;
+  isFullyEditable: boolean;
 };
 
 enum FieldType {
@@ -35,6 +38,8 @@ type PaginationConfig = {
   parameter: string;
   start: number;
   end: number;
+  step: number;
+  urlRegexToInsert?: string;
 };
 
 enum ScrapeStatus {
@@ -46,6 +51,34 @@ type FieldSelector = {
   id: string;
   fieldId: string;
   selector: string;
-  // e.g href, src, innerText, data-*
   attributeToGet: string;
+  regex: string;
+};
+
+type ScrapeResult = {
+  id: string;
+  uniqueHash: string;
+  endpointId: string;
+  groupId: string;
+  fields: ScrapeResultDetail[];
+  timestamp: Date;
+};
+
+type ScrapeResultDetail = {
+  id: string;
+  fieldId: string;
+  value: string;
+};
+
+export { FieldType };
+
+export type {
+  ScrapeGroup,
+  Field,
+  Endpoint,
+  PaginationConfig,
+  ScrapeStatus,
+  FieldSelector,
+  ScrapeResult,
+  ScrapeResultDetail,
 };

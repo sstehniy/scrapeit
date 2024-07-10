@@ -3,8 +3,8 @@ package scraper
 import (
 	"fmt"
 	"os"
-	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/devices"
@@ -15,7 +15,7 @@ var (
 	mu sync.Mutex
 )
 
-func getBrowser() (*rod.Browser, error) {
+func GetBrowser() (*rod.Browser, error) {
 	rodBrowserWsURL := os.Getenv("ROD_BROWSER_WS_URL")
 	if rodBrowserWsURL == "" {
 		return nil, fmt.Errorf("ROD_BROWSER_WS_URL environment variable not set")
@@ -24,17 +24,23 @@ func getBrowser() (*rod.Browser, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	browser := rod.New().ControlURL(rodBrowserWsURL).MustConnect().DefaultDevice(devices.Device{
-		Screen: devices.Screen{Horizontal: devices.ScreenSize{
-			Width:  1920,
-			Height: 1080,
-		}},
-	})
+	browser := rod.New().ControlURL(rodBrowserWsURL).MustConnect().DefaultDevice(devices.LaptopWithHiDPIScreen)
+
 	return browser, nil
 }
 
-func Scrape() (map[string]string, error) {
-	browser, err := getBrowser()
+func GetStealthPage(browser *rod.Browser, url string) (*rod.Page, error) {
+	page := stealth.MustPage(browser).MustNavigate(url).MustWaitLoad()
+	page.MustSetViewport(1920, 1080,
+		2.0,
+		false,
+	)
+
+	return page, nil
+}
+
+func ScrapeTest() (map[string]string, error) {
+	browser, err := GetBrowser()
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -43,11 +49,6 @@ func Scrape() (map[string]string, error) {
 
 	page := browser.MustPage("https://brightdata.com/solutions/rotating-proxies").MustWaitLoad().MustWindowFullscreen()
 	// get current page dimensions
-	res := page.MustEval(`() => {
-		return "Page dimensions:," + window.innerWidth + " " + window.innerHeight;
-	}`)
-	fmt.Println(res.String())
-	page.MustScreenshot("screenshot.png")
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered from panic:", r)
@@ -58,30 +59,121 @@ func Scrape() (map[string]string, error) {
 	return map[string]string{"titleddsaffadssdaf": title}, nil
 }
 
-func GetMainElementHTMLContent(url, elementSelector string) (string, error) {
-	browser, err := getBrowser()
+const (
+	scrollDelay = 300 // milliseconds
+)
+
+func SlowScrollToHalf(page *rod.Page) error {
+	fmt.Println("Scrolling to half")
+	var totalHeight int
+	var viewportHeight int
+
+	// Get the initial document height and viewport height
+	result := page.MustEval(`() => [document.documentElement.scrollHeight, window.innerHeight]`).String()
+
+	// parse the result [totalHeight viewportHeight]
+	_, err := fmt.Sscanf(result, "[%d %d]", &totalHeight, &viewportHeight)
+
 	if err != nil {
-		fmt.Println(err)
-		return "", err
+		return fmt.Errorf("failed to parse result: %w", err)
 	}
-	defer browser.Close()
 
-	page := stealth.MustPage(browser).MustNavigate(url).MustWaitLoad().MustWindowFullscreen()
+	fmt.Println("Total height: ", totalHeight)
+	// Scroll loop
+	for currentScroll := 0; currentScroll < totalHeight/2; currentScroll += viewportHeight {
+		// screenshot into separate folder
+		// create folder if not exists
 
-	// scroll to the bottom of the page
-	page.MustEval(`() => {
-		window.scrollTo(0, document.body.scrollHeight);
-	}`)
-
-	fmt.Printf("Element selector: %v\n", elementSelector)
-
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered from panic:", r)
+		fmt.Println("Current scroll: ", currentScroll)
+		// Scroll to the new position
+		_, err = page.Eval(fmt.Sprintf("() => window.scrollTo(0, %d)", currentScroll))
+		if err != nil {
+			fmt.Println("Error scrolling: ", err)
+			return fmt.Errorf("failed to scroll: %w", err)
 		}
-	}()
 
-	html := page.MustElement(elementSelector).MustHTML()
-	fmt.Printf("HTML: %v\n", len(strings.TrimSpace(html)))
-	return html, nil
+		// Wait for a short time to allow content to load
+		time.Sleep(scrollDelay * time.Millisecond)
+
+		// Print progress
+		fmt.Printf("\rScrolling: %d/%d pixels", currentScroll, totalHeight)
+
+		// Check if the document height has changed (in case of dynamically loaded content)
+		var newHeight int
+		err = page.MustEval(`() => document.documentElement.scrollHeight`).Unmarshal(&newHeight)
+		if err != nil {
+			fmt.Println("Error getting new height: ", err)
+			return fmt.Errorf("failed to get new height: %w", err)
+		}
+
+		if newHeight > totalHeight {
+			totalHeight = newHeight
+		}
+
+		// Check if we've reached the bottom
+		if currentScroll+viewportHeight >= totalHeight {
+			break
+		}
+	}
+
+	fmt.Println() // Print a newline after the progress indicator
+	return nil
+
+}
+
+func SlowScrollToBottom(page *rod.Page) error {
+	fmt.Println("Scrolling to bottom")
+	var totalHeight int
+	var viewportHeight int
+
+	// Get the initial document height and viewport height
+	result := page.MustEval(`() => [document.documentElement.scrollHeight, window.innerHeight]`).String()
+
+	// parse the result [totalHeight viewportHeight]
+	_, err := fmt.Sscanf(result, "[%d %d]", &totalHeight, &viewportHeight)
+
+	if err != nil {
+		return fmt.Errorf("failed to parse result: %w", err)
+	}
+
+	fmt.Println("Total height: ", totalHeight)
+	// Scroll loop
+	for currentScroll := 0; currentScroll < totalHeight; currentScroll += viewportHeight {
+		// screenshot into separate folder
+		// create folder if not exists
+
+		fmt.Println("Current scroll: ", currentScroll)
+		// Scroll to the new position
+		_, err = page.Eval(fmt.Sprintf("() => window.scrollTo(0, %d)", currentScroll))
+		if err != nil {
+			fmt.Println("Error scrolling: ", err)
+			return fmt.Errorf("failed to scroll: %w", err)
+		}
+
+		// Wait for a short time to allow content to load
+		time.Sleep(scrollDelay * time.Millisecond)
+
+		// Print progress
+		fmt.Printf("\rScrolling: %d/%d pixels", currentScroll, totalHeight)
+
+		// Check if the document height has changed (in case of dynamically loaded content)
+		var newHeight int
+		err = page.MustEval(`() => document.documentElement.scrollHeight`).Unmarshal(&newHeight)
+		if err != nil {
+			fmt.Println("Error getting new height: ", err)
+			return fmt.Errorf("failed to get new height: %w", err)
+		}
+
+		if newHeight > totalHeight {
+			totalHeight = newHeight
+		}
+
+		// Check if we've reached the bottom
+		if currentScroll+viewportHeight >= totalHeight {
+			break
+		}
+	}
+
+	fmt.Println() // Print a newline after the progress indicator
+	return nil
 }

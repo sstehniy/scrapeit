@@ -14,7 +14,7 @@ func Home(c echo.Context) error {
 }
 
 func Scrape(c echo.Context) error {
-	result, err := scraper.Scrape()
+	result, err := scraper.ScrapeTest()
 	if err != nil {
 		fmt.Println("error scraping:", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})

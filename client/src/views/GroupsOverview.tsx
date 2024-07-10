@@ -1,17 +1,16 @@
-import { useEffect, useState } from "react";
-
+import { FC, useEffect, useState } from "react";
+import { ScrapeGroup } from "../types";
 import axios from "axios";
-import { ScrapeGroup } from "./types";
-import { CreateGroupModal } from "./components/modals/CreateGroup";
 import { toast } from "react-toastify";
-import { GroupCard } from "./components/GroupCard";
+import { GroupCard } from "../components/GroupCard";
+import { CreateGroupModal } from "../components/modals/CreateGroup";
+import { useNavigate } from "react-router-dom";
+import { Button } from "../components/ui/Button";
 
-function App() {
+export const GroupsOverview: FC = () => {
   const [scrapeGroups, setScrapeGroups] = useState<ScrapeGroup[] | null>(null);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
-  const [groupToConfigure, setGroupToConfigure] = useState<ScrapeGroup | null>(
-    null,
-  );
+  const navigate = useNavigate();
   useEffect(() => {
     axios.get(`/api/scrape-groups`).then((data) => {
       setScrapeGroups(data.data);
@@ -22,28 +21,26 @@ function App() {
     axios
       .post(`/api/scrape-groups`, { name })
       .then((response) => {
-        // setScrapeGroups((prev) => (prev ? [...prev, data.data] : [data.data]));
         toast.success("Group created");
         setShowCreateGroupModal(false);
         setScrapeGroups((prev) =>
           prev ? [...prev, response.data] : [response.data],
         );
-        setGroupToConfigure(response.data);
+        navigate(`/group/${response.data.id}`);
       })
       .catch((error) => {
         console.error(error);
         toast.error("Failed to create group");
       });
   };
-
   return (
-    <div className="container mx-auto py-10">
-      <button
+    <div>
+      <Button
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         onClick={() => setShowCreateGroupModal(true)}
       >
         Create new Group
-      </button>
+      </Button>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
         {scrapeGroups?.map((group) => (
           <GroupCard key={group.id} group={group} />
@@ -56,6 +53,4 @@ function App() {
       />
     </div>
   );
-}
-
-export default App;
+};

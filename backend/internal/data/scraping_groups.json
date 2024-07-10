@@ -5,42 +5,216 @@
     "fields": [
       {
         "id": "1",
-        "name": "title",
-        "type": "text"
+        "name": "Title",
+        "key": "title",
+        "type": "text",
+        "isFullyEditable": true
       },
       {
         "id": "2",
-        "name": "description",
-        "type": "text"
+        "name": "Price",
+        "key": "price_value",
+        "type": "text",
+        "isFullyEditable": true
       },
       {
         "id": "3",
-        "name": "price",
-        "type": "text"
+        "name": "Currency",
+        "key": "price_currency",
+        "type": "text",
+        "isFullyEditable": true
+      },
+      {
+        "id": "4",
+        "name": "Milage",
+        "key": "milage",
+        "type": "text",
+        "isFullyEditable": true
+      },
+      {
+        "id": "5",
+        "name": "Image",
+        "key": "image",
+        "type": "image",
+        "isFullyEditable": false
+      },
+      {
+        "id": "6",
+        "name": "Link",
+        "key": "link",
+        "type": "link",
+        "isFullyEditable": false
       }
     ],
     "endpoints": [
       {
         "id": "1",
         "name": "autoscout",
-        "url": "https://www.autoscout24.de/lst/volkswagen/passat-cc?atype=C&cy=D&desc=0&fregfrom=2005&ocs_listing=include&page=1&priceto=8000&sort=age",
+        "url": "https://www.autoscout24.de/lst/volkswagen/passat-cc?atype=C\u0026cy=D\u0026desc=0\u0026fregfrom=2005\u0026ocs_listing=include\u0026page=1\u0026priceto=8000\u0026sort=age",
         "paginationConfig": {
           "type": "url_parameter",
           "parameter": "page",
           "start": 1,
-          "end": 3
+          "end": 3,
+          "step": 1
         },
         "mainElementSelector": ".ListItem_wrapper__TxHWu",
         "detailFieldSelectors": [
-          {}
-        ]
+          {
+            "id": "22",
+            "fieldId": "1",
+            "selector": ".ListItem_header__J6xlG .ListItem_title__ndA4s h2",
+            "regex": "",
+            "attributeToGet": ""
+          },
+          {
+            "id": "23",
+            "fieldId": "2",
+            "selector": ".PriceAndSeals_current_price__ykUpx",
+            "regex": "\\d+\\.?\\d*",
+            "attributeToGet": ""
+          },
+          {
+            "id": "24",
+            "fieldId": "3",
+            "selector": ".PriceAndSeals_wrapper__BMNaJ .Price_price__APlgs",
+            "regex": "[€\\$£]",
+            "attributeToGet": ""
+          },
+          {
+            "id": "25",
+            "fieldId": "4",
+            "selector": "[data-testid=\"VehicleDetails-mileage_road\"]",
+            "regex": "",
+            "attributeToGet": ""
+          },
+          {
+            "id": "26",
+            "fieldId": "5",
+            "selector": ".NewGallery_picture__fNsZr img",
+            "regex": "",
+            "attributeToGet": "src"
+          },
+          {
+            "id": "27",
+            "fieldId": "6",
+            "selector": ".ListItem_header__J6xlG .ListItem_title__ndA4s",
+            "regex": "",
+            "attributeToGet": "href"
+          }
+        ],
+        "interval": 900,
+        "active": true
       }
     ]
   },
   {
-    "id": "3cf7a24c-8386-48b2-b96b-eee8a5db7b57",
-    "name": "new group",
-    "fields": [],
-    "endpoints": []
+    "id": "bd8e1bbc-9007-4f3e-a8bc-887444b25d7f",
+    "name": "jewmg",
+    "fields": [
+      {
+        "id": "1",
+        "name": "Title",
+        "key": "title",
+        "type": "text",
+        "isFullyEditable": true
+      },
+      {
+        "id": "2",
+        "name": "Price",
+        "key": "price_value",
+        "type": "text",
+        "isFullyEditable": true
+      },
+      {
+        "id": "3",
+        "name": "Currency",
+        "key": "price_currency",
+        "type": "text",
+        "isFullyEditable": true
+      },
+      {
+        "id": "4",
+        "name": "Description",
+        "key": "description",
+        "type": "text",
+        "isFullyEditable": true
+      },
+      {
+        "id": "5",
+        "name": "Image",
+        "key": "image",
+        "type": "image",
+        "isFullyEditable": false
+      },
+      {
+        "id": "6",
+        "name": "Link",
+        "key": "link",
+        "type": "link",
+        "isFullyEditable": false
+      }
+    ],
+    "endpoints": [
+      {
+        "id": "1",
+        "name": "idealo",
+        "url": "https://www.idealo.de/preisvergleich/ProductCategory/3751F699493-7612874-104023766.html?q=Gaming-Laptop&sortKey=minPrice",
+        "paginationConfig": {
+          "type": "url_parameter",
+          "parameter": "page",
+          "start": 1,
+          "end": 1,
+          "step": 1
+        },
+        "mainElementSelector": ".sr-resultItemLink_YbJS7.sr-resultItemTile__link_Q8V4n",
+        "detailFieldSelectors": [
+          {
+            "id": "1",
+            "fieldId": "1",
+            "selector": ".sr-productSummary__title_f5flP",
+            "regex": "",
+            "attributeToGet": ""
+          },
+          {
+            "id": "2",
+            "fieldId": "2",
+            "selector": ".sr-detailedPriceInfo__price_sYVmx",
+            "regex": "\\d+[,.]?\\d*",
+            "attributeToGet": ""
+          },
+          {
+            "id": "3",
+            "fieldId": "3",
+            "selector": ".sr-detailedPriceInfo__price_sYVmx",
+            "regex": "[\\$€]",
+            "attributeToGet": ""
+          },
+          {
+            "id": "4",
+            "fieldId": "4",
+            "selector": ".sr-productSummary__description_Okjc5",
+            "regex": "",
+            "attributeToGet": ""
+          },
+          {
+            "id": "5",
+            "fieldId": "5",
+            "selector": ".sr-resultItemTile__image_ivkex",
+            "regex": "",
+            "attributeToGet": "src"
+          },
+          {
+            "id": "6",
+            "fieldId": "6",
+            "selector": ".sr-resultItemTile__link_Q8V4n > a",
+            "regex": "",
+            "attributeToGet": "href"
+          }
+        ],
+        "interval": 900,
+        "active": true
+      }
+    ]
   }
 ]

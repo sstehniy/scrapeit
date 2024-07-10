@@ -1,72 +1,49 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"scrapeit/internal/models"
+	"scrapeit/internal/utils"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func getAllGroups() (*[]models.ScrapeGroup, error) {
-	pwd, _ := os.Getwd()
-	jsonData, err := os.Open(pwd + "/internal/data/scraping_groups.json")
-	if err != nil {
-		fmt.Println("Error reading JSON groups: ", err)
-		return nil, err
-	}
-
-	defer jsonData.Close()
-
-	byteValue, _ := io.ReadAll(jsonData)
-
-	var groups *[]models.ScrapeGroup
-
-	err = json.Unmarshal(byteValue, &groups)
-
-	if err != nil {
-		fmt.Println("Error unmarshaling JSON bytes", err)
-		return nil, err
-	}
-
-	return groups, nil
-}
-
 func writeAllGroups(groups *[]models.ScrapeGroup) error {
-	pwd, _ := os.Getwd()
-	file, err := os.OpenFile(pwd+"/internal/data/scraping_groups.json", os.O_WRONLY|os.O_TRUNC, 0644)
-	if err != nil {
-		fmt.Println("Error opening JSON file: ", err)
-		return err
-	}
-	defer file.Close()
-
-	jsonData, err := json.Marshal(groups)
-	if err != nil {
-		fmt.Println("Error marshaling JSON: ", err)
-		return err
-	}
-
-	_, err = file.Write(jsonData)
-	if err != nil {
-		fmt.Println("Error writing JSON data: ", err)
-		return err
-	}
-
-	return nil
+	return utils.WriteJson("/internal/data/scraping_groups.json", groups)
 }
 
 func GetScrapingGroups(c echo.Context) error {
-	allGroups, _ := getAllGroups()
+	dbClient, ok := c.Get("db").(*mongo.Client)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
+	}
+	var allGroups []models.ScrapeGroup
+
+	result, err := dbClient.Database("scrapeit").Collection("scrape_groups").Find(c.Request().Context(), bson.M{})
+	if err != nil {
+		fmt.Println("error in finding groups")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+
+	}
+	defer result.Close(c.Request().Context())
+	err = result.All(c.Request().Context(), &allGroups)
+	if err != nil {
+		fmt.Println("error in getting all groups")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
 
 	return c.JSON(http.StatusOK, allGroups)
 }
 
 func CreateScrapingGroup(c echo.Context) error {
+	dbClient, ok := c.Get("db").(*mongo.Client)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
+	}
 	body := map[string]interface{}{}
 	if err := c.Bind(&body); err != nil {
 		return err
@@ -75,20 +52,19 @@ func CreateScrapingGroup(c echo.Context) error {
 	var newGroup *models.ScrapeGroup
 
 	if name, ok := body["name"].(string); ok {
-		allGroups, _ := getAllGroups()
-		newGroup = &models.ScrapeGroup{
-			ID:        uuid.New().String(),
-			Name:      name,
-			Fields:    []models.Field{},
-			Endpoints: []models.Endpoint{},
-		}
-		*allGroups = append(*allGroups, *newGroup)
-		err := writeAllGroups(allGroups)
-		if err != nil {
-			fmt.Println("Error while writing to all groups", err)
-			return err
-		}
 
+		newGroup = &models.ScrapeGroup{
+			ID:            primitive.NewObjectID(),
+			Name:          name,
+			Fields:        []models.Field{},
+			Endpoints:     []models.Endpoint{},
+			WithThumbnail: false,
+		}
+		result, err := dbClient.Database("scrapeit").Collection("scrape_groups").InsertOne(c.Request().Context(), newGroup)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+		fmt.Println(result.InsertedID)
 	} else {
 		fmt.Println("name is not a string")
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{

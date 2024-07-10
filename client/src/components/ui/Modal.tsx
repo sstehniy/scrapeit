@@ -1,5 +1,7 @@
-import React, { FC, useEffect, useRef } from "react";
-import { useClickOutside } from "../../hooks/useClickOutside";
+import React, { FC, useRef } from "react";
+import { createPortal } from "react-dom";
+import { useClickAway } from "react-use";
+import { Button } from "./Button";
 
 export type ModalProps = {
   isOpen: boolean;
@@ -9,7 +11,7 @@ export type ModalProps = {
   content: string | React.ReactNode | null;
 };
 
-type ModalAction = {
+export type ModalAction = {
   label: string;
   onClick: () => void;
   className?: string;
@@ -19,38 +21,13 @@ type ModalAction = {
 
 export const Modal: FC<ModalProps> = ({
   actions,
-  content,
   isOpen,
+  content,
   onClose,
   title,
 }) => {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const timeSinceOpened = useRef<number>(0);
-
-  useEffect(() => {
-    if (isOpen) {
-      timeSinceOpened.current = Date.now();
-    }
-
-    if (!isOpen && timeSinceOpened.current > 0) {
-      timeSinceOpened.current = 0;
-    }
-
-    return () => {
-      timeSinceOpened.current = 0;
-    };
-  }, [isOpen]);
-
-  useClickOutside(dialogRef, () => {
-    if (
-      isOpen &&
-      timeSinceOpened.current > 0 &&
-      Date.now() - timeSinceOpened.current > 100
-    ) {
-      onClose();
-    }
-  });
-
+  const modalContentRef = useRef<HTMLDivElement>(null);
+  useClickAway(modalContentRef, onClose);
   const getModalTitle = () => {
     if (!title) {
       return null;
@@ -63,26 +40,31 @@ export const Modal: FC<ModalProps> = ({
     return title;
   };
 
-  return (
-    <dialog
-      className="modal"
-      open={isOpen}
+  if (!isOpen) return null;
+
+  const portalRoot = document.getElementById("portal");
+  if (!portalRoot) return null;
+
+  return createPortal(
+    <div
+      className="modal modal-open"
       style={{
         backgroundColor: "rgba(0, 0, 0, 0.5)",
+        zIndex: 1000,
       }}
     >
-      <div className="modal-box" ref={dialogRef}>
-        <button
+      <div className="modal-box max-w-max" ref={modalContentRef}>
+        <Button
           className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
           onClick={onClose}
         >
           ✕
-        </button>
+        </Button>
         {getModalTitle()}
         <div className="py-4">{content}</div>
         <div className="modal-action gap-2">
           {actions.map((action, index) => (
-            <button
+            <Button
               key={index}
               className={`btn ${action.className || ""}`}
               onClick={action.onClick}
@@ -90,10 +72,11 @@ export const Modal: FC<ModalProps> = ({
               disabled={action.disabled}
             >
               {action.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
-    </dialog>
+    </div>,
+    portalRoot,
   );
 };

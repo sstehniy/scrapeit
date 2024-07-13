@@ -6,6 +6,7 @@ import { ConfigureGroupEndpoint } from "../modals/ConfigureGroupEndpoint";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Button } from "../ui/Button";
+import { ConfirmRemoveEndpoint } from "../modals/ConfirmRemoveEndpoint";
 
 type GroupEndpointsProps = {
   group: ScrapeGroup;
@@ -31,18 +32,35 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
     isOpen: false,
     endpoint: null,
   });
+  const [showConfirmRemoveEndpointModal, setShowConfirmRemoveEndpointModal] =
+    useState<{
+      isOpen: boolean;
+      onConfirm: () => void;
+    }>({
+      isOpen: false,
+      onConfirm: () => {},
+    });
 
   const handleDeleteEndpoint = useCallback(
     async (endpointId: string) => {
-      try {
-        await axios.delete(
-          `/api/scrape-groups/${group.id}/endpoints/${endpointId}`,
-        );
-        onEndpointChange();
-      } catch (e) {
-        toast.error("Failed to delete endpoint");
-        console.error(e);
-      }
+      setShowConfirmRemoveEndpointModal({
+        isOpen: true,
+        onConfirm: async () => {
+          try {
+            await axios.delete(
+              `/api/scrape-groups/${group.id}/endpoints/${endpointId}`,
+            );
+            onEndpointChange();
+            setShowConfirmRemoveEndpointModal({
+              isOpen: false,
+              onConfirm: () => {},
+            });
+          } catch (e) {
+            toast.error("Failed to delete endpoint");
+            console.error(e);
+          }
+        },
+      });
     },
     [group.id, onEndpointChange],
   );
@@ -235,6 +253,16 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
         }
         onConfirm={(endpoint) => handleCreateEndpoint(endpoint, "save")}
         editEndpoint={showEditEndpointModal.endpoint ?? undefined}
+      />
+      <ConfirmRemoveEndpoint
+        isOpen={showConfirmRemoveEndpointModal.isOpen}
+        onClose={() =>
+          setShowConfirmRemoveEndpointModal({
+            isOpen: false,
+            onConfirm: () => {},
+          })
+        }
+        onConfirm={showConfirmRemoveEndpointModal.onConfirm}
       />
     </div>
   );

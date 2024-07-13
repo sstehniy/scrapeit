@@ -659,28 +659,34 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
       }
       setFieldsWithLoadingSelectors((prev) => [...prev, field.id]);
       console.log("Extracting selector for field", field);
-      const response = await axios.post("/api/selectors/extract", {
-        url: endpoint.url,
-        mainElementSelector: endpoint.mainElementSelector,
-        fieldsToExtractSelectorsFor: [field.key],
-      });
-      console.log("Extracted selectors", response.data);
-      setEndpoint((prev) => ({
-        ...prev,
-        detailFieldSelectors: prev.detailFieldSelectors.map((selector) =>
-          selector.fieldId === field.id
-            ? {
-                ...selector,
-                selector: response.data.fields[0]?.selector || "",
-                attributeToGet: response.data.fields[0]?.attributeToGet || "",
-                regex: response.data.fields[0]?.regex || "",
-              }
-            : selector,
-        ),
-      }));
-      setFieldsWithLoadingSelectors((prev) =>
-        prev.filter((id) => id !== field.id),
-      );
+      try {
+        const response = await axios.post("/api/selectors/extract", {
+          url: endpoint.url,
+          mainElementSelector: endpoint.mainElementSelector,
+          fieldsToExtractSelectorsFor: [field.key],
+        });
+        console.log("Extracted selectors", response.data);
+        setEndpoint((prev) => ({
+          ...prev,
+          detailFieldSelectors: prev.detailFieldSelectors.map((selector) =>
+            selector.fieldId === field.id
+              ? {
+                  ...selector,
+                  selector: response.data.fields[0]?.selector || "",
+                  attributeToGet: response.data.fields[0]?.attributeToGet || "",
+                  regex: response.data.fields[0]?.regex || "",
+                }
+              : selector,
+          ),
+        }));
+        setFieldsWithLoadingSelectors((prev) =>
+          prev.filter((id) => id !== field.id),
+        );
+      } catch (error) {
+        setFieldsWithLoadingSelectors([]);
+        console.error(error);
+        toast.error("Failed to extract selector for field");
+      }
     },
     [endpoint.mainElementSelector, endpoint.url, fieldsWithLoadingSelectors],
   );
@@ -940,7 +946,16 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
             if (!validateFirstStep(endpoint) || !validateSecondStep(endpoint)) {
               return;
             }
-
+            if (!editEndpoint) {
+              endpoint.detailFieldSelectors = endpoint.detailFieldSelectors.map(
+                (selector) => {
+                  return {
+                    ...selector,
+                    selectorStatus: SelectorStatus.OK,
+                  };
+                },
+              );
+            }
             onConfirm(endpoint);
             onClose();
           },

@@ -1,5 +1,5 @@
-import { FC, useCallback, useState } from "react";
-import { Endpoint, ScrapeGroup } from "../../types";
+import { FC, PropsWithChildren, useCallback, useState } from "react";
+import { Endpoint, ScrapeGroup, SelectorStatus } from "../../types";
 import { getColoredEndpointPill } from "../ColoredEndpointPill";
 import { getBaseUrl } from "../../util/url";
 import { ConfigureGroupEndpoint } from "../modals/ConfigureGroupEndpoint";
@@ -10,14 +10,16 @@ import { Button } from "../ui/Button";
 type GroupEndpointsProps = {
   group: ScrapeGroup;
   onEndpointChange: () => void | Promise<void>;
-  allEndpointsAreScraped: boolean;
+  allowScrapeAllEndpoints: boolean;
+  disabledTooltip: string;
   onScrapeAllEndpoints: () => void | Promise<void>;
 };
 
 export const GroupEndpoints: FC<GroupEndpointsProps> = ({
   group,
   onEndpointChange,
-  allEndpointsAreScraped,
+  allowScrapeAllEndpoints,
+  disabledTooltip,
   onScrapeAllEndpoints,
 }) => {
   const { endpoints } = group;
@@ -29,6 +31,21 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
     isOpen: false,
     endpoint: null,
   });
+
+  const handleDeleteEndpoint = useCallback(
+    async (endpointId: string) => {
+      try {
+        await axios.delete(
+          `/api/scrape-groups/${group.id}/endpoints/${endpointId}`,
+        );
+        onEndpointChange();
+      } catch (e) {
+        toast.error("Failed to delete endpoint");
+        console.error(e);
+      }
+    },
+    [group.id, onEndpointChange],
+  );
 
   const handleCreateEndpoint = useCallback(
     async (endpoint: Endpoint, type: "create" | "save") => {
@@ -79,6 +96,27 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
               <div className="w-48">{getBaseUrl(endpoint.url, false)}</div>
             </div>
             <div className="flex gap-5">
+              {endpoint.detailFieldSelectors.some(
+                (ds) => ds.selectorStatus !== SelectorStatus.OK,
+              ) && (
+                <div
+                  className="tooltip"
+                  data-tip="This endpoint needs update since last schema change"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className="size-6 text-warning"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+              )}
               <Button
                 onClick={() => {
                   setShowEditEndpointModal({
@@ -115,6 +153,7 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
                   strokeWidth={1.5}
                   stroke="currentColor"
                   className="size-6 hover:text-error"
+                  onClick={() => handleDeleteEndpoint(endpoint.id)}
                 >
                   <path
                     strokeLinecap="round"
@@ -152,27 +191,31 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
           New Endpoint
         </Button>
         {!!group.endpoints.length && (
-          <Button
-            className="btn btn-primary btn-sm"
-            onClick={onScrapeAllEndpoints}
-            disabled={allEndpointsAreScraped}
+          <WithTooltip
+            tooltip={!allowScrapeAllEndpoints ? disabledTooltip : ""}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2.5}
-              stroke="currentColor"
-              className="size-4"
+            <Button
+              className="btn btn-primary btn-sm"
+              onClick={onScrapeAllEndpoints}
+              disabled={!allowScrapeAllEndpoints}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
-              />
-            </svg>
-            Scrape All Endpoints
-          </Button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                className="size-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+                />
+              </svg>
+              Scrape All Endpoints
+            </Button>
+          </WithTooltip>
         )}
       </div>
       <ConfigureGroupEndpoint
@@ -194,5 +237,19 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
         editEndpoint={showEditEndpointModal.endpoint ?? undefined}
       />
     </div>
+  );
+};
+
+const WithTooltip: FC<
+  PropsWithChildren<{
+    tooltip: string;
+  }>
+> = ({ children, tooltip, ...props }) => {
+  return tooltip ? (
+    <div className="tooltip" data-tip={tooltip}>
+      {children}
+    </div>
+  ) : (
+    <>{children}</>
   );
 };

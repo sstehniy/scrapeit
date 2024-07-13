@@ -13,6 +13,21 @@ type ScrapeGroup struct {
 	Fields        []Field            `json:"fields" bson:"fields"`
 	Endpoints     []Endpoint         `json:"endpoints" bson:"endpoints"`
 	WithThumbnail bool               `json:"withThumbnail" bson:"withThumbnail"`
+	VersionTag    string             `json:"versionTag" bson:"versionTag"`
+	Created       primitive.DateTime `json:"created" bson:"created"`
+	Updated       primitive.DateTime `json:"updated" bson:"updated"`
+}
+
+type ArchivedScrapeGroup struct {
+	ID            primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	OriginalID    primitive.ObjectID `json:"originalId" bson:"originalId"`
+	Name          string             `json:"name" bson:"name"`
+	Fields        []Field            `json:"fields" bson:"fields"`
+	Endpoints     []Endpoint         `json:"endpoints" bson:"endpoints"`
+	WithThumbnail bool               `json:"withThumbnail" bson:"withThumbnail"`
+	VersionTag    string             `json:"versionTag" bson:"versionTag"`
+	Created       primitive.DateTime `json:"created" bson:"created"`
+	Updated       primitive.DateTime `json:"updated" bson:"updated"`
 }
 
 func (sg ScrapeGroup) GetEndpointById(id string) *Endpoint {
@@ -22,6 +37,26 @@ func (sg ScrapeGroup) GetEndpointById(id string) *Endpoint {
 		}
 	}
 	return nil
+}
+
+func (sc ScrapeGroup) GetFieldById(id string) *Field {
+	for _, field := range sc.Fields {
+		if field.ID == id {
+			return &field
+		}
+	}
+	return nil
+
+}
+
+func (sg *ScrapeGroup) DeleteEndpoint(id string) {
+	var newEndpoints []Endpoint
+	for _, endpoint := range sg.Endpoints {
+		if endpoint.ID != id {
+			newEndpoints = append(newEndpoints, endpoint)
+		}
+	}
+	sg.Endpoints = newEndpoints
 }
 
 type ScrapeGroupLocal struct {
@@ -38,6 +73,7 @@ type Field struct {
 	Key             string    `json:"key" bson:"key"`
 	Type            FieldType `json:"type" bson:"type"`
 	IsFullyEditable bool      `json:"isFullyEditable" bson:"isFullyEditable"`
+	Order           int       `json:"order" bson:"order"`
 }
 
 // FieldType defines the type of a field
@@ -81,13 +117,22 @@ const (
 	ScrapeStatusFailed  ScrapeStatus = "failed"
 )
 
+type SelectorStatusValue string
+
+const (
+	SelectorStatusOk          SelectorStatusValue = "ok"
+	SelectorStatusNeedsUpdate SelectorStatusValue = "needs_update"
+	SelectorStatusNew         SelectorStatusValue = "new"
+)
+
 // FieldSelector represents a selector for a field
 type FieldSelector struct {
-	ID             string `json:"id" bson:"id"`
-	FieldID        string `json:"fieldId" bson:"fieldId"`
-	Selector       string `json:"selector" bson:"selector"`
-	Regex          string `json:"regex" bson:"regex"`
-	AttributeToGet string `json:"attributeToGet" bson:"attributeToGet"`
+	ID             string              `json:"id" bson:"id"`
+	FieldID        string              `json:"fieldId" bson:"fieldId"`
+	Selector       string              `json:"selector" bson:"selector"`
+	Regex          string              `json:"regex" bson:"regex"`
+	AttributeToGet string              `json:"attributeToGet" bson:"attributeToGet"`
+	SelectorStatus SelectorStatusValue `json:"selectorStatus" bson:"selectorStatus"`
 }
 
 // SearchConfig represents search configuration for an endpoint
@@ -112,16 +157,33 @@ type FieldSelectorsRequest struct {
 }
 
 type ScrapeResult struct {
-	ID         primitive.ObjectID   `json:"id" bson:"_id,omitempty"`
-	UniqueHash string               `json:"uniqueHash" bson:"uniqueHash"`
-	EndpointID string               `json:"endpointId" bson:"endpointId"`
-	GroupId    primitive.ObjectID   `json:"groupId" bson:"groupId"`
-	Fields     []ScrapeResultDetail `json:"fields" bson:"fields"`
-	Timestamp  string               `json:"timestamp" bson:"timestamp"`
+	ID              primitive.ObjectID   `json:"id" bson:"_id,omitempty"`
+	UniqueHash      string               `json:"uniqueHash" bson:"uniqueHash"`
+	EndpointID      string               `json:"endpointId" bson:"endpointId"`
+	GroupId         primitive.ObjectID   `json:"groupId" bson:"groupId"`
+	Fields          []ScrapeResultDetail `json:"fields" bson:"fields"`
+	Timestamp       string               `json:"timestamp" bson:"timestamp"`
+	GroupVersionTag string               `json:"groupVersionTag" bson:"groupVersionTag"`
 }
 
 type ScrapeResultDetail struct {
 	ID      string `json:"id" bson:"id"`
 	FieldID string `json:"fieldId" bson:"fieldId"`
 	Value   string `json:"value" bson:"value"`
+}
+
+type FieldChangeType string
+
+const (
+	ChangeFieldKey  FieldChangeType = "change_field_key"
+	ChangeFieldType FieldChangeType = "change_field_type"
+	ChangeFieldName FieldChangeType = "change_field_name"
+	DeleteField     FieldChangeType = "delete_field"
+	AddField        FieldChangeType = "add_field"
+)
+
+type FieldChange struct {
+	FieldID                 string          `json:"fieldId"`
+	FieldIsNewSinceLastSave bool            `json:"fieldIsNewSinceLastSave"`
+	ChangeType              FieldChangeType `json:"type"`
 }

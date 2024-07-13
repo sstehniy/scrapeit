@@ -30,7 +30,7 @@ Guidelines:
 3. If a unique selector can't be found for a field, return an empty string as the selector.
 4. If the target value is in an attribute rather than text content, include an "attributeToGet" field specifying the attribute name.
 5. Only include "attributeToGet" when the value is in an attribute, not for text content.
-6, Avoid using data- attributes selectors as they are brittle and may break if the HTML structure changes. Instead, you can use nth-child or nth-of-type selectors.
+6, Avoid using data- attributes selectors as they are brittle and may break if the HTML structure changes. Instead, you can use nth-child or nth-of-type, but try to do your best to avoid using such selectors.
 
 Example input:
 {

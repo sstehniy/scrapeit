@@ -4,6 +4,10 @@ type ScrapeGroup = {
   fields: Field[];
   endpoints: Endpoint[];
   withThumbnail: boolean;
+  versionTag: string;
+  created: string;
+  updated: string;
+  isArchived: boolean;
 };
 
 type Field = {
@@ -12,6 +16,7 @@ type Field = {
   key: string;
   type: FieldType;
   isFullyEditable: boolean;
+  order: number;
 };
 
 enum FieldType {
@@ -47,12 +52,19 @@ enum ScrapeStatus {
   FAILED = "failed",
 }
 
+enum SelectorStatus {
+  OK = "ok",
+  NEEDS_UPDATE = "needs_update",
+  NEW = "new",
+}
+
 type FieldSelector = {
   id: string;
   fieldId: string;
   selector: string;
   attributeToGet: string;
   regex: string;
+  selectorStatus: SelectorStatus;
 };
 
 type ScrapeResult = {
@@ -62,6 +74,7 @@ type ScrapeResult = {
   groupId: string;
   fields: ScrapeResultDetail[];
   timestamp: Date;
+  groupVersionTag: string;
 };
 
 type ScrapeResultDetail = {
@@ -70,7 +83,7 @@ type ScrapeResultDetail = {
   value: string;
 };
 
-export { FieldType };
+export { FieldType, SelectorStatus };
 
 export type {
   ScrapeGroup,

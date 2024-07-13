@@ -52,6 +52,7 @@ func main() {
 	// Scrape routes
 	scrape := api.Group("/scrape")
 	scrape.GET("/results/:groupId", handlers.GetScrapingResults)
+	scrape.GET("/results/not-empty/:groupId", handlers.GetScrapingResultsNotEmpty)
 	scrape.POST("/endpoints", handlers.ScrapeEndpointsHandler)
 	scrape.POST("/endpoint", handlers.ScrapeEndpointHandler)
 	scrape.POST("/endpoint-test", handlers.ScrapeEndpointTestHandler)
@@ -61,16 +62,20 @@ func main() {
 	groups.GET("", handlers.GetScrapingGroups)
 	groups.POST("", handlers.CreateScrapingGroup)
 	groups.GET("/:id", handlers.GetScrapingGroup)
-	groups.POST("/:id/fields", handlers.UpdateScrapingGroupSchema)
+	groups.PUT("/:groupId/schema", handlers.UpdateScrapingGroupSchema)
+	groups.GET("/version-tag-exists/:versionTag", handlers.VersionTagExists)
 
 	// Endpoints within scrape groups
 	groups.POST("/:groupId/endpoints", handlers.CreateScrapingGroupEndpoint)
+	groups.DELETE("/:groupId/endpoints/:endpointId", handlers.DeleteScrapingGroupEndpoint)
 	groups.PUT("/:groupId/endpoints/:endpointId", handlers.UpdateScrapingGroupEndpoint)
 
 	// Selector routes
 	selectors := api.Group("/selectors")
 	selectors.POST("/extract", handlers.ExtractSelectorsHandler)
 	selectors.POST("/test", handlers.ElementSelectorTestHandler)
+
+	// prepopulateScrapeGroups(DbClient)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

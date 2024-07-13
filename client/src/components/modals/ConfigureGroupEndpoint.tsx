@@ -1,6 +1,12 @@
 import React, { FC, useCallback, useEffect, useState } from "react";
 import { Modal, ModalProps } from "../ui/Modal";
-import { Endpoint, Field, ScrapeGroup, ScrapeResult } from "../../types";
+import {
+  Endpoint,
+  Field,
+  ScrapeGroup,
+  ScrapeResult,
+  SelectorStatus,
+} from "../../types";
 import { v4 } from "uuid";
 import { TextInput } from "../ui/TextInput";
 import axios from "axios";
@@ -39,15 +45,16 @@ const FirstStepContent: FC<{
   testElementLoading: boolean;
   testElementError: string | null;
   testElementResult: string | null;
+  validateFirstStep: (ep: Endpoint) => boolean;
 }> = ({
   endpoint,
   setEndpoint,
   firstStepErrors,
-  setFirstStepErrors,
   handleTestGettingElement,
   testElementLoading,
   testElementError,
   testElementResult,
+  validateFirstStep,
 }) => {
   return (
     <div className="w-[450px]">
@@ -60,12 +67,9 @@ const FirstStepContent: FC<{
         id="name"
         value={endpoint.name}
         onChange={(e) => {
-          setFirstStepErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors.name;
-            return newErrors;
-          });
-          setEndpoint((prev) => ({ ...prev, name: e.target.value }));
+          const newEndpoint = { ...endpoint, name: e.target.value };
+          validateFirstStep(newEndpoint);
+          setEndpoint(newEndpoint);
         }}
         required
         error={firstStepErrors.name}
@@ -80,12 +84,9 @@ const FirstStepContent: FC<{
         id="endpoint_name"
         value={endpoint.url}
         onChange={(e) => {
-          setFirstStepErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors.url;
-            return newErrors;
-          });
-          setEndpoint((prev) => ({ ...prev, url: e.target.value }));
+          const newEndpoint = { ...endpoint, url: e.target.value };
+          validateFirstStep(newEndpoint);
+          setEndpoint(newEndpoint);
         }}
         required
         error={firstStepErrors.url}
@@ -100,15 +101,12 @@ const FirstStepContent: FC<{
         id="main_element_selector"
         value={endpoint.mainElementSelector}
         onChange={(e) => {
-          setFirstStepErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors.mainElementSelector;
-            return newErrors;
-          });
-          setEndpoint((prev) => ({
-            ...prev,
+          const newEndpoint = {
+            ...endpoint,
             mainElementSelector: e.target.value,
-          }));
+          };
+          validateFirstStep(newEndpoint);
+          setEndpoint(newEndpoint);
         }}
         required
         error={firstStepErrors.mainElementSelector}
@@ -158,6 +156,7 @@ const SecondStepContent: FC<{
   handleExtractSelectorForField: (field: Field) => Promise<void>;
   fieldsWithLoadingSelectors: string[];
   handleTestScrape: () => Promise<void>;
+  validateSecondStep: (ep: Endpoint) => boolean;
   loadingSampleData: boolean;
   sampleData: ScrapeResult[];
 }> = ({
@@ -170,6 +169,7 @@ const SecondStepContent: FC<{
   handleTestScrape,
   loadingSampleData,
   sampleData,
+  validateSecondStep,
 }) => {
   return (
     <div>
@@ -181,12 +181,6 @@ const SecondStepContent: FC<{
         <strong
           style={{
             display: "block",
-            width: "500px",
-            overflow: "hidden",
-            margin: 0,
-            lineHeight: "1.5",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
           }}
         >
           {endpoint.url}
@@ -202,13 +196,15 @@ const SecondStepContent: FC<{
         className="select select-bordered w-full mb-4 "
         value={endpoint.paginationConfig.type}
         onChange={(e) => {
-          setEndpoint((prev) => ({
-            ...prev,
+          const newEndpoint = {
+            ...endpoint,
             paginationConfig: {
-              ...prev.paginationConfig,
+              ...endpoint.paginationConfig,
               type: e.target.value as "url_parameter",
             },
-          }));
+          };
+          validateSecondStep(newEndpoint);
+          setEndpoint(newEndpoint);
         }}
       >
         <option value="url_parameter" selected>
@@ -223,13 +219,15 @@ const SecondStepContent: FC<{
         className="input input-bordered w-full mb-4"
         value={endpoint.paginationConfig.parameter}
         onChange={(e) => {
-          setEndpoint((prev) => ({
-            ...prev,
+          const newEndpoint = {
+            ...endpoint,
             paginationConfig: {
-              ...prev.paginationConfig,
+              ...endpoint.paginationConfig,
               parameter: e.target.value,
             },
-          }));
+          };
+          validateSecondStep(newEndpoint);
+          setEndpoint(newEndpoint);
         }}
         required
       />
@@ -243,13 +241,15 @@ const SecondStepContent: FC<{
             className="input input-bordered w-full "
             value={endpoint.paginationConfig.start}
             onChange={(e) => {
-              setEndpoint((prev) => ({
-                ...prev,
+              const newEndpoint = {
+                ...endpoint,
                 paginationConfig: {
-                  ...prev.paginationConfig,
+                  ...endpoint.paginationConfig,
                   start: parseInt(e.target.value),
                 },
-              }));
+              };
+              validateSecondStep(newEndpoint);
+              setEndpoint(newEndpoint);
             }}
             required
           />
@@ -263,13 +263,15 @@ const SecondStepContent: FC<{
             className="input input-bordered w-full "
             value={endpoint.paginationConfig.end}
             onChange={(e) => {
-              setEndpoint((prev) => ({
-                ...prev,
+              const newEndpoint = {
+                ...endpoint,
                 paginationConfig: {
-                  ...prev.paginationConfig,
+                  ...endpoint.paginationConfig,
                   end: parseInt(e.target.value),
                 },
-              }));
+              };
+              validateSecondStep(newEndpoint);
+              setEndpoint(newEndpoint);
             }}
             required
           />
@@ -285,13 +287,15 @@ const SecondStepContent: FC<{
             className="input input-bordered w-full "
             value={endpoint.paginationConfig.step}
             onChange={(e) => {
-              setEndpoint((prev) => ({
-                ...prev,
+              const newEndpoint = {
+                ...endpoint,
                 paginationConfig: {
-                  ...prev.paginationConfig,
+                  ...endpoint.paginationConfig,
                   step: parseInt(e.target.value),
                 },
-              }));
+              };
+              validateSecondStep(newEndpoint);
+              setEndpoint(newEndpoint);
             }}
             required
           />
@@ -305,13 +309,15 @@ const SecondStepContent: FC<{
             className="input input-bordered w-full"
             value={endpoint.paginationConfig.urlRegexToInsert}
             onChange={(e) => {
-              setEndpoint((prev) => ({
-                ...prev,
+              const newEndpoint = {
+                ...endpoint,
                 paginationConfig: {
-                  ...prev.paginationConfig,
+                  ...endpoint.paginationConfig,
                   urlRegexToInsert: e.target.value,
                 },
-              }));
+              };
+              validateSecondStep(newEndpoint);
+              setEndpoint(newEndpoint);
             }}
           />
         </div>
@@ -342,139 +348,164 @@ const SecondStepContent: FC<{
 
       <div className="w-[950px]">
         {fields.map((field) => (
-          <div key={field.id} className="flex gap-3">
-            <div className="flex-1">
-              <TextInput
-                labelClassName="block font-medium text-gray-500 mb-1"
-                className="input input-bordered w-full"
-                wrapperClassName="mb-4"
-                label="Field Name"
-                readOnly
-                disabled
-                value={field.name}
-              />
-            </div>
-            <div className="flex-1">
-              <TextInput
-                labelClassName="block font-medium text-gray-500 mb-1"
-                className="input input-bordered w-full"
-                wrapperClassName="mb-4"
-                label="Field Key"
-                readOnly
-                disabled
-                value={field.key}
-              />
-            </div>
-            <div className="w-1/3">
-              <TextInput
-                labelClassName="block font-medium text-gray-500 mb-1"
-                className="input input-bordered w-full"
-                wrapperClassName="mb-4"
-                label="Selector"
-                value={
-                  endpoint.detailFieldSelectors.find(
-                    (selector) => selector.fieldId === field.id,
-                  )?.selector
-                }
-                onChange={(e) => {
-                  setEndpoint((prev) => ({
-                    ...prev,
-                    detailFieldSelectors: prev.detailFieldSelectors.map(
-                      (selector) =>
-                        selector.fieldId === field.id
-                          ? { ...selector, selector: e.target.value }
-                          : selector,
-                    ),
-                  }));
-                }}
-                required
-              />
-            </div>
-            <div className="flex-1">
-              <TextInput
-                labelClassName="block font-medium text-gray-500 mb-1"
-                className="input input-bordered w-full"
-                wrapperClassName="mb-4"
-                label="Attribute"
-                value={
-                  endpoint.detailFieldSelectors.find(
-                    (selector) => selector.fieldId === field.id,
-                  )?.attributeToGet
-                }
-                onChange={(e) => {
-                  setEndpoint((prev) => ({
-                    ...prev,
-                    detailFieldSelectors: prev.detailFieldSelectors.map(
-                      (selector) =>
-                        selector.fieldId === field.id
-                          ? { ...selector, attributeToGet: e.target.value }
-                          : selector,
-                    ),
-                  }));
-                }}
-              />
-            </div>
-            <div className="flex-1">
-              <TextInput
-                labelClassName="block font-medium text-gray-500 mb-1"
-                className="input input-bordered w-full"
-                wrapperClassName="mb-4"
-                label="Regex"
-                value={
-                  endpoint.detailFieldSelectors.find(
-                    (selector) => selector.fieldId === field.id,
-                  )?.regex
-                }
-                onChange={(e) => {
-                  setEndpoint((prev) => ({
-                    ...prev,
-                    detailFieldSelectors: prev.detailFieldSelectors.map(
-                      (selector) =>
-                        selector.fieldId === field.id
-                          ? { ...selector, regex: e.target.value }
-                          : selector,
-                    ),
-                  }));
-                }}
-              />
-            </div>
-            <div
-              className="btn btn-square btn-sm mt-9 btn-outline"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                userSelect: fieldsWithLoadingSelectors.includes(field.id)
-                  ? "none"
-                  : "auto",
-                cursor: fieldsWithLoadingSelectors.includes(field.id)
-                  ? "not-allowed"
-                  : "pointer",
-              }}
-            >
-              {!fieldsWithLoadingSelectors.includes(field.id) ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="size-5"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    handleExtractSelectorForField(field);
+          <div key={field.id}>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <TextInput
+                  labelClassName="block font-medium text-gray-500 mb-1"
+                  className="input input-bordered w-full"
+                  wrapperClassName="mb-4"
+                  label="Field Name"
+                  readOnly
+                  disabled
+                  value={field.name}
+                />
+              </div>
+              <div className="flex-1">
+                <TextInput
+                  labelClassName="block font-medium text-gray-500 mb-1"
+                  className="input input-bordered w-full"
+                  wrapperClassName="mb-4"
+                  label="Field Key"
+                  readOnly
+                  disabled
+                  value={field.key}
+                />
+              </div>
+              <div className="w-1/3 mb-4">
+                <TextInput
+                  labelClassName="block font-medium text-gray-500 mb-1"
+                  className="input input-bordered w-full mb-1"
+                  wrapperClassName=""
+                  label="Selector"
+                  value={
+                    endpoint.detailFieldSelectors.find(
+                      (selector) => selector.fieldId === field.id,
+                    )?.selector
+                  }
+                  onChange={(e) => {
+                    const newEndpoint = {
+                      ...endpoint,
+                      detailFieldSelectors: endpoint.detailFieldSelectors.map(
+                        (selector) =>
+                          selector.fieldId === field.id
+                            ? { ...selector, selector: e.target.value }
+                            : selector,
+                      ),
+                    };
+                    setEndpoint(newEndpoint);
+                    validateSecondStep(newEndpoint);
                   }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
-                  />
-                </svg>
-              ) : (
-                <span className="loading loading-spinner loading-md"></span>
-              )}
+                  required
+                />
+                {endpoint.detailFieldSelectors.find(
+                  (selector) =>
+                    selector.fieldId === field.id &&
+                    selector.selector === "" &&
+                    selector.selectorStatus === SelectorStatus.NEW,
+                ) && (
+                  <div className="text-yellow-500 text-xs italic">
+                    Selector not extracted
+                  </div>
+                )}
+                {endpoint.detailFieldSelectors.find(
+                  (selector) => selector.fieldId === field.id,
+                )?.selectorStatus === SelectorStatus.NEEDS_UPDATE && (
+                  <div className="text-yellow-500 text-xs italic">
+                    Selector may need to be updated
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <TextInput
+                  labelClassName="block font-medium text-gray-500 mb-1"
+                  className="input input-bordered w-full"
+                  wrapperClassName="mb-4"
+                  label="Attribute"
+                  value={
+                    endpoint.detailFieldSelectors.find(
+                      (selector) => selector.fieldId === field.id,
+                    )?.attributeToGet
+                  }
+                  onChange={(e) => {
+                    const newEndpoint = {
+                      ...endpoint,
+                      detailFieldSelectors: endpoint.detailFieldSelectors.map(
+                        (selector) =>
+                          selector.fieldId === field.id
+                            ? { ...selector, attributeToGet: e.target.value }
+                            : selector,
+                      ),
+                    };
+                    setEndpoint(newEndpoint);
+                    validateSecondStep(newEndpoint);
+                  }}
+                />
+              </div>
+              <div className="flex-1">
+                <TextInput
+                  labelClassName="block font-medium text-gray-500 mb-1"
+                  className="input input-bordered w-full"
+                  wrapperClassName="mb-4"
+                  label="Regex"
+                  value={
+                    endpoint.detailFieldSelectors.find(
+                      (selector) => selector.fieldId === field.id,
+                    )?.regex
+                  }
+                  onChange={(e) => {
+                    const newEndpoint = {
+                      ...endpoint,
+                      detailFieldSelectors: endpoint.detailFieldSelectors.map(
+                        (selector) =>
+                          selector.fieldId === field.id
+                            ? { ...selector, regex: e.target.value }
+                            : selector,
+                      ),
+                    };
+                    setEndpoint(newEndpoint);
+                    validateSecondStep(newEndpoint);
+                  }}
+                />
+              </div>
+              <div
+                className="btn btn-square btn-sm mt-9 btn-outline"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  userSelect: fieldsWithLoadingSelectors.includes(field.id)
+                    ? "none"
+                    : "auto",
+                  cursor: fieldsWithLoadingSelectors.includes(field.id)
+                    ? "not-allowed"
+                    : "pointer",
+                }}
+              >
+                {!fieldsWithLoadingSelectors.includes(field.id) ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-5"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      handleExtractSelectorForField(field);
+                    }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
+                    />
+                  </svg>
+                ) : (
+                  <span className="loading loading-spinner loading-md"></span>
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -594,6 +625,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
           attributeToGet: "",
           selector: "",
           regex: "",
+          selectorStatus: SelectorStatus.NEW,
         }));
       setEndpoint({
         ...defaultEndpoint,
@@ -690,6 +722,10 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
       fields,
       endpoints: [endpoint],
       withThumbnail: false,
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+      isArchived: false,
+      versionTag: "",
     };
     setSampleData([]);
     setLoadingSampleData(true);
@@ -706,43 +742,43 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
     }
   }, [endpoint, fields]);
 
-  const validateFirstStep = useCallback(() => {
+  const validateFirstStep = useCallback((ep: Endpoint) => {
     setFirstStepErrors({});
     const errors: { [key: string]: string } = {};
-    if (endpoint.name.trim() === "") {
+    if (ep.name.trim() === "") {
       errors.name = "Name is required";
     }
-    if (endpoint.url === "") {
+    if (ep.url === "") {
       errors.url = "URL is required";
     }
-    if (endpoint.mainElementSelector.trim() === "") {
+    if (ep.mainElementSelector.trim() === "") {
       errors.mainElementSelector = "Main Element Selector is required";
     }
     const urlRegex = new RegExp("^(http|https)://[^\\s/$.?#].[^\\s]*$", "g");
-    if (!urlRegex.test(endpoint.url)) {
+    if (!urlRegex.test(ep.url)) {
       errors.url = "URL is not valid";
     }
     setFirstStepErrors(errors);
     return Object.entries(errors).length === 0;
-  }, [endpoint.mainElementSelector, endpoint.name, endpoint.url]);
+  }, []);
 
-  const validateSecondStep = useCallback(() => {
+  const validateSecondStep = useCallback((ep: Endpoint) => {
     setSecondStepErrors({});
     const errors: { [key: string]: string } = {};
-    if (endpoint.paginationConfig.parameter.trim() === "") {
+    if (ep.paginationConfig.parameter.trim() === "") {
       errors.parameter = "Parameter is required";
     }
-    if (endpoint.paginationConfig.start === 0) {
+    if (ep.paginationConfig.start === 0) {
       errors.start = "Start is required";
     }
-    if (endpoint.paginationConfig.end === 0) {
+    if (ep.paginationConfig.end === 0) {
       errors.end = "End is required";
     }
-    if (endpoint.paginationConfig.step === 0) {
+    if (ep.paginationConfig.step === 0) {
       errors.step = "Step is required";
     }
     if (
-      endpoint.detailFieldSelectors.some(
+      ep.detailFieldSelectors.some(
         (selector) => selector.selector.trim() === "",
       )
     ) {
@@ -750,13 +786,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
     }
     setSecondStepErrors(errors);
     return Object.entries(errors).length === 0;
-  }, [
-    endpoint.detailFieldSelectors,
-    endpoint.paginationConfig.end,
-    endpoint.paginationConfig.parameter,
-    endpoint.paginationConfig.start,
-    endpoint.paginationConfig.step,
-  ]);
+  }, []);
 
   const validateField = useCallback(
     (name: "name" | "url" | "mainElementSelector"): boolean => {
@@ -837,6 +867,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
           testElementLoading={testElementLoading}
           testElementError={testElementError}
           testElementResult={testElementResult}
+          validateFirstStep={validateFirstStep}
         />
       }
       actions={[
@@ -876,6 +907,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
           handleExtractSelectorsForAllFields={
             handleExtractSelectorsForAllFields
           }
+          validateSecondStep={validateSecondStep}
           handleExtractSelectorForField={handleExtractSelectorForField}
           fieldsWithLoadingSelectors={fieldsWithLoadingSelectors}
           handleTestScrape={handleTestScrape}
@@ -899,9 +931,13 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
           label: editEndpoint ? "Save" : "Create",
           disabled:
             Object.entries(firstStepErrors).length > 0 ||
-            Object.entries(secondStepErrors).length > 0,
+            Object.entries(secondStepErrors).length > 0 ||
+            endpoint.detailFieldSelectors.some(
+              (d) =>
+                d.selectorStatus === SelectorStatus.NEW && d.selector === "",
+            ),
           onClick: () => {
-            if (!validateFirstStep() || !validateSecondStep()) {
+            if (!validateFirstStep(endpoint) || !validateSecondStep(endpoint)) {
               return;
             }
 

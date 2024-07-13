@@ -16,9 +16,17 @@ func cleanHTML(input string) string {
 	// Regular expression to match data attributes
 	dataAttrRegex := regexp.MustCompile(`\s*data-[a-zA-Z0-9\-_]+\s*=\s*"[^"]*"`)
 
+	// remove all svgs
+	svgRegex := regexp.MustCompile(`<svg[^>]*>.*?</svg>`)
+
 	// Remove all inline styles and data attributes
 	withoutStyles := styleRegex.ReplaceAllString(noNewlines, "")
-	return dataAttrRegex.ReplaceAllString(withoutStyles, "")
+
+	withoutDataAttrs := dataAttrRegex.ReplaceAllString(withoutStyles, "")
+
+	withoutSVGs := svgRegex.ReplaceAllString(withoutDataAttrs, "")
+
+	return withoutSVGs
 }
 
 func GetMainElementHTMLContent(url, elementSelector string, maxElements int) (string, error) {

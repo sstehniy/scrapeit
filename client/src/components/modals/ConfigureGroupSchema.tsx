@@ -1,12 +1,16 @@
+/** eslint-disable prettier/prettier */
+/** eslint-disable unused-imports/no-unused-vars */
+/** eslint-disable no-empty */
 import { FC, useEffect, useRef, useState } from "react";
-import { Modal, ModalProps } from "../ui/Modal";
-import { Field, FieldType } from "../../types";
 import { v4 } from "uuid";
-import { TextInput } from "../ui/TextInput";
+import { Field, FieldType } from "../../types";
+import { FieldChange } from "../../views/GroupView";
 import { Button } from "../ui/Button";
+import { Modal, ModalProps } from "../ui/Modal";
+import { TextInput } from "../ui/TextInput";
 
 type ConfigureGroupSchemaProps = Pick<ModalProps, "isOpen" | "onClose"> & {
-  onConfirm: (fields: Field[]) => void;
+  onConfirm: (fields: Field[], fieldChanges: FieldChange[]) => void;
   fieldsToEdit: Field[];
 };
 
@@ -17,6 +21,7 @@ const defaultFields: Field[] = [
     name: "",
     key: "link",
     type: FieldType.LINK,
+    order: 0,
   },
   {
     id: v4(),
@@ -24,9 +29,11 @@ const defaultFields: Field[] = [
     name: "",
     key: "image",
     type: FieldType.IMAGE,
+    order: 1,
   },
 ];
 
+// eslint-disable-next-line prettier/prettier
 export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
   onConfirm,
   isOpen,
@@ -36,25 +43,27 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
   const [fields, setFields] = useState<Field[]>([]);
   const [fieldsValid, setFieldsValid] = useState(true);
   const [fieldsUnique, setFieldsUnique] = useState(true);
+  const [fieldChanges, setFieldChanges] = useState<FieldChange[]>([]);
 
   useEffect(() => {
-    if (fieldsToEdit.length) {
-      setFields(fieldsToEdit);
-    } else {
-      setFields(defaultFields);
+    if (isOpen) {
+      setFields(fieldsToEdit?.length ? fieldsToEdit : defaultFields);
+      setFieldChanges([]);
+      setFieldsValid(true);
+      setFieldsUnique(true);
     }
-  }, [fieldsToEdit]);
+  }, [fieldsToEdit, isOpen]);
 
   const listRef = useRef<HTMLDivElement>(null);
 
-  const validateFields = () => {
+  const validateFields = (fieldsToValidate: Field[]) => {
     setFieldsValid(true);
     setFieldsUnique(true);
     const uniqueKeys = new Set<string>();
     const uniqueNames = new Set<string>();
     let valid = true;
     let unique = true;
-    fields.forEach((field) => {
+    fieldsToValidate.forEach((field) => {
       if (!field.name || !field.key) {
         valid = false;
       }
@@ -76,6 +85,103 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
     return fieldsToEdit.length;
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
+  const handleFieldChange = (
+    fieldId: string,
+    type: FieldChange["type"],
+    value?: string,
+  ) => {
+    let newFields = [...fields];
+
+    const fieldIsNewSinceLastSave = !fieldsToEdit.find(
+      (field) => field.id === fieldId,
+    );
+    switch (type) {
+      case "add_field": {
+        if (!fieldIsNewSinceLastSave) {
+          console.log("wtf!");
+          return;
+        }
+        const newField = {
+          id: v4(),
+          name: "",
+          key: "",
+          type: FieldType.TEXT,
+          isFullyEditable: true,
+          order: newFields.length + 1,
+        };
+        newFields.push(newField);
+        setFieldChanges([
+          ...fieldChanges,
+          { fieldId: newField.id, type, fieldIsNewSinceLastSave: true },
+        ]);
+        break;
+      }
+      // eslint-disable-next-line no-empty
+      case "delete_field": {
+        /* empty */
+        if (fieldIsNewSinceLastSave) {
+          newFields = newFields.filter((field) => field.id !== fieldId);
+          setFieldChanges((prev) =>
+            prev.filter((change) => change.fieldId !== fieldId),
+          );
+        } else {
+          const field = fieldsToEdit.find((field) => field.id === fieldId);
+          if (!field) {
+            return;
+          }
+          newFields = newFields.filter((field) => field.id !== fieldId);
+          setFieldChanges([
+            ...fieldChanges,
+            { fieldId, type, fieldIsNewSinceLastSave },
+          ]);
+        }
+        break;
+      }
+      case "change_field_key":
+      case "change_field_name":
+      case "change_field_type": {
+        const field = newFields.find((field) => field.id === fieldId);
+        if (!field || !field.isFullyEditable || value === undefined) {
+          return;
+        }
+
+        if (type === "change_field_key") {
+          field.key = value;
+        } else if (type === "change_field_name") {
+          field.name = value;
+        } else if (type === "change_field_type") {
+          field.type = value as FieldType;
+        }
+
+        const sameChangeIdx = fieldChanges.findIndex(
+          (change) => change.fieldId === fieldId && change.type === type,
+        );
+        if (sameChangeIdx !== -1) {
+          setFieldChanges((prev) => {
+            const newChanges = [...prev];
+            newChanges[sameChangeIdx] = {
+              fieldId,
+              type,
+              fieldIsNewSinceLastSave,
+            };
+            return newChanges;
+          });
+          break;
+        }
+
+        setFieldChanges([
+          ...fieldChanges,
+          { fieldId, type, fieldIsNewSinceLastSave },
+        ]);
+
+        break;
+      }
+    }
+    validateFields(newFields);
+    setFields(newFields);
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -90,7 +196,7 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
             className="space-y-2 w-[450px] max-h-[325px] overflow-y-auto px-1 mb-2"
             ref={listRef}
           >
-            {fields.map((field, index) => (
+            {fields.map((field) => (
               <div key={field.id} className="flex items-center space-x-2">
                 <TextInput
                   labelClassName="block font-medium text-gray-500 mb-1"
@@ -102,9 +208,11 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
                   placeholder="Field Name"
                   value={field.name}
                   onChange={(e) => {
-                    const newFields = [...fields];
-                    newFields[index].name = e.target.value;
-                    setFields(newFields);
+                    handleFieldChange(
+                      field.id,
+                      "change_field_name",
+                      e.target.value,
+                    );
                   }}
                   required
                 />
@@ -118,9 +226,11 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
                   placeholder="Field Key"
                   value={field.key}
                   onChange={(e) => {
-                    const newFields = [...fields];
-                    newFields[index].key = e.target.value;
-                    setFields(newFields);
+                    handleFieldChange(
+                      field.id,
+                      "change_field_key",
+                      e.target.value,
+                    );
                   }}
                   required
                   disabled={!keyAndNameEditable(field)}
@@ -133,9 +243,11 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
                   <select
                     value={field.type}
                     onChange={(e) => {
-                      const newFields = [...fields];
-                      newFields[index].type = e.target.value as FieldType;
-                      setFields(newFields);
+                      handleFieldChange(
+                        field.id,
+                        "change_field_type",
+                        e.target.value,
+                      );
                     }}
                     className="select select-bordered w-full mb-4"
                     disabled={!field.isFullyEditable}
@@ -152,9 +264,7 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
                   <Button
                     className="btn btn-sm btn-outline border-0 btn-square btn-secondary mt-2"
                     onClick={() => {
-                      const newFields = [...fields];
-                      newFields.splice(index, 1);
-                      setFields(newFields);
+                      handleFieldChange(field.id, "delete_field");
                     }}
                   >
                     <svg
@@ -193,19 +303,30 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
               Field names and keys must be unique
             </p>
           )}
-          <div className="flex justify-end">
+          {fieldChanges.filter(
+            (change) =>
+              change.type === "delete_field" &&
+              fieldsToEdit.find((f) => f.id === change.fieldId),
+          ).length > 0 && (
+            <p className="text-red-500 text-xs">
+              Following existing fields will be deleted:{" "}
+              {fieldChanges
+                .filter(
+                  (change) =>
+                    change.type === "delete_field" &&
+                    fieldsToEdit.find((f) => f.id === change.fieldId),
+                )
+                .map(
+                  (change) =>
+                    fieldsToEdit.find((f) => f.id === change.fieldId)?.name,
+                )
+                .join(", ")}
+            </p>
+          )}
+          <div className="flex justify-end mt-3">
             <Button
               onClick={() => {
-                setFields([
-                  ...fields,
-                  {
-                    id: v4(),
-                    name: "",
-                    key: "",
-                    type: FieldType.TEXT,
-                    isFullyEditable: true,
-                  },
-                ]);
+                handleFieldChange("", "add_field");
                 setTimeout(() => {
                   listRef.current?.scrollTo({
                     top: listRef.current.scrollHeight,
@@ -227,12 +348,12 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
           className: "bg-gray-500 text-white",
         },
         {
-          label: "Create",
+          label: fieldsToEdit.length ? "Save" : "Create",
           onClick: () => {
-            if (!validateFields()) {
+            if (!validateFields(fields)) {
               return;
             }
-            onConfirm(fields);
+            onConfirm(fields, fieldChanges);
             onClose();
           },
           className: "bg-blue-500 text-white",

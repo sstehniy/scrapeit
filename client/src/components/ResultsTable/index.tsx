@@ -86,7 +86,8 @@ export const ResultsTable: FC<ResultsTableProps> = ({
                     </a>
                   );
                 }
-                const baseLink = getBaseUrl(endpoint?.url || "");
+                const baseLink = getBaseUrl(endpoint?.url || "", true);
+                console.log(baseLink);
                 return (
                   <a href={`${baseLink}${value?.value}`} target="_blank">
                     Link

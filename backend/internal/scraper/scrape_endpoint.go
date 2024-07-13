@@ -46,6 +46,9 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 		SlowScrollToBottom(page)
 
 		elements, err := page.Elements(endpointToScrape.MainElementSelector)
+		if endpointToScrape.ID == "713d796b-246c-409c-8031-b4e467eaaaee" {
+			fmt.Println("Specific Elements found: ", len(elements))
+		}
 		if err != nil {
 			return nil, fmt.Errorf("error finding elements: %w", err)
 		}
@@ -66,6 +69,7 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 	results := make([]models.ScrapeResult, 0, len(filteredElements))
 	for _, element := range filteredElements {
 		details, err := getElementDetails(element, endpointToScrape.DetailFieldSelectors)
+
 		if err != nil {
 			return nil, fmt.Errorf("error getting element details: %w", err)
 		}
@@ -81,6 +85,12 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 			Timestamp:  time.Now().Format(time.RFC3339),
 		}
 		results = append(results, result)
+	}
+
+	for _, result := range results {
+		if result.EndpointID == "713d796b-246c-409c-8031-b4e467eaaaee" {
+			fmt.Println("Specific Scrape result: ", result)
+		}
 	}
 
 	return results, nil
@@ -130,6 +140,9 @@ func findLinkSelector(selectors []models.FieldSelector, linkFieldId string) mode
 }
 
 func filterElements(elements rod.Elements, linkSelector models.FieldSelector, endpointId string, groupId primitive.ObjectID, client *mongo.Client) rod.Elements {
+	if endpointId == "713d796b-246c-409c-8031-b4e467eaaaee" {
+		fmt.Println("Specific Filtering elements", len(elements))
+	}
 	var filtered rod.Elements
 	for _, element := range elements {
 		linkElement, err := element.Element(linkSelector.Selector)
@@ -144,6 +157,9 @@ func filterElements(elements rod.Elements, linkSelector models.FieldSelector, en
 			filtered = append(filtered, element)
 		}
 	}
+	if endpointId == "713d796b-246c-409c-8031-b4e467eaaaee" {
+		fmt.Println("Specific Filtering elements after", len(elements))
+	}
 	return filtered
 }
 
@@ -152,6 +168,7 @@ func getElementDetails(element *rod.Element, selectors []models.FieldSelector) (
 	for _, selector := range selectors {
 		fieldElement, err := element.Element(selector.Selector)
 		if err != nil {
+
 			fmt.Printf("Error finding element for selector %s: %v\n", selector.Selector, err)
 			details = append(details, models.ScrapeResultDetail{
 				ID:      uuid.New().String(),

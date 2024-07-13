@@ -22,21 +22,27 @@ type GetScrapingResultsRespones struct {
 
 func getScrapeResults(
 	ctx context.Context, groupId string, offset, limit int, endpointIds []string,
+	isArchive bool,
 	client *mongo.Client,
 ) ([]models.ScrapeResult, bool, error) {
 
 	findOptions := options.FindOptions{}
 	findOptions.SetSkip(int64(offset))
 	findOptions.SetLimit(int64(limit))
-	findOptions.SetSort(bson.D{{"timestamp", -1}})
+	findOptions.SetSort(bson.D{{Key: "timestamp", Value: -1}})
 
 	groupObjId, err := primitive.ObjectIDFromHex(groupId)
 	if err != nil {
 		fmt.Println("error", err)
 		return nil, false, err
 	}
+	collectionName := "scrape_results"
 
-	cursor, err := client.Database("scrapeit").Collection("scrape_results").Find(ctx, bson.M{
+	if isArchive {
+		collectionName = "archived_scrape_results"
+	}
+
+	cursor, err := client.Database("scrapeit").Collection(collectionName).Find(ctx, bson.M{
 		"groupId":    groupObjId,
 		"endpointId": bson.M{"$in": endpointIds},
 	}, &findOptions)
@@ -123,6 +129,13 @@ func GetScrapingResults(c echo.Context) error {
 	// should be an array of endpoint ids
 	endpointIdsParam := c.QueryParam("endpointIds")
 
+	isArchive := false
+	// query params
+	isArchiveParam := c.QueryParam("isArchive")
+	if isArchiveParam == "true" {
+		isArchive = true
+	}
+
 	endpointIds := strings.Split(endpointIdsParam, ",")
 	if len(endpointIds) == 0 {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -132,7 +145,7 @@ func GetScrapingResults(c echo.Context) error {
 
 	fmt.Println("endpointIds", endpointIds)
 
-	results, hasMore, err := getScrapeResults(c.Request().Context(), groupId, offsetNumber, limitNumber, endpointIds, dbClient)
+	results, hasMore, err := getScrapeResults(c.Request().Context(), groupId, offsetNumber, limitNumber, endpointIds, isArchive, dbClient)
 	if err != nil {
 		fmt.Println("error", err)
 		return c.JSON(http.StatusOK, map[string]interface{}{})

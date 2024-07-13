@@ -1,5 +1,5 @@
 import { FC, useCallback, useEffect, useRef, useState } from "react";
-import { Field, ScrapeGroup, ScrapeResult } from "../types";
+import { Field, ScrapeGroup, ScrapeResult, SelectorStatus } from "../types";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import {
@@ -15,6 +15,7 @@ import { GroupEndpoints } from "../components/GroupEndpoints";
 import { toast } from "react-toastify";
 import { ConfigureGroupSchema } from "../components/modals/ConfigureGroupSchema";
 import { Button } from "../components/ui/Button";
+import { ConfirmArchiveCurrentGroup } from "../components/modals/ConfirmArchiveCurrentGroup";
 
 const pageSize = 20;
 
@@ -24,6 +25,17 @@ const defaultSearchConfig = {
   endpointIds: [] as string[],
 };
 
+export type FieldChange = {
+  fieldId: string;
+  fieldIsNewSinceLastSave: boolean;
+  type:
+    | "change_field_key"
+    | "change_field_type"
+    | "change_field_name"
+    | "delete_field"
+    | "add_field";
+};
+
 export const GroupView: FC = () => {
   const [showGroupSchemaSettings, setShowGroupSchemaSettings] = useState(false);
   const { groupId } = useParams<{ groupId: string }>();
@@ -31,6 +43,13 @@ export const GroupView: FC = () => {
   const [headerRef, size] = useComponentSize<HTMLDivElement>();
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
   const initialLoaded = useRef(false);
+  const [showConfirmGroupArchive, setShowConfirmGroupArchive] = useState<{
+    isOpen: boolean;
+    onConfirm: ((versionTag: string) => void) | null;
+  }>({
+    isOpen: false,
+    onConfirm: () => {},
+  });
   const queryClient = useQueryClient();
 
   const [searchConfig, setSearchConfig] = useState({
@@ -55,6 +74,19 @@ export const GroupView: FC = () => {
     queryFn: () =>
       axios.get(`/api/scrape-groups/${groupId}`).then((res) => res.data),
     enabled: !!groupId,
+    behavior: {
+      onFetch: () => {
+        queryClient.invalidateQueries({ queryKey: ["groupResults", groupId] });
+      },
+    },
+  });
+
+  const { data: scrapeResultsExist } = useQuery<boolean>({
+    queryKey: ["scrapeResultsExist", groupId],
+    queryFn: () =>
+      axios
+        .get(`/api/scrape/results/not-empty/${groupId}`)
+        .then((res) => res.data.resultsNotEmpty),
   });
 
   const {
@@ -88,10 +120,20 @@ export const GroupView: FC = () => {
   });
 
   const updateGroupSchemaMutation = useMutation({
-    mutationFn: (fields: Field[]) =>
-      axios.put(`/api/scrape-groups/${groupId}/schema`, { fields }),
+    mutationFn: (data: {
+      fields: Field[];
+      changes: FieldChange[];
+      versionTag?: string;
+      shouldArchive?: boolean;
+    }) => {
+      console.log(data);
+      return axios.put(`/api/scrape-groups/${groupId}/schema`, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["group", groupId] });
+      queryClient.invalidateQueries({
+        queryKey: ["scrapeResultsExist", groupId],
+      });
       toast.success("Group schema updated successfully");
     },
     onError: () => {
@@ -108,6 +150,7 @@ export const GroupView: FC = () => {
     onSuccess: () => {
       setSearchConfig({
         ...defaultSearchConfig,
+        offset: 0,
         endpointIds: group?.endpoints.map((e) => e.id) || [],
       });
       queryClient.invalidateQueries({ queryKey: ["groupResults", groupId] });
@@ -136,10 +179,36 @@ export const GroupView: FC = () => {
   }, [group]);
 
   const handleUpdateGroupSchema = useCallback(
-    (fields: Field[]) => {
-      updateGroupSchemaMutation.mutate(fields);
+    (fields: Field[], changes: FieldChange[]) => {
+      if (!group) return;
+      if (
+        group.fields.length &&
+        changes.some((c) => c.type === "add_field") &&
+        scrapeResultsExist
+      ) {
+        setShowConfirmGroupArchive({
+          isOpen: true,
+          onConfirm: (versionTag: string) => {
+            updateGroupSchemaMutation.mutate({
+              fields,
+              changes,
+              versionTag,
+              shouldArchive: true,
+            });
+            setShowGroupSchemaSettings(false);
+            setShowConfirmGroupArchive({
+              isOpen: false,
+              onConfirm: null,
+            });
+          },
+        });
+        return;
+      } else {
+        updateGroupSchemaMutation.mutate({ fields, changes });
+        setShowGroupSchemaSettings(false);
+      }
     },
-    [updateGroupSchemaMutation],
+    [group, scrapeResultsExist, updateGroupSchemaMutation],
   );
 
   const handleScrapeAllEndpoints = useCallback(() => {
@@ -222,10 +291,31 @@ export const GroupView: FC = () => {
         {group && (
           <GroupEndpoints
             group={group}
-            onEndpointChange={() =>
-              queryClient.invalidateQueries({ queryKey: ["group", groupId] })
+            onEndpointChange={() => {
+              queryClient.invalidateQueries({ queryKey: ["group", groupId] });
+              queryClient.invalidateQueries({
+                queryKey: ["scrapeResultsExist", groupId],
+              });
+            }}
+            disabledTooltip={
+              scrapeAllEndpointsMutation.isPending
+                ? "Scraping is in progress"
+                : group.endpoints.some((e) =>
+                      e.detailFieldSelectors.some(
+                        (s) => s.selectorStatus === SelectorStatus.NEW,
+                      ),
+                    )
+                  ? "Some endpoints need update since last schema change"
+                  : ""
             }
-            allEndpointsAreScraped={scrapeAllEndpointsMutation.isPending}
+            allowScrapeAllEndpoints={
+              !scrapeAllEndpointsMutation.isPending &&
+              !group.endpoints.some((e) =>
+                e.detailFieldSelectors.some(
+                  (s) => s.selectorStatus === SelectorStatus.NEW,
+                ),
+              )
+            }
             onScrapeAllEndpoints={handleScrapeAllEndpoints}
           />
         )}
@@ -235,6 +325,16 @@ export const GroupView: FC = () => {
         onClose={() => setShowGroupSchemaSettings(false)}
         onConfirm={handleUpdateGroupSchema}
         fieldsToEdit={group?.fields || []}
+      />
+      <ConfirmArchiveCurrentGroup
+        isOpen={showConfirmGroupArchive.isOpen}
+        onClose={() =>
+          setShowConfirmGroupArchive({
+            isOpen: false,
+            onConfirm: null,
+          })
+        }
+        onConfirm={showConfirmGroupArchive.onConfirm || (() => {})}
       />
 
       {!!scrapeResults?.pages.length && group && (

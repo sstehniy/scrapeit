@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"scrapeit/internal/models"
 	"scrapeit/internal/scraper"
@@ -55,10 +56,16 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 	resultsChan := make(chan []models.ScrapeResult)
 
 	for _, endpointToScrape := range endpointsToScrape {
+		fmt.Println("Scraping endpoints:", endpointToScrape.ID)
+
 		go func(endpoint models.Endpoint) {
 			results, err := scraper.ScrapeEndpoint(endpoint, *relevantGroup, true, dbClient)
 			if err != nil {
+				fmt.Println("Error scraping endpoint:", err)
 				resultsChan <- []models.ScrapeResult{}
+			}
+			if endpoint.ID == "713d796b-246c-409c-8031-b4e467eaaaee" {
+				fmt.Println("Scraped endpoint:", len(results))
 			}
 			resultsChan <- results
 		}(endpointToScrape)
@@ -75,9 +82,13 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 		r.ID = primitive.NewObjectID()
 		interfaceResults = append(interfaceResults, r)
 	}
+	if len(interfaceResults) == 0 {
+		return c.JSON(http.StatusOK, results)
+	}
 	_, err = allResultsCollection.InsertMany(c.Request().Context(), interfaceResults)
 
 	if err != nil {
+		fmt.Println("Error inserting results:", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 

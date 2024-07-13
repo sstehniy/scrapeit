@@ -23,6 +23,7 @@
     "react-router-dom": "^6.24.1",
     "react-toastify": "^10.0.5",
     "react-use": "^17.5.0",
+    "sortablejs": "^1.15.2",
     "use-query-params": "^2.2.1",
     "uuid": "^10.0.0"
   },
@@ -31,6 +32,7 @@
     "@types/lodash": "^4.17.6",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
+    "@types/sortablejs": "^1.15.8",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^7.2.0",
     "@typescript-eslint/parser": "^7.2.0",

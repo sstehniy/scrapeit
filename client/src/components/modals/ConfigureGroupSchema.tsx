@@ -8,6 +8,7 @@ import { FieldChange } from "../../views/GroupView";
 import { Button } from "../ui/Button";
 import { Modal, ModalProps } from "../ui/Modal";
 import { TextInput } from "../ui/TextInput";
+import Sortable from "sortablejs";
 
 type ConfigureGroupSchemaProps = Pick<ModalProps, "isOpen" | "onClose"> & {
   onConfirm: (fields: Field[], fieldChanges: FieldChange[]) => void;
@@ -44,6 +45,33 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
   const [fieldsValid, setFieldsValid] = useState(true);
   const [fieldsUnique, setFieldsUnique] = useState(true);
   const [fieldChanges, setFieldChanges] = useState<FieldChange[]>([]);
+
+  const sortableRef = useRef<Sortable | null>(null);
+
+  useEffect(() => {
+    if (listRef.current) {
+      sortableRef.current = new Sortable(listRef.current, {
+        handle: ".handle",
+        onEnd: (evt) => {
+          const oldIndex = evt.oldIndex || 0;
+          const newIndex = evt.newIndex || 0;
+
+          setFields((prev) => {
+            const newFields = [...prev];
+            const [removed] = newFields.splice(oldIndex, 1);
+            newFields.splice(newIndex, 0, removed);
+            newFields.forEach((field, idx) => {
+              field.order = idx + 1;
+            });
+            return newFields;
+          });
+        },
+      });
+      return () => {
+        sortableRef.current?.destroy();
+      };
+    }
+  }, [fields, isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -193,11 +221,27 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
             Fields
           </label>
           <div
-            className="space-y-2 w-[450px] max-h-[325px] overflow-y-auto px-1 mb-2"
+            className="space-y-2 w-[500px] max-h-[325px] overflow-y-auto px-1 mb-2"
             ref={listRef}
           >
             {fields.map((field) => (
               <div key={field.id} className="flex items-center space-x-2">
+                <div className="handle cursor-move mt-3 -ms-2 me-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+                    />
+                  </svg>
+                </div>
                 <TextInput
                   labelClassName="block font-medium text-gray-500 mb-1"
                   className="input input-bordered w-full"

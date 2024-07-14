@@ -107,11 +107,11 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
             key={endpoint.id}
             className="mr-2 mb-2 px-3 py-2 border-2 rounded-lg border-base-content bg-base-100 text-base-content flex items-center"
           >
-            <div className="mr-10 flex">
-              <div className="w-24">
+            <div className="flex">
+              <div className="mr-3">
                 {getColoredEndpointPill(endpoint.id, group)}
               </div>
-              <div className="w-48">{getBaseUrl(endpoint.url, false)}</div>
+              <div className="mr-4">{getBaseUrl(endpoint.url, false)}</div>
             </div>
             <div className="flex gap-5">
               {endpoint.detailFieldSelectors.some(

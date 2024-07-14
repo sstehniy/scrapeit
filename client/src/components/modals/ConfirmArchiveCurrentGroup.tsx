@@ -44,8 +44,6 @@ export const ConfirmArchiveCurrentGroup: FC<
     }
   }, [isOpen, queryClient]);
 
-  console.log(versionExists);
-
   const getConfirmArchiveCurrentGroupContent = () => {
     return (
       <div className="space-y-2 w-[450px]">

@@ -22,23 +22,23 @@ func (e ScrapeEndpointError) Error() string {
 	return fmt.Sprintf("scrape endpoint error: %s", e.Message)
 }
 
-func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, filterExisiting bool, client *mongo.Client) ([]models.ScrapeResult, error) {
+func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, filterExisiting bool, client *mongo.Client) ([]models.ScrapeResult, []models.ScrapeResult, error) {
 
 	browser, err := GetBrowser()
 	if err != nil {
-		return nil, fmt.Errorf("error getting browser: %w", err)
+		return nil, nil, fmt.Errorf("error getting browser: %w", err)
 	}
 	defer browser.Close()
 
 	var allElements rod.Elements
 
 	for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i++ {
-		urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig.Parameter, i)
+		urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
 		fmt.Println("Scraping URL: ", urlWithPagination)
 
 		page, err := GetStealthPage(browser, urlWithPagination)
 		if err != nil {
-			return nil, fmt.Errorf("error getting page: %w", err)
+			return nil, nil, fmt.Errorf("error getting page: %w", err)
 		}
 
 		defer page.Close()
@@ -46,11 +46,9 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 		SlowScrollToBottom(page)
 
 		elements, err := page.Elements(endpointToScrape.MainElementSelector)
-		if endpointToScrape.ID == "713d796b-246c-409c-8031-b4e467eaaaee" {
-			fmt.Println("Specific Elements found: ", len(elements))
-		}
+
 		if err != nil {
-			return nil, fmt.Errorf("error finding elements: %w", err)
+			return nil, nil, fmt.Errorf("error finding elements: %w", err)
 		}
 
 		allElements = append(allElements, elements...)
@@ -59,23 +57,14 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 	linkFieldId := findLinkFieldId(relevantGroup.Fields)
 	endpointLinkSelector := findLinkSelector(endpointToScrape.DetailFieldSelectors, linkFieldId)
 	fmt.Println("Link selector: ", endpointLinkSelector)
-	var filteredElements rod.Elements
-	if filterExisiting {
-		filteredElements = filterElements(allElements, endpointLinkSelector, endpointToScrape.ID, relevantGroup.ID, client)
-	} else {
-		filteredElements = allElements
-	}
 
-	results := make([]models.ScrapeResult, 0, len(filteredElements))
-	for _, element := range filteredElements {
+	results := make([]models.ScrapeResult, 0, len(allElements))
+	for _, element := range allElements {
 		details, err := getElementDetails(element, endpointToScrape.DetailFieldSelectors)
 
 		if err != nil {
-			return nil, fmt.Errorf("error getting element details: %w", err)
+			return nil, nil, fmt.Errorf("error getting element details: %w", err)
 		}
-		fmt.Println("--------------------")
-		fmt.Println(fmt.Sprintf("URL: %s, hash: %s", getFieldValueByFieldName(relevantGroup.Fields, "link", details), utils.GenerateScrapeResultHash(getFieldValueByFieldName(relevantGroup.Fields, "link", details))))
-		fmt.Println("--------------------")
 		result := models.ScrapeResult{
 			ID:         primitive.NewObjectID(),
 			UniqueHash: utils.GenerateScrapeResultHash(getFieldValueByFieldName(relevantGroup.Fields, "link", details)),
@@ -87,25 +76,54 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 		results = append(results, result)
 	}
 
-	for _, result := range results {
-		if result.EndpointID == "713d796b-246c-409c-8031-b4e467eaaaee" {
-			fmt.Println("Specific Scrape result: ", result)
-		}
+	if filterExisiting {
+		return filterElements(relevantGroup.Fields, results, endpointToScrape.ID, relevantGroup.ID, client)
 	}
 
-	return results, nil
+	return results, nil, nil
 }
 
-func buildPaginationURL(baseURL, parameter string, page int) string {
+func buildPaginationURL(baseURL string, config models.PaginationConfig, page int) string {
+	switch config.Type {
+	case "url_parameter":
+		return buildURLParameterPagination(baseURL, config.Parameter, page)
+	case "url_path":
+		return buildURLPathPagination(baseURL, config.Parameter, page, *config.UrlRegexToInsert)
+	default:
+		return baseURL // Return original URL if type is not recognized
+	}
+}
+
+func buildURLParameterPagination(baseURL, parameter string, page int) string {
+	// Existing implementation for URL parameter pagination
 	if strings.Contains(baseURL, "?") {
 		if strings.Contains(baseURL, parameter) {
-			// replace the existing page number with regex
 			re := regexp.MustCompile(parameter + `=\d+`)
 			return re.ReplaceAllString(baseURL, fmt.Sprintf("%s=%d", parameter, page))
 		}
 		return fmt.Sprintf("%s&%s=%d", baseURL, parameter, page)
 	}
 	return fmt.Sprintf("%s?%s=%d", baseURL, parameter, page)
+}
+
+func buildURLPathPagination(baseURL, parameter string, page int, urlRegexToInsert string) string {
+	if urlRegexToInsert == "" {
+		// Default regex if not provided
+		urlRegexToInsert = fmt.Sprintf(`(%s:\d+)`, parameter)
+	}
+	re := regexp.MustCompile(urlRegexToInsert)
+	replacement := fmt.Sprintf("%s:%d", parameter, page)
+
+	if re.MatchString(baseURL) {
+		return re.ReplaceAllString(baseURL, replacement)
+	}
+
+	// If the pattern is not found, insert it before the last path segment
+	parts := strings.Split(baseURL, "/")
+	if len(parts) > 1 {
+		parts[len(parts)-1] = replacement + "/" + parts[len(parts)-1]
+	}
+	return strings.Join(parts, "/")
 }
 
 func findLinkFieldId(fields []models.Field) string {
@@ -139,28 +157,30 @@ func findLinkSelector(selectors []models.FieldSelector, linkFieldId string) mode
 	return models.FieldSelector{}
 }
 
-func filterElements(elements rod.Elements, linkSelector models.FieldSelector, endpointId string, groupId primitive.ObjectID, client *mongo.Client) rod.Elements {
-	if endpointId == "713d796b-246c-409c-8031-b4e467eaaaee" {
-		fmt.Println("Specific Filtering elements", len(elements))
-	}
-	var filtered rod.Elements
-	for _, element := range elements {
-		linkElement, err := element.Element(linkSelector.Selector)
+func filterElements(fields []models.Field, results []models.ScrapeResult, endpointId string, groupId primitive.ObjectID, client *mongo.Client) ([]models.ScrapeResult, []models.ScrapeResult, error) {
+
+	var filtered []models.ScrapeResult
+	var toReplace []models.ScrapeResult
+	for _, element := range results {
+
+		filterResult, err := utils.FindScrapeResultExists(client, endpointId, groupId, element.Fields, fields)
+
 		if err != nil {
+			fmt.Println("Failed to find existing", err)
 			continue
 		}
-		hrefAttr, err := linkElement.Attribute("href")
-		if err != nil || hrefAttr == nil {
-			continue
-		}
-		if !utils.FindScrapeResultExists(*hrefAttr, endpointId, groupId, client) {
+
+		if filterResult.NeedsReplace {
+			toReplace = append(toReplace, element)
+		} else if !filterResult.Exists {
 			filtered = append(filtered, element)
 		}
 	}
-	if endpointId == "713d796b-246c-409c-8031-b4e467eaaaee" {
-		fmt.Println("Specific Filtering elements after", len(elements))
-	}
-	return filtered
+
+	fmt.Println("Filtered results: ", len(filtered))
+	fmt.Println("To replace results: ", len(toReplace))
+
+	return filtered, toReplace, nil
 }
 
 func getElementDetails(element *rod.Element, selectors []models.FieldSelector) ([]models.ScrapeResultDetail, error) {

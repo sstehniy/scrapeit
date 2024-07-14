@@ -97,6 +97,12 @@ func prepopulateScrapeGroups(client *mongo.Client) error {
 		return err
 	}
 
+	archivedResultsCollection := client.Database("scrapeit").Collection("archived_scrape_results")
+	if err := archivedResultsCollection.Drop(context.Background()); err != nil {
+		fmt.Println("Error dropping archived results collection:", err)
+		return err
+	}
+
 	byteValue, err := utils.ReadJson("/internal/data/scraping_groups.json")
 	if err != nil {
 		fmt.Println("Error reading JSON groups:", err)

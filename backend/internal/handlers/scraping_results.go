@@ -150,7 +150,6 @@ func GetScrapingResults(c echo.Context) error {
 		fmt.Println("error", err)
 		return c.JSON(http.StatusOK, map[string]interface{}{})
 	}
-	fmt.Println("results", results)
 	return c.JSON(http.StatusOK, GetScrapingResultsRespones{
 		Results: results,
 		HasMore: hasMore,

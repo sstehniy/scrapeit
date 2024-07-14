@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"scrapeit/internal/models"
 	"scrapeit/internal/scraper"
@@ -50,7 +51,7 @@ func ScrapeEndpointHandler(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "Endpoint not found"})
 	}
 
-	results, err := scraper.ScrapeEndpoint(*endpointToScrape, *relevantGroup, true, dbClient)
+	results, toReplace, err := scraper.ScrapeEndpoint(*endpointToScrape, *relevantGroup, true, dbClient)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -76,6 +77,26 @@ func ScrapeEndpointHandler(c echo.Context) error {
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Update existing results
+	if len(toReplace) > 0 {
+		var bulkWrites []mongo.WriteModel
+		for _, r := range toReplace {
+			update := mongo.NewUpdateOneModel().
+				SetFilter(bson.M{"uniqueHash": r.UniqueHash, "groupId": r.GroupId}).
+				SetUpdate(bson.M{"$set": bson.M{
+					"fields":    r.Fields,
+					"timestamp": r.Timestamp,
+				}})
+			bulkWrites = append(bulkWrites, update)
+		}
+
+		_, err = allResultsCollection.BulkWrite(c.Request().Context(), bulkWrites)
+		if err != nil {
+			fmt.Println("Error updating existing results:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
 	}
 
 	return c.JSON(http.StatusOK, results)

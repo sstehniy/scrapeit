@@ -64,19 +64,32 @@ export const ResultsTable: FC<ResultsTableProps> = ({
             );
 
             switch (field.type) {
-              case "image":
+              case "image": {
+                let imageUrl = value?.value;
+                const endpoint = group.endpoints.find(
+                  (e) => e.id === row.row.original.endpointId,
+                );
+                if (imageUrl && imageUrl.startsWith("/")) {
+                  const baseLink = getBaseUrl(endpoint?.url || "", true);
+                  imageUrl = `${baseLink}${imageUrl}`;
+                }
                 return (
                   <div className="shrink-0 w-28">
                     <img
                       src={
-                        value?.value ||
+                        imageUrl ||
                         "https://via.assets.so/img.jpg?w=135&h=100&tc=grey&bg=lightgrey&t=thumbnail"
                       }
                       alt={field.name}
-                      style={{ height: "auto", margin: "0 auto" }}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                      }}
                     />
                   </div>
                 );
+              }
               case "link": {
                 const endpoint = group.endpoints.find(
                   (e) => e.id === row.row.original.endpointId,
@@ -89,7 +102,7 @@ export const ResultsTable: FC<ResultsTableProps> = ({
                   );
                 }
                 const baseLink = getBaseUrl(endpoint?.url || "", true);
-                console.log(baseLink);
+
                 return (
                   <a href={`${baseLink}${value?.value}`} target="_blank">
                     Link

@@ -30,7 +30,16 @@ func GetBrowser() (*rod.Browser, error) {
 }
 
 func GetStealthPage(browser *rod.Browser, url string) (*rod.Page, error) {
-	page := stealth.MustPage(browser).MustNavigate(url).MustWaitLoad()
+
+	err := stealth.MustPage(browser).Navigate(url)
+	if err != nil {
+		fmt.Println("Error navigating: ", err)
+		return nil, err
+
+	}
+	page := stealth.MustPage(browser).MustNavigate(url)
+	page.MustWaitLoad()
+
 	page.MustSetViewport(1920, 1080,
 		2.0,
 		false,

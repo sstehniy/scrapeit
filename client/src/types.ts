@@ -39,7 +39,7 @@ type Endpoint = {
 };
 
 type PaginationConfig = {
-  type: "url_parameter";
+  type: "url_parameter" | "url_path";
   parameter: string;
   start: number;
   end: number;

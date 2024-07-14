@@ -106,11 +106,11 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
     return valid && unique;
   };
 
-  const keyAndNameEditable = (field: Field) => {
+  const keyEditable = (field: Field) => {
     if (!field.isFullyEditable) {
       return false;
     }
-    return fieldsToEdit.length;
+    return true;
   };
 
   // eslint-disable-next-line unused-imports/no-unused-vars
@@ -127,7 +127,6 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
     switch (type) {
       case "add_field": {
         if (!fieldIsNewSinceLastSave) {
-          console.log("wtf!");
           return;
         }
         const newField = {
@@ -166,8 +165,38 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
         }
         break;
       }
+      case "change_field_name": {
+        const field = newFields.find((field) => field.id === fieldId);
+        if (!field || value === undefined) {
+          return;
+        }
+
+        field.name = value;
+
+        const sameChangeIdx = fieldChanges.findIndex(
+          (change) => change.fieldId === fieldId && change.type === type,
+        );
+        if (sameChangeIdx !== -1) {
+          setFieldChanges((prev) => {
+            const newChanges = [...prev];
+            newChanges[sameChangeIdx] = {
+              fieldId,
+              type,
+              fieldIsNewSinceLastSave,
+            };
+            return newChanges;
+          });
+          break;
+        }
+
+        setFieldChanges([
+          ...fieldChanges,
+          { fieldId, type, fieldIsNewSinceLastSave },
+        ]);
+
+        break;
+      }
       case "change_field_key":
-      case "change_field_name":
       case "change_field_type": {
         const field = newFields.find((field) => field.id === fieldId);
         if (!field || !field.isFullyEditable || value === undefined) {
@@ -176,8 +205,6 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
 
         if (type === "change_field_key") {
           field.key = value;
-        } else if (type === "change_field_name") {
-          field.name = value;
         } else if (type === "change_field_type") {
           field.type = value as FieldType;
         }
@@ -277,7 +304,7 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
                     );
                   }}
                   required
-                  disabled={!keyAndNameEditable(field)}
+                  disabled={!keyEditable(field)}
                 />
 
                 <div className="w-40">

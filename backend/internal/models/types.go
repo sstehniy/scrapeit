@@ -99,6 +99,14 @@ type Endpoint struct {
 	Status               *ScrapeStatus    `json:"status,omitempty" bson:"status,omitempty"`
 }
 
+type PaginationConfigType string
+
+const (
+	PaginationConfigTypeNone         PaginationConfigType = "none"
+	PaginationConfigTypeUrlParameter PaginationConfigType = "url_parameter"
+	PaginationConfigTypePath         PaginationConfigType = "url_path"
+)
+
 // PaginationConfig represents pagination configuration for an endpoint
 type PaginationConfig struct {
 	Type             string  `json:"type" bson:"type"`

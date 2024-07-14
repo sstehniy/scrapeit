@@ -39,13 +39,12 @@ func GetMainElementHTMLContent(url, elementSelector string, maxElements int) (st
 
 	page, err := GetStealthPage(browser, url)
 	if err != nil {
-		fmt.Println(err)
-		return "", err
 
+		return "", err
 	}
 
 	page.MustWaitElementsMoreThan(
-		elementSelector, 1,
+		elementSelector, 0,
 	).MustSetViewport(1920, 1080,
 		2.0,
 		false,

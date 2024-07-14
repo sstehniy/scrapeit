@@ -23,7 +23,9 @@ func GetScrapingGroups(c echo.Context) error {
 	}
 	var allGroups []models.ScrapeGroup
 
-	result, err := dbClient.Database("scrapeit").Collection("scrape_groups").Find(c.Request().Context(), bson.M{})
+	result, err := dbClient.Database("scrapeit").Collection("scrape_groups").Find(c.Request().Context(), bson.M{
+		"versionTag": "",
+	})
 	if err != nil {
 		fmt.Println("error in finding groups")
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})

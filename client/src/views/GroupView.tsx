@@ -17,7 +17,7 @@ import { ConfigureGroupSchema } from "../components/modals/ConfigureGroupSchema"
 import { Button } from "../components/ui/Button";
 import { ConfirmArchiveCurrentGroup } from "../components/modals/ConfirmArchiveCurrentGroup";
 
-const pageSize = 20;
+const pageSize = 2000;
 
 const defaultSearchConfig = {
   offset: 0,
@@ -126,7 +126,6 @@ export const GroupView: FC = () => {
       versionTag?: string;
       shouldArchive?: boolean;
     }) => {
-      console.log(data);
       return axios.put(`/api/scrape-groups/${groupId}/schema`, data);
     },
     onSuccess: () => {

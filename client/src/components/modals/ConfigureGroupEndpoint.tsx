@@ -210,6 +210,7 @@ const SecondStepContent: FC<{
         <option value="url_parameter" selected>
           URL Parameter
         </option>
+        <option value="url_path">URL Path</option>
       </select>
       <label className="block font-medium text-gray-500 mb-2">Parameter</label>
       <input
@@ -300,27 +301,29 @@ const SecondStepContent: FC<{
             required
           />
         </div>
-        <div className="flex-1">
-          <TextInput
-            name="urlRegexToInsert"
-            id="urlRegexToInsert"
-            label="URL Regex To Insert"
-            labelClassName="block font-medium text-gray-500"
-            className="input input-bordered w-full"
-            value={endpoint.paginationConfig.urlRegexToInsert}
-            onChange={(e) => {
-              const newEndpoint = {
-                ...endpoint,
-                paginationConfig: {
-                  ...endpoint.paginationConfig,
-                  urlRegexToInsert: e.target.value,
-                },
-              };
-              validateSecondStep(newEndpoint);
-              setEndpoint(newEndpoint);
-            }}
-          />
-        </div>
+        {endpoint.paginationConfig.type === "url_path" && (
+          <div className="flex-1">
+            <TextInput
+              name="urlRegexToInsert"
+              id="urlRegexToInsert"
+              label="URL Regex To Insert"
+              labelClassName="block font-medium text-gray-500"
+              className="input input-bordered w-full"
+              value={endpoint.paginationConfig.urlRegexToInsert}
+              onChange={(e) => {
+                const newEndpoint = {
+                  ...endpoint,
+                  paginationConfig: {
+                    ...endpoint.paginationConfig,
+                    urlRegexToInsert: e.target.value,
+                  },
+                };
+                validateSecondStep(newEndpoint);
+                setEndpoint(newEndpoint);
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <div className="w-full flex justify-end">

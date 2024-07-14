@@ -17,6 +17,11 @@ type ScraperEndpointsHandlerRequest struct {
 	GroupId     string   `json:"groupId"`
 }
 
+type ScraperEndpointsHandlerResponse struct {
+	NewResults      []models.ScrapeResult `json:"newResults"`
+	ReplacedResults []models.ScrapeResult `json:"replacedResults"`
+}
+
 func ScrapeEndpointsHandler(c echo.Context) error {
 	var body ScraperEndpointsHandlerRequest
 	if err := c.Bind(&body); err != nil {
@@ -54,26 +59,29 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 	}
 
 	resultsChan := make(chan []models.ScrapeResult)
+	toReplaceChan := make(chan []models.ScrapeResult)
 
 	for _, endpointToScrape := range endpointsToScrape {
 		fmt.Println("Scraping endpoints:", endpointToScrape.ID)
 
 		go func(endpoint models.Endpoint) {
-			results, err := scraper.ScrapeEndpoint(endpoint, *relevantGroup, true, dbClient)
+			results, toReplace, err := scraper.ScrapeEndpoint(endpoint, *relevantGroup, true, dbClient)
 			if err != nil {
 				fmt.Println("Error scraping endpoint:", err)
 				resultsChan <- []models.ScrapeResult{}
+				toReplaceChan <- []models.ScrapeResult{}
+			} else {
+				resultsChan <- results
+				toReplaceChan <- toReplace
 			}
-			if endpoint.ID == "713d796b-246c-409c-8031-b4e467eaaaee" {
-				fmt.Println("Scraped endpoint:", len(results))
-			}
-			resultsChan <- results
 		}(endpointToScrape)
 	}
 
 	var results []models.ScrapeResult
+	var toReplaceResults []models.ScrapeResult
 	for range endpointsToScrape {
 		results = append(results, <-resultsChan...)
+		toReplaceResults = append(toReplaceResults, <-toReplaceChan...)
 	}
 
 	allResultsCollection := dbClient.Database("scrapeit").Collection("scrape_results")
@@ -82,15 +90,37 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 		r.ID = primitive.NewObjectID()
 		interfaceResults = append(interfaceResults, r)
 	}
-	if len(interfaceResults) == 0 {
-		return c.JSON(http.StatusOK, results)
-	}
-	_, err = allResultsCollection.InsertMany(c.Request().Context(), interfaceResults)
 
-	if err != nil {
-		fmt.Println("Error inserting results:", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	if len(interfaceResults) > 0 {
+		_, err = allResultsCollection.InsertMany(c.Request().Context(), interfaceResults)
+		if err != nil {
+			fmt.Println("Error inserting results:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
 	}
 
-	return c.JSON(http.StatusOK, results)
+	// Update existing results
+	if len(toReplaceResults) > 0 {
+		var bulkWrites []mongo.WriteModel
+		for _, r := range toReplaceResults {
+			update := mongo.NewUpdateOneModel().
+				SetFilter(bson.M{"uniqueHash": r.UniqueHash, "groupId": r.GroupId}).
+				SetUpdate(bson.M{"$set": bson.M{
+					"fields":    r.Fields,
+					"timestamp": r.Timestamp,
+				}})
+			bulkWrites = append(bulkWrites, update)
+		}
+
+		_, err = allResultsCollection.BulkWrite(c.Request().Context(), bulkWrites)
+		if err != nil {
+			fmt.Println("Error updating existing results:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+	}
+
+	return c.JSON(http.StatusOK, ScraperEndpointsHandlerResponse{
+		NewResults:      results,
+		ReplacedResults: toReplaceResults,
+	})
 }

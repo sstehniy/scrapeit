@@ -66,14 +66,16 @@ export const ResultsTable: FC<ResultsTableProps> = ({
             switch (field.type) {
               case "image":
                 return (
-                  <img
-                    src={
-                      value?.value ||
-                      "https://via.assets.so/img.jpg?w=135&h=100&tc=grey&bg=lightgrey&t=thumbnail"
-                    }
-                    alt={field.name}
-                    style={{ width: "auto", height: 50, margin: "0 auto" }}
-                  />
+                  <div className="shrink-0 w-28">
+                    <img
+                      src={
+                        value?.value ||
+                        "https://via.assets.so/img.jpg?w=135&h=100&tc=grey&bg=lightgrey&t=thumbnail"
+                      }
+                      alt={field.name}
+                      style={{ height: "auto", margin: "0 auto" }}
+                    />
+                  </div>
                 );
               case "link": {
                 const endpoint = group.endpoints.find(
@@ -176,7 +178,7 @@ export const ResultsTable: FC<ResultsTableProps> = ({
             <button
               onClick={loadMore}
               disabled={loading}
-              className="btn btn-primary mt-3"
+              className="btn btn-primary my-3"
             >
               Load more
             </button>

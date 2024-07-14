@@ -232,37 +232,29 @@ export const GroupView: FC = () => {
   return (
     <div>
       <div ref={headerRef}>
-        <div className="flex justify-between">
-          <Button
-            onClick={() => navigate("/")}
-            className="btn btn-accent btn-sm mb-3"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2.5}
-              stroke="currentColor"
-              className="size-4"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-              />
-            </svg>
-          </Button>
-          {searchConfigChanged && (
-            <Button
-              onClick={resetSearch}
-              className="btn btn-primary btn-sm mb-3"
-            >
-              Reset Search
-            </Button>
-          )}
-        </div>
         <div className="flex items-center gap-5 mb-5">
-          <h1 className="text-3xl font-bold">{group?.name}</h1>
+          <div className="flex">
+            <Button
+              onClick={() => navigate("/")}
+              className="btn btn-accent btn-outline btn-sm mr-4 btn-square border-0"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                className="size-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+                />
+              </svg>
+            </Button>
+            <h1 className="text-3xl font-bold">{group?.name}</h1>
+          </div>
           <Button
             onClick={() => setShowGroupSchemaSettings(true)}
             className="btn btn-secondary btn-outline btn-sm btn-square border-0"
@@ -344,7 +336,7 @@ export const GroupView: FC = () => {
           loadMore={() => {
             fetchNextPage();
           }}
-          height={windowHeight - size.height - 150}
+          height={windowHeight - size.height - 100}
           loading={isLoading || isFetchingNextPage}
           results={scrapeResults.pages
             .flatMap((page) => page.results)

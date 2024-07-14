@@ -346,7 +346,7 @@ const SecondStepContent: FC<{
         </Button>
       </div>
 
-      <div className="w-[950px]">
+      <div className="w-full">
         {fields.map((field) => (
           <div key={field.id}>
             <div className="flex gap-3">
@@ -538,52 +538,54 @@ const SecondStepContent: FC<{
           <span className="loading loading-spinner loading-lg"></span>
         </div>
       )}
-      <div
-        className="w-full max-w-[950px] "
-        style={{
-          maxHeight: 400,
-          overflow: "auto",
-        }}
-      >
-        <table className="border-collapse bg-gray-800 shadow-md rounded-lg">
-          <thead className="bg-gray-700 sticky top-0">
-            <tr>
-              {fields.map((field) => (
-                <th
-                  key={field.id}
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-600 transition whitespace-nowrap"
-                >
-                  {field.name}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-gray-800 divide-y divide-gray-700">
-            {sampleData.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-700 transition">
+      {sampleData.length > 0 && (
+        <div
+          className="w-full"
+          style={{
+            maxHeight: 400,
+            overflow: "auto",
+          }}
+        >
+          <table className="border-collapse bg-gray-800 shadow-md rounded-lg w-full">
+            <thead className="bg-gray-700 sticky top-0">
+              <tr>
                 {fields.map((field) => (
-                  <td key={field.id} className="text-sm text-gray-300">
-                    <div
-                      className="px-4"
-                      style={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        maxHeight: 95,
-                        maxWidth: 300,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 4,
-                        WebkitBoxOrient: "vertical",
-                      }}
-                    >
-                      {row.fields.find((r) => r.fieldId === field.id)?.value}
-                    </div>
-                  </td>
+                  <th
+                    key={field.id}
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-600 transition whitespace-nowrap"
+                  >
+                    {field.name}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="bg-gray-800 divide-y divide-gray-700">
+              {sampleData.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-700 transition">
+                  {fields.map((field) => (
+                    <td key={field.id} className="text-sm text-gray-300">
+                      <div
+                        className="px-4"
+                        style={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxHeight: 95,
+                          maxWidth: 300,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 4,
+                          WebkitBoxOrient: "vertical",
+                        }}
+                      >
+                        {row.fields.find((r) => r.fieldId === field.id)?.value}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

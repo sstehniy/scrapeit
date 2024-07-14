@@ -113,7 +113,7 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
               </div>
               <div className="mr-4">{getBaseUrl(endpoint.url, false)}</div>
             </div>
-            <div className="flex gap-5">
+            <div className="flex gap-3">
               {endpoint.detailFieldSelectors.some(
                 (ds) => ds.selectorStatus !== SelectorStatus.OK,
               ) && (
@@ -125,7 +125,7 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
                     fill="currentColor"
-                    className="size-6 text-warning"
+                    className="size-5 text-warning"
                   >
                     <path
                       fillRule="evenodd"
@@ -149,7 +149,7 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className="size-6 hover:text-primary"
+                  className="size-5 hover:text-primary"
                 >
                   <path
                     strokeLinecap="round"
@@ -170,7 +170,7 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className="size-6 hover:text-error"
+                  className="size-5 hover:text-error"
                   onClick={() => handleDeleteEndpoint(endpoint.id)}
                 >
                   <path

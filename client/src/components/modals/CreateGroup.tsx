@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { Modal, ModalProps } from "../ui/Modal";
 
 type CreateGroupModalProps = Pick<ModalProps, "isOpen" | "onClose"> & {
@@ -11,6 +11,12 @@ export const CreateGroupModal: FC<CreateGroupModalProps> = ({
   onClose,
 }) => {
   const [name, setName] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      setName("");
+    }
+  }, [isOpen]);
 
   const getCreateGroupContent = () => {
     return (

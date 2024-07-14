@@ -615,6 +615,20 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
   const [sampleData, setSampleData] = useState<ScrapeResult[]>([]);
 
   useEffect(() => {
+    if (isOpen) {
+      setCurrentStep(0);
+      setFirstStepErrors({});
+      setSecondStepErrors({});
+      setTestElementError(null);
+      setTestElementResult(null);
+      setTestElementLoading(false);
+      setFieldsWithLoadingSelectors([]);
+      setLoadingSampleData(false);
+      setSampleData([]);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (editEndpoint) {
       setEndpoint(editEndpoint);
     } else {

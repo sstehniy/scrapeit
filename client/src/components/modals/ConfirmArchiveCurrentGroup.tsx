@@ -42,7 +42,7 @@ export const ConfirmArchiveCurrentGroup: FC<
     if (isOpen) {
       setVersionTag("");
     }
-  }, [isOpen]);
+  }, [isOpen, queryClient]);
 
   console.log(versionExists);
 

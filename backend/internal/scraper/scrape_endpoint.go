@@ -3,8 +3,8 @@ package scraper
 import (
 	"fmt"
 	"regexp"
+	"scrapeit/internal/helpers"
 	"scrapeit/internal/models"
-	"scrapeit/internal/utils"
 	"strings"
 	"time"
 
@@ -67,7 +67,7 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 		}
 		result := models.ScrapeResult{
 			ID:         primitive.NewObjectID(),
-			UniqueHash: utils.GenerateScrapeResultHash(getFieldValueByFieldName(relevantGroup.Fields, "link", details)),
+			UniqueHash: helpers.GenerateScrapeResultHash(getFieldValueByFieldName(relevantGroup.Fields, "link", details)),
 			EndpointID: endpointToScrape.ID,
 			GroupId:    relevantGroup.ID,
 			Fields:     details,
@@ -160,7 +160,7 @@ func filterElements(fields []models.Field, results []models.ScrapeResult, endpoi
 	var toReplace []models.ScrapeResult
 	for _, element := range results {
 
-		filterResult, err := utils.FindScrapeResultExists(client, endpointId, groupId, element.Fields, fields)
+		filterResult, err := helpers.FindScrapeResultExists(client, endpointId, groupId, element.Fields, fields)
 
 		if err != nil {
 			fmt.Println("Failed to find existing", err)
@@ -208,7 +208,7 @@ func getElementDetails(element *rod.Element, selectors []models.FieldSelector) (
 			}
 		}
 		if selector.Regex != "" {
-			text, err = utils.ExtractStringWithRegex(text, selector.Regex)
+			text, err = helpers.ExtractStringWithRegex(text, selector.Regex)
 			if err != nil {
 				fmt.Printf("Error extracting regex for selector %s: %v\n", selector.Selector, err)
 				text = ""
@@ -314,7 +314,7 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 			}
 		}
 		if selector.Regex != "" {
-			text, err = utils.ExtractStringWithRegex(text, selector.Regex)
+			text, err = helpersExtractStringWithRegex(text, selector.Regex)
 			if err != nil {
 				fmt.Printf("Error extracting regex for selector %s: %v\n", selector.Selector, err)
 				text = ""

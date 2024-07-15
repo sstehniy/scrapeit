@@ -11,7 +11,6 @@ import (
 	"scrapeit/internal/cron"
 	"scrapeit/internal/handlers"
 	"scrapeit/internal/models"
-	"scrapeit/internal/utils"
 	"syscall"
 	"time"
 
@@ -174,7 +173,7 @@ func prepopulateScrapeGroups(client *mongo.Client) error {
 		return err
 	}
 
-	byteValue, err := utils.ReadJson("/internal/data/scraping_groups.json")
+	byteValue, err := helpers.ReadJson("/internal/data/scraping_groups.json")
 	if err != nil {
 		fmt.Println("Error reading JSON groups:", err)
 		return err

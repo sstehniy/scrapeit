@@ -4,17 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	"scrapeit/internal/models"
-	"scrapeit/internal/utils"
 
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
-func writeAllGroups(groups *[]models.ScrapeGroup) error {
-	return utils.WriteJson("/internal/data/scraping_groups.json", groups)
-}
 
 func GetScrapingGroups(c echo.Context) error {
 	dbClient, ok := c.Get("db").(*mongo.Client)

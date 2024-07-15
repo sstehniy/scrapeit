@@ -55,18 +55,6 @@ func ScrapeEndpointHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-	// allResultsBytes, err := utils.ReadJson("/internal/data/scrape_results.json")
-	// if err != nil {
-	// 	return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	// }
-	// var allResults []models.ScrapeResult
-	// err = json.Unmarshal(allResultsBytes, &allResults)
-	// if err != nil {
-	// 	return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	// }
-	// allResults = append(allResults, results...)
-	// utils.WriteJson("/internal/data/scrape_results.json", results)
-
 	allResultsCollection := dbClient.Database("scrapeit").Collection("scrape_results")
 	var interfaceResults []interface{}
 	for _, r := range results {

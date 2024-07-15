@@ -1,18 +1,22 @@
+/** eslint-disable unused-imports/no-unused-vars */
+/** eslint-disable @typescript-eslint/no-explicit-any */
+import axios from "axios";
 import React, { FC, useCallback, useEffect, useState } from "react";
-import { Modal, ModalProps } from "../ui/Modal";
+import { JsonView, darkStyles } from "react-json-view-lite";
+import "react-json-view-lite/dist/index.css";
+import { toast } from "react-toastify";
+import { v4 } from "uuid";
 import {
   Endpoint,
   Field,
   ScrapeGroup,
-  ScrapeResult,
+  ScrapeResultTest,
   SelectorStatus,
 } from "../../types";
-import { v4 } from "uuid";
-import { TextInput } from "../ui/TextInput";
-import axios from "axios";
-import { toast } from "react-toastify";
+import { FloatingAIChat } from "../FloatingAIChat";
 import { Button } from "../ui/Button";
-
+import { Modal, ModalProps } from "../ui/Modal";
+import { TextInput } from "../ui/TextInput";
 type ConfigureGroupEndpointProps = Pick<ModalProps, "isOpen" | "onClose"> & {
   onConfirm: (endpoint: Endpoint) => void | Promise<void>;
   editEndpoint?: Endpoint;
@@ -25,6 +29,8 @@ const defaultEndpoint: Endpoint = {
   url: "",
   detailFieldSelectors: [],
   mainElementSelector: "",
+  interval: "*/5 * * * *",
+  active: true,
   paginationConfig: {
     type: "url_parameter",
     parameter: "",
@@ -158,7 +164,7 @@ const SecondStepContent: FC<{
   handleTestScrape: () => Promise<void>;
   validateSecondStep: (ep: Endpoint) => boolean;
   loadingSampleData: boolean;
-  sampleData: ScrapeResult[];
+  sampleData: ScrapeResultTest[];
 }> = ({
   endpoint,
   setEndpoint,
@@ -171,6 +177,40 @@ const SecondStepContent: FC<{
   sampleData,
   validateSecondStep,
 }) => {
+  const intervals = [
+    {
+      label: "Every minute",
+      value: "* * * * *",
+    },
+    {
+      label: "Every 5 minutes",
+      value: "*/5 * * * *",
+    },
+    {
+      label: "Every 15 minutes",
+      value: "*/15 * * * *",
+    },
+    {
+      label: "Every 30 minutes",
+      value: "*/30 * * * *",
+    },
+    {
+      label: "Every hour",
+      value: "0 * * * *",
+    },
+    {
+      label: "Every 6 hours",
+      value: "0 */6 * * *",
+    },
+    {
+      label: "Every 12 hours",
+      value: "0 */12 * * *",
+    },
+    {
+      label: "Every day",
+      value: "0 0 * * *",
+    },
+  ];
   return (
     <div>
       <div>
@@ -189,6 +229,27 @@ const SecondStepContent: FC<{
       <div>
         Main Element Selector: <strong>{endpoint.mainElementSelector}</strong>
       </div>
+      <label className="block font-medium text-gray-500 mb-2">
+        Scrape Interval
+      </label>
+      <select
+        className="select select-bordered w-full mb-4"
+        value={endpoint.interval}
+        onChange={(e) => {
+          const newEndpoint = {
+            ...endpoint,
+            interval: e.target.value,
+          };
+          validateSecondStep(newEndpoint);
+          setEndpoint(newEndpoint);
+        }}
+      >
+        {intervals.map((interval) => (
+          <option key={interval.value} value={interval.value}>
+            {interval.label}
+          </option>
+        ))}
+      </select>
       <label className="block font-medium text-gray-500 mb-2">
         Pagination Config
       </label>
@@ -542,52 +603,72 @@ const SecondStepContent: FC<{
         </div>
       )}
       {sampleData.length > 0 && (
-        <div
-          className="w-full"
-          style={{
-            maxHeight: 400,
-            overflow: "auto",
-          }}
-        >
-          <table className="border-collapse bg-gray-800 shadow-md rounded-lg w-full">
-            <thead className="bg-gray-700 sticky top-0">
-              <tr>
-                {fields.map((field) => (
-                  <th
-                    key={field.id}
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-600 transition whitespace-nowrap"
-                  >
-                    {field.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-gray-800 divide-y divide-gray-700">
-              {sampleData.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-700 transition">
+        <>
+          <div
+            className="w-full mb-5"
+            style={{
+              maxHeight: 400,
+              overflow: "auto",
+            }}
+          >
+            <JsonView
+              data={sampleData}
+              clickToExpandNode
+              // eslint-disable-next-line unused-imports/no-unused-vars
+              shouldExpandNode={(level) => true}
+              style={darkStyles}
+            />
+          </div>
+          <div
+            className="w-full"
+            style={{
+              maxHeight: 400,
+              overflow: "auto",
+            }}
+          >
+            <table className="border-collapse bg-gray-800 shadow-md rounded-lg w-full">
+              <thead className="bg-gray-700 sticky top-0">
+                <tr>
                   {fields.map((field) => (
-                    <td key={field.id} className="text-sm text-gray-300">
-                      <div
-                        className="px-4"
-                        style={{
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          maxHeight: 95,
-                          maxWidth: 300,
-                          display: "-webkit-box",
-                          WebkitLineClamp: 4,
-                          WebkitBoxOrient: "vertical",
-                        }}
-                      >
-                        {row.fields.find((r) => r.fieldId === field.id)?.value}
-                      </div>
-                    </td>
+                    <th
+                      key={field.id}
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-600 transition whitespace-nowrap"
+                    >
+                      {field.name}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-gray-800 divide-y divide-gray-700">
+                {sampleData.map((row) => (
+                  <tr key={row.id} className="hover:bg-gray-700 transition">
+                    {fields.map((field) => (
+                      <td key={field.id} className="text-sm text-gray-300">
+                        <div
+                          className="px-4"
+                          style={{
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxHeight: 95,
+                            maxWidth: 300,
+                            display: "-webkit-box",
+                            WebkitLineClamp: 4,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {
+                            row.fields.find((r) => r.fieldId === field.id)
+                              ?.value
+                          }
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
@@ -617,21 +698,21 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
     string[]
   >([]);
   const [loadingSampleData, setLoadingSampleData] = useState(false);
-  const [sampleData, setSampleData] = useState<ScrapeResult[]>([]);
+  const [sampleData, setSampleData] = useState<ScrapeResultTest[]>([]);
 
-  useEffect(() => {
-    if (isOpen) {
-      setCurrentStep(0);
-      setFirstStepErrors({});
-      setSecondStepErrors({});
-      setTestElementError(null);
-      setTestElementResult(null);
-      setTestElementLoading(false);
-      setFieldsWithLoadingSelectors([]);
-      setLoadingSampleData(false);
-      setSampleData([]);
-    }
-  }, [isOpen]);
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     setCurrentStep(0);
+  //     setFirstStepErrors({});
+  //     setSecondStepErrors({});
+  //     setTestElementError(null);
+  //     setTestElementResult(null);
+  //     setTestElementLoading(false);
+  //     setFieldsWithLoadingSelectors([]);
+  //     setLoadingSampleData(false);
+  //     setSampleData([]);
+  //   }
+  // }, [isOpen]);
 
   useEffect(() => {
     if (editEndpoint) {
@@ -877,110 +958,118 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
     [endpoint.mainElementSelector, endpoint.name, endpoint.url],
   );
 
-  return currentStep === 0 ? (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={editEndpoint ? "Edit Endpoint" : "Create new Endpoint"}
-      content={
-        <FirstStepContent
-          endpoint={endpoint}
-          setEndpoint={setEndpoint}
-          firstStepErrors={firstStepErrors}
-          setFirstStepErrors={setFirstStepErrors}
-          handleTestGettingElement={handleTestGettingElement}
-          testElementLoading={testElementLoading}
-          testElementError={testElementError}
-          testElementResult={testElementResult}
-          validateFirstStep={validateFirstStep}
-        />
-      }
-      actions={[
-        {
-          label: "Cancel",
-          onClick: onClose,
-          className: "bg-gray-500 text-white",
-        },
+  return (
+    <>
+      {isOpen && <FloatingAIChat />}
+      {currentStep === 0 ? (
+        <Modal
+          isOpen={isOpen}
+          onClose={onClose}
+          closeOnClickOutside={false}
+          title={editEndpoint ? "Edit Endpoint" : "Create new Endpoint"}
+          actions={[
+            {
+              label: "Cancel",
+              onClick: onClose,
+              className: "bg-gray-500 text-white",
+            },
 
-        {
-          label: "Next",
-          onClick: () => {
-            if (
-              !validateField("name") ||
-              !validateField("url") ||
-              !validateField("mainElementSelector")
-            ) {
-              return;
-            }
-            setCurrentStep(currentStep + 1);
-          },
-          className: "bg-blue-500 text-white",
-          disabled: Object.entries(firstStepErrors).length > 0,
-        },
-      ]}
-    />
-  ) : (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={editEndpoint ? "Edit Endpoint" : "Create new Endpoint"}
-      content={
-        <SecondStepContent
-          endpoint={endpoint}
-          setEndpoint={setEndpoint}
-          fields={fields}
-          handleExtractSelectorsForAllFields={
-            handleExtractSelectorsForAllFields
-          }
-          validateSecondStep={validateSecondStep}
-          handleExtractSelectorForField={handleExtractSelectorForField}
-          fieldsWithLoadingSelectors={fieldsWithLoadingSelectors}
-          handleTestScrape={handleTestScrape}
-          loadingSampleData={loadingSampleData}
-          sampleData={sampleData}
-        />
-      }
-      actions={[
-        {
-          label: "Cancel",
-          onClick: onClose,
-          className: "bg-gray-500 text-white",
-        },
+            {
+              label: "Next",
+              onClick: () => {
+                if (
+                  !validateField("name") ||
+                  !validateField("url") ||
+                  !validateField("mainElementSelector")
+                ) {
+                  return;
+                }
+                setCurrentStep(currentStep + 1);
+              },
+              className: "bg-blue-500 text-white",
+              disabled: Object.entries(firstStepErrors).length > 0,
+            },
+          ]}
+        >
+          <FirstStepContent
+            endpoint={endpoint}
+            setEndpoint={setEndpoint}
+            firstStepErrors={firstStepErrors}
+            setFirstStepErrors={setFirstStepErrors}
+            handleTestGettingElement={handleTestGettingElement}
+            testElementLoading={testElementLoading}
+            testElementError={testElementError}
+            testElementResult={testElementResult}
+            validateFirstStep={validateFirstStep}
+          />
+        </Modal>
+      ) : (
+        <Modal
+          isOpen={isOpen}
+          onClose={onClose}
+          closeOnClickOutside={false}
+          title={editEndpoint ? "Edit Endpoint" : "Create new Endpoint"}
+          actions={[
+            {
+              label: "Cancel",
+              onClick: onClose,
+              className: "bg-gray-500 text-white",
+            },
 
-        {
-          label: "Back",
-          onClick: () => setCurrentStep(currentStep - 1),
-          className: "bg-blue-500 text-white",
-        },
-        {
-          label: editEndpoint ? "Save" : "Create",
-          disabled:
-            Object.entries(firstStepErrors).length > 0 ||
-            Object.entries(secondStepErrors).length > 0 ||
-            endpoint.detailFieldSelectors.some(
-              (d) =>
-                d.selectorStatus === SelectorStatus.NEW && d.selector === "",
-            ),
-          onClick: () => {
-            if (!validateFirstStep(endpoint) || !validateSecondStep(endpoint)) {
-              return;
+            {
+              label: "Back",
+              onClick: () => setCurrentStep(currentStep - 1),
+              className: "bg-blue-500 text-white",
+            },
+            {
+              label: editEndpoint ? "Save" : "Create",
+              disabled:
+                Object.entries(firstStepErrors).length > 0 ||
+                Object.entries(secondStepErrors).length > 0 ||
+                endpoint.detailFieldSelectors.some(
+                  (d) =>
+                    d.selectorStatus === SelectorStatus.NEW &&
+                    d.selector === "",
+                ),
+              onClick: () => {
+                if (
+                  !validateFirstStep(endpoint) ||
+                  !validateSecondStep(endpoint)
+                ) {
+                  return;
+                }
+                if (!editEndpoint) {
+                  endpoint.detailFieldSelectors =
+                    endpoint.detailFieldSelectors.map((selector) => {
+                      return {
+                        ...selector,
+                        selectorStatus: SelectorStatus.OK,
+                      };
+                    });
+                }
+                onConfirm(endpoint);
+                onClose();
+              },
+              className: "bg-green-500 text-white",
+            },
+          ]}
+        >
+          <SecondStepContent
+            endpoint={endpoint}
+            setEndpoint={setEndpoint}
+            fields={fields}
+            handleExtractSelectorsForAllFields={
+              handleExtractSelectorsForAllFields
             }
-            if (!editEndpoint) {
-              endpoint.detailFieldSelectors = endpoint.detailFieldSelectors.map(
-                (selector) => {
-                  return {
-                    ...selector,
-                    selectorStatus: SelectorStatus.OK,
-                  };
-                },
-              );
-            }
-            onConfirm(endpoint);
-            onClose();
-          },
-          className: "bg-green-500 text-white",
-        },
-      ]}
-    />
+            validateSecondStep={validateSecondStep}
+            handleExtractSelectorForField={handleExtractSelectorForField}
+            fieldsWithLoadingSelectors={fieldsWithLoadingSelectors}
+            handleTestScrape={handleTestScrape}
+            loadingSampleData={loadingSampleData}
+            sampleData={sampleData}
+          />
+        </Modal>
+      )}
+    </>
   );
 };

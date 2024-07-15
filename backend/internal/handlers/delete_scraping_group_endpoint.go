@@ -3,9 +3,11 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"scrapeit/internal/cron"
 	"scrapeit/internal/models"
 
 	"github.com/labstack/echo/v4"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -47,6 +49,11 @@ func DeleteScrapingGroupEndpoint(c echo.Context) error {
 	if !ok {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
 	}
+	cronManager, ok := c.Get("cron").(*cron.CronManager)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
+	}
+
 	groupId := c.Param("groupId")
 	if groupId == "" {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -66,6 +73,9 @@ func DeleteScrapingGroupEndpoint(c echo.Context) error {
 			"error": err.Error(),
 		})
 	}
+
+	// stop the cron job for this endpoint
+	cronManager.DestroyJob(groupId, endpointId)
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Endpoint deleted successfully"})
 }

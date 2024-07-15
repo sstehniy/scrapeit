@@ -1,4 +1,4 @@
-import React, { FC, useRef } from "react";
+import React, { FC, PropsWithChildren, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useClickAway } from "react-use";
 import { Button } from "./Button";
@@ -8,7 +8,7 @@ export type ModalProps = {
   onClose: () => void;
   actions: ModalAction[];
   title: string | React.ReactNode | null;
-  content: string | React.ReactNode | null;
+  closeOnClickOutside?: boolean;
 };
 
 export type ModalAction = {
@@ -19,15 +19,16 @@ export type ModalAction = {
   disabled?: boolean;
 };
 
-export const Modal: FC<ModalProps> = ({
+export const Modal: FC<PropsWithChildren<ModalProps>> = ({
   actions,
   isOpen,
-  content,
+  children,
   onClose,
   title,
+  closeOnClickOutside = true,
 }) => {
   const modalContentRef = useRef<HTMLDivElement>(null);
-  useClickAway(modalContentRef, onClose);
+  useClickAway(modalContentRef, closeOnClickOutside ? onClose : () => {});
   const getModalTitle = () => {
     if (!title) {
       return null;
@@ -53,7 +54,7 @@ export const Modal: FC<ModalProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="modal-box max-w-max" ref={modalContentRef}>
+      <div className="modal-box max-w-max px-14" ref={modalContentRef}>
         <Button
           className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
           onClick={onClose}
@@ -61,7 +62,7 @@ export const Modal: FC<ModalProps> = ({
           ✕
         </Button>
         {getModalTitle()}
-        <div className="py-4">{content}</div>
+        <div className="py-4">{children}</div>
         <div className="modal-action gap-2">
           {actions.map((action, index) => (
             <Button

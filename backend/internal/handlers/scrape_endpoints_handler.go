@@ -65,7 +65,7 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 		fmt.Println("Scraping endpoints:", endpointToScrape.ID)
 
 		go func(endpoint models.Endpoint) {
-			results, toReplace, err := scraper.ScrapeEndpoint(endpoint, *relevantGroup, true, dbClient)
+			results, toReplace, err := scraper.ScrapeEndpoint(endpoint, *relevantGroup, dbClient)
 			if err != nil {
 				fmt.Println("Error scraping endpoint:", err)
 				resultsChan <- []models.ScrapeResult{}

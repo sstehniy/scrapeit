@@ -80,9 +80,10 @@ type Field struct {
 type FieldType string
 
 const (
-	FieldTypeText  FieldType = "text"
-	FieldTypeImage FieldType = "image"
-	FieldTypeLink  FieldType = "link"
+	FieldTypeText   FieldType = "text"
+	FieldTypeImage  FieldType = "image"
+	FieldTypeLink   FieldType = "link"
+	FieldTypeNumber FieldType = "number"
 )
 
 // Endpoint represents an endpoint with its configuration
@@ -93,7 +94,7 @@ type Endpoint struct {
 	PaginationConfig     PaginationConfig `json:"paginationConfig" bson:"paginationConfig"`
 	MainElementSelector  string           `json:"mainElementSelector" bson:"mainElementSelector"`
 	DetailFieldSelectors []FieldSelector  `json:"detailFieldSelectors" bson:"detailFieldSelectors"`
-	Interval             *int             `json:"interval,omitempty" bson:"interval,omitempty"`
+	Interval             string           `json:"interval,omitempty" bson:"interval,omitempty"`
 	Active               *bool            `json:"active,omitempty" bson:"active,omitempty"`
 	LastScraped          *time.Time       `json:"lastScraped,omitempty" bson:"lastScraped,omitempty"`
 	Status               *ScrapeStatus    `json:"status,omitempty" bson:"status,omitempty"`
@@ -174,10 +175,27 @@ type ScrapeResult struct {
 	GroupVersionTag string               `json:"groupVersionTag" bson:"groupVersionTag"`
 }
 
+type ScrapeResultTest struct {
+	ID              primitive.ObjectID       `json:"id"`
+	UniqueHash      string                   `json:"uniqueHash"`
+	EndpointID      string                   `json:"endpointId"`
+	GroupId         primitive.ObjectID       `json:"groupId"`
+	Fields          []ScrapeResultDetailTest `json:"fields"`
+	Timestamp       string                   `json:"timestamp"`
+	GroupVersionTag string                   `json:"groupVersionTag"`
+}
+
 type ScrapeResultDetail struct {
 	ID      string `json:"id" bson:"id"`
 	FieldID string `json:"fieldId" bson:"fieldId"`
 	Value   string `json:"value" bson:"value"`
+}
+
+type ScrapeResultDetailTest struct {
+	ID      string `json:"id"`
+	FieldID string `json:"fieldId"`
+	Value   string `json:"value"`
+	RawData string `json:"rawData"`
 }
 
 type FieldChangeType string

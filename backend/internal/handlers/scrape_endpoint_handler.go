@@ -51,7 +51,7 @@ func ScrapeEndpointHandler(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "Endpoint not found"})
 	}
 
-	results, toReplace, err := scraper.ScrapeEndpoint(*endpointToScrape, *relevantGroup, true, dbClient)
+	results, toReplace, err := scraper.ScrapeEndpoint(*endpointToScrape, *relevantGroup, dbClient)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}

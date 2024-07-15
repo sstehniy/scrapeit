@@ -21,6 +21,7 @@ type Field = {
 
 enum FieldType {
   TEXT = "text",
+  NUMBER = "number",
   IMAGE = "image",
   LINK = "link",
 }
@@ -32,7 +33,7 @@ type Endpoint = {
   paginationConfig: PaginationConfig;
   mainElementSelector: string;
   detailFieldSelectors: FieldSelector[];
-  interval?: number;
+  interval?: string;
   active?: boolean;
   lastScraped?: Date;
   status?: ScrapeStatus;
@@ -77,10 +78,18 @@ type ScrapeResult = {
   groupVersionTag: string;
 };
 
+type ScrapeResultTest = ScrapeResult & {
+  fields: ScrapeResultDetailTest[];
+};
+
 type ScrapeResultDetail = {
   id: string;
   fieldId: string;
   value: string;
+};
+
+type ScrapeResultDetailTest = ScrapeResultDetail & {
+  rawData: string;
 };
 
 export { FieldType, SelectorStatus };
@@ -93,5 +102,7 @@ export type {
   ScrapeStatus,
   FieldSelector,
   ScrapeResult,
+  ScrapeResultTest,
   ScrapeResultDetail,
+  ScrapeResultDetailTest,
 };

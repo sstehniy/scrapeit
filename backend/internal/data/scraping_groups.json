@@ -115,7 +115,7 @@
             "selectorStatus": "ok"
           }
         ],
-        "interval": 900,
+        "interval": "* * * * *",
         "active": true
       }
     ]

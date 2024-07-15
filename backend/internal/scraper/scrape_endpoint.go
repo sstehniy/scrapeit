@@ -22,7 +22,7 @@ func (e ScrapeEndpointError) Error() string {
 	return fmt.Sprintf("scrape endpoint error: %s", e.Message)
 }
 
-func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, filterExisiting bool, client *mongo.Client) ([]models.ScrapeResult, []models.ScrapeResult, error) {
+func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, client *mongo.Client) ([]models.ScrapeResult, []models.ScrapeResult, error) {
 
 	browser, err := GetBrowser()
 	if err != nil {
@@ -76,11 +76,8 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 		results = append(results, result)
 	}
 
-	if filterExisiting {
-		return filterElements(relevantGroup.Fields, results, endpointToScrape.ID, relevantGroup.ID, client)
-	}
+	return filterElements(relevantGroup.Fields, results, endpointToScrape.ID, relevantGroup.ID, client)
 
-	return results, nil, nil
 }
 
 func buildPaginationURL(baseURL string, config models.PaginationConfig, page int) string {
@@ -177,8 +174,13 @@ func filterElements(fields []models.Field, results []models.ScrapeResult, endpoi
 		}
 	}
 
+	toReplaceIds := make([]string, 0, len(toReplace))
+	for _, r := range toReplace {
+		toReplaceIds = append(toReplaceIds, r.ID.Hex())
+	}
+
 	fmt.Println("Filtered results: ", len(filtered))
-	fmt.Println("To replace results: ", len(toReplace))
+	fmt.Println("To replace results: ", toReplaceIds)
 
 	return filtered, toReplace, nil
 }
@@ -220,5 +222,113 @@ func getElementDetails(element *rod.Element, selectors []models.FieldSelector) (
 		}
 		details = append(details, detail)
 	}
+	return details, nil
+}
+
+type ScrapeEndpointTestError struct {
+	Message string
+}
+
+func (e ScrapeEndpointTestError) Error() string {
+	return fmt.Sprintf("scrape endpoint test error: %s", e.Message)
+}
+
+func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, client *mongo.Client) ([]models.ScrapeResultTest, []models.ScrapeResultTest, error) {
+	fmt.Println(("Scraping endpoint test"))
+	browser, err := GetBrowser()
+	if err != nil {
+		return nil, nil, fmt.Errorf("error getting browser: %w", err)
+	}
+	defer browser.Close()
+
+	var allElements rod.Elements
+
+	for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i++ {
+		urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
+		fmt.Println("Scraping URL: ", urlWithPagination)
+
+		page, err := GetStealthPage(browser, urlWithPagination)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error getting page: %w", err)
+		}
+
+		defer page.Close()
+
+		SlowScrollToBottom(page)
+
+		elements, err := page.Elements(endpointToScrape.MainElementSelector)
+
+		if err != nil {
+			return nil, nil, fmt.Errorf("error finding elements: %w", err)
+		}
+
+		allElements = append(allElements, elements...)
+	}
+
+	linkFieldId := findLinkFieldId(relevantGroup.Fields)
+	endpointLinkSelector := findLinkSelector(endpointToScrape.DetailFieldSelectors, linkFieldId)
+	fmt.Println("Link selector: ", endpointLinkSelector)
+
+	results := make([]models.ScrapeResultTest, 0, len(allElements))
+	for _, element := range allElements {
+		details, err := getElementDetailsTest(element, endpointToScrape.DetailFieldSelectors)
+
+		if err != nil {
+			return nil, nil, fmt.Errorf("error getting element details: %w", err)
+		}
+		result := models.ScrapeResultTest{
+			ID:         primitive.NewObjectID(),
+			UniqueHash: "",
+			EndpointID: endpointToScrape.ID,
+			GroupId:    relevantGroup.ID,
+			Fields:     details,
+			Timestamp:  time.Now().Format(time.RFC3339),
+		}
+		results = append(results, result)
+	}
+
+	return results, nil, nil
+}
+
+func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelector) ([]models.ScrapeResultDetailTest, error) {
+	details := make([]models.ScrapeResultDetailTest, 0, len(selectors))
+	for _, selector := range selectors {
+		fieldElement, err := element.Element(selector.Selector)
+		if err != nil {
+
+			fmt.Printf("Error finding element for selector %s: %v\n", selector.Selector, err)
+			details = append(details, models.ScrapeResultDetailTest{
+				ID:      uuid.New().String(),
+				FieldID: selector.FieldID,
+				Value:   "",
+				RawData: "",
+			})
+			continue
+		}
+		text := fieldElement.MustEval("() => this.textContent").String()
+
+		if selector.AttributeToGet != "" {
+			attr, err := fieldElement.Attribute(selector.AttributeToGet)
+			if err == nil {
+				text = *attr
+			}
+		}
+		if selector.Regex != "" {
+			text, err = utils.ExtractStringWithRegex(text, selector.Regex)
+			if err != nil {
+				fmt.Printf("Error extracting regex for selector %s: %v\n", selector.Selector, err)
+				text = ""
+			}
+		}
+
+		detail := models.ScrapeResultDetailTest{
+			ID:      uuid.New().String(),
+			FieldID: selector.FieldID,
+			Value:   text,
+			RawData: fieldElement.MustHTML(),
+		}
+		details = append(details, detail)
+	}
+
 	return details, nil
 }

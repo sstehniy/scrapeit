@@ -69,6 +69,7 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
     async (endpoint: Endpoint, type: "create" | "save") => {
       if (type === "create") {
         try {
+          console.log("endpoint", endpoint);
           await axios.post(`/api/scrape-groups/${group.id}/endpoints`, {
             endpoint,
           });
@@ -236,34 +237,40 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
           </WithTooltip>
         )}
       </div>
-      <ConfigureGroupEndpoint
-        fields={group.fields}
-        isOpen={showCreateEndpointModal}
-        onClose={() => setShowCreateEndpointModal(false)}
-        onConfirm={(endpoint) => handleCreateEndpoint(endpoint, "create")}
-      />
-      <ConfigureGroupEndpoint
-        fields={group.fields}
-        isOpen={showEditEndpointModal.isOpen}
-        onClose={() =>
-          setShowEditEndpointModal({
-            isOpen: false,
-            endpoint: null,
-          })
-        }
-        onConfirm={(endpoint) => handleCreateEndpoint(endpoint, "save")}
-        editEndpoint={showEditEndpointModal.endpoint ?? undefined}
-      />
-      <ConfirmRemoveEndpoint
-        isOpen={showConfirmRemoveEndpointModal.isOpen}
-        onClose={() =>
-          setShowConfirmRemoveEndpointModal({
-            isOpen: false,
-            onConfirm: () => {},
-          })
-        }
-        onConfirm={showConfirmRemoveEndpointModal.onConfirm}
-      />
+      {showCreateEndpointModal && (
+        <ConfigureGroupEndpoint
+          fields={group.fields}
+          isOpen={showCreateEndpointModal}
+          onClose={() => setShowCreateEndpointModal(false)}
+          onConfirm={(endpoint) => handleCreateEndpoint(endpoint, "create")}
+        />
+      )}
+      {showEditEndpointModal.isOpen && (
+        <ConfigureGroupEndpoint
+          fields={group.fields}
+          isOpen={showEditEndpointModal.isOpen}
+          onClose={() =>
+            setShowEditEndpointModal({
+              isOpen: false,
+              endpoint: null,
+            })
+          }
+          onConfirm={(endpoint) => handleCreateEndpoint(endpoint, "save")}
+          editEndpoint={showEditEndpointModal.endpoint ?? undefined}
+        />
+      )}
+      {showConfirmRemoveEndpointModal.isOpen && (
+        <ConfirmRemoveEndpoint
+          isOpen={showConfirmRemoveEndpointModal.isOpen}
+          onClose={() =>
+            setShowConfirmRemoveEndpointModal({
+              isOpen: false,
+              onConfirm: () => {},
+            })
+          }
+          onConfirm={showConfirmRemoveEndpointModal.onConfirm}
+        />
+      )}
     </div>
   );
 };

@@ -5,20 +5,19 @@ import { getBaseUrl } from "../../util/url";
 
 export const GroupCard: FC<{ group: ScrapeGroup }> = ({ group }) => {
   return (
-    <div
-      key={group.id}
-      className="bg-white shadow-md rounded p-4 flex flex-col"
-    >
-      <NavLink to={`/group/${group.id}`}>
-        <h2 className="text-xl font-bold text-base-300">{group.name}</h2>
-        {group.endpoints.map((endpoint) => (
-          <div key={endpoint.id} className="mt-2">
-            <h3 className="text-lg font-bold inline-block me-3">
-              {endpoint.name}
-            </h3>
-            <span>({getBaseUrl(endpoint.url)})</span>
-          </div>
-        ))}
+    <div className="card bg-base-300 shadow-xl hover:shadow-2xl transition-shadow duration-300">
+      <NavLink to={`/group/${group.id}`} className="card-body flex flex-col">
+        <h2 className="card-title text-2xl">{group.name}</h2>
+        <div className="flex-1 ps-5">
+          {group.endpoints.map((endpoint) => (
+            <div key={endpoint.id} className="mt-1">
+              <h3 className="font-bold inline-block mr-2">{endpoint.name}</h3>
+              <span className="text-sm text-gray-500">
+                ({getBaseUrl(endpoint.url)})
+              </span>
+            </div>
+          ))}
+        </div>
       </NavLink>
     </div>
   );

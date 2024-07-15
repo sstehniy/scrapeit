@@ -81,6 +81,7 @@ export const ResultsTable: FC<ResultsTableProps> = ({
                         "https://via.assets.so/img.jpg?w=135&h=100&tc=grey&bg=lightgrey&t=thumbnail"
                       }
                       alt={field.name}
+                      loading="lazy"
                       style={{
                         width: "100%",
                         height: "100%",

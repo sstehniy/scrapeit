@@ -87,6 +87,7 @@ export const GroupView: FC = () => {
       axios
         .get(`/api/scrape/results/not-empty/${groupId}`)
         .then((res) => res.data.resultsNotEmpty),
+    enabled: !!groupId,
   });
 
   const {
@@ -111,6 +112,7 @@ export const GroupView: FC = () => {
         })
         .then((res) => res.data);
     },
+    refetchInterval: 30000,
     getNextPageParam: (lastPage, pages) => {
       return lastPage.hasMore ? pages.length * searchConfig.limit : undefined;
     },
@@ -311,22 +313,26 @@ export const GroupView: FC = () => {
           />
         )}
       </div>
-      <ConfigureGroupSchema
-        isOpen={showGroupSchemaSettings}
-        onClose={() => setShowGroupSchemaSettings(false)}
-        onConfirm={handleUpdateGroupSchema}
-        fieldsToEdit={group?.fields || []}
-      />
-      <ConfirmArchiveCurrentGroup
-        isOpen={showConfirmGroupArchive.isOpen}
-        onClose={() =>
-          setShowConfirmGroupArchive({
-            isOpen: false,
-            onConfirm: null,
-          })
-        }
-        onConfirm={showConfirmGroupArchive.onConfirm || (() => {})}
-      />
+      {showGroupSchemaSettings && (
+        <ConfigureGroupSchema
+          isOpen={showGroupSchemaSettings}
+          onClose={() => setShowGroupSchemaSettings(false)}
+          onConfirm={handleUpdateGroupSchema}
+          fieldsToEdit={group?.fields || []}
+        />
+      )}
+      {showConfirmGroupArchive.isOpen && (
+        <ConfirmArchiveCurrentGroup
+          isOpen={showConfirmGroupArchive.isOpen}
+          onClose={() =>
+            setShowConfirmGroupArchive({
+              isOpen: false,
+              onConfirm: null,
+            })
+          }
+          onConfirm={showConfirmGroupArchive.onConfirm || (() => {})}
+        />
+      )}
 
       {!!scrapeResults?.pages.length && group && (
         <ResultsTable

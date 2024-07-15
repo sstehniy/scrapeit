@@ -82,7 +82,6 @@ func getScrapeResults(
 		hasMore = true
 	}
 
-	fmt.Println("endpointResults", endpointResults)
 	return endpointResults, hasMore, nil
 }
 

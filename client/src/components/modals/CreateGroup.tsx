@@ -18,29 +18,11 @@ export const CreateGroupModal: FC<CreateGroupModalProps> = ({
     }
   }, [isOpen]);
 
-  const getCreateGroupContent = () => {
-    return (
-      <div className="space-y-2 w-[450px]">
-        <label className="block font-medium text-gray-500">Name</label>
-        <input
-          type="text"
-          name="name"
-          id="name"
-          className="p-2 border border-gray-300 rounded w-full "
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-      </div>
-    );
-  };
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="Create new Group"
-      content={getCreateGroupContent()}
       actions={[
         {
           label: "Cancel",
@@ -57,6 +39,19 @@ export const CreateGroupModal: FC<CreateGroupModalProps> = ({
           disabled: !name.trim(),
         },
       ]}
-    />
+    >
+      <div className="space-y-2 w-[450px]">
+        <label className="block font-medium text-gray-500">Name</label>
+        <input
+          type="text"
+          name="name"
+          id="name"
+          className="p-2 border border-gray-300 rounded w-full "
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+      </div>
+    </Modal>
   );
 };

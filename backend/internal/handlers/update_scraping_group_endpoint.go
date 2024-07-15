@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"scrapeit/internal/cron"
 	"scrapeit/internal/models"
 	"strings"
 
@@ -20,6 +22,7 @@ func UpdateScrapingGroupEndpoint(c echo.Context) error {
 	if !ok {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
 	}
+
 	groupIdString := c.Param("groupId")
 	endpointId := c.Param("endpointId")
 
@@ -52,6 +55,15 @@ func UpdateScrapingGroupEndpoint(c echo.Context) error {
 	oldEndpoint := group.GetEndpointById(endpointId)
 	if oldEndpoint == nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid Endpoint Id")
+	}
+
+	if newEndpoint.Interval != oldEndpoint.Interval {
+		cronManager, ok := c.Get("cron").(*cron.CronManager)
+		if !ok {
+			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
+		}
+		fmt.Println("Updating job interval")
+		cronManager.UpdateJobInterval(groupIdString, endpointId, newEndpoint.Interval)
 	}
 
 	for _, oldSelector := range oldEndpoint.DetailFieldSelectors {

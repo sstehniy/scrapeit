@@ -44,8 +44,34 @@ export const ConfirmArchiveCurrentGroup: FC<
     }
   }, [isOpen, queryClient]);
 
-  const getConfirmArchiveCurrentGroupContent = () => {
-    return (
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Create new Group"
+      actions={[
+        {
+          label: "Cancel",
+          onClick: onClose,
+          className: "bg-gray-500 text-white",
+        },
+        {
+          label: "Create",
+          onClick: () => {
+            if (!validateVersionTag(versionTag)) {
+              setVersionTagError("Version Tag is required");
+              return;
+            }
+            if (versionExists) {
+              return;
+            }
+            onConfirm(versionTag);
+          },
+          className: "bg-blue-500 text-white",
+          disabled: versionExists || !validateVersionTag(versionTag),
+        },
+      ]}
+    >
       <div className="space-y-2 w-[450px]">
         <p className="text-gray-500 mb-3">
           Warning: as you have added new fields to current group that already
@@ -85,37 +111,6 @@ export const ConfirmArchiveCurrentGroup: FC<
           <p className="text-red-500 text-sm">{versionTagError}</p>
         )}
       </div>
-    );
-  };
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Create new Group"
-      content={getConfirmArchiveCurrentGroupContent()}
-      actions={[
-        {
-          label: "Cancel",
-          onClick: onClose,
-          className: "bg-gray-500 text-white",
-        },
-        {
-          label: "Create",
-          onClick: () => {
-            if (!validateVersionTag(versionTag)) {
-              setVersionTagError("Version Tag is required");
-              return;
-            }
-            if (versionExists) {
-              return;
-            }
-            onConfirm(versionTag);
-          },
-          className: "bg-blue-500 text-white",
-          disabled: versionExists || !validateVersionTag(versionTag),
-        },
-      ]}
-    />
+    </Modal>
   );
 };

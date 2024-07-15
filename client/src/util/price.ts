@@ -1,7 +1,10 @@
-export const getPriceNumber = (price: string) => {
-  // handle different cases, e.g. "1000.00" or "1,000.00"
-  if (price.includes(",")) {
-    return parseFloat(price.replace(/,/g, ""));
+export const getPriceNumber = (price: string): number => {
+  if (price.includes(".") && price.includes(",")) {
+    return parseFloat(price.replace(",", ".").replace(/\./g, ""));
+  } else if (price.includes(",")) {
+    return parseFloat(price.replace(",", ""));
+  } else if (price.includes(".")) {
+    return parseFloat(price.replace(/\./g, ""));
   }
   return parseFloat(price);
 };

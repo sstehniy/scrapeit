@@ -1,12 +1,12 @@
 # Use an official Go runtime as a parent image
-FROM golang:1.18-alpine
+FROM golang:1.22.5-alpine
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
 # Install Air for hot-reloading
 RUN apk update && apk add --no-cache git bash curl && \
-  curl -sSfL https://raw.githubusercontent.com/air-verse/air/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+    curl -sSfL https://raw.githubusercontent.com/air-verse/air/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
 
 # Copy go.mod and go.sum files first to leverage Docker cache
 COPY go.mod go.sum ./

@@ -23,10 +23,11 @@ func GetDbClient() (*mongo.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Configure the client options
+	// Configure the client options and disable logging
 	clientOptions := options.Client().
 		ApplyURI(mongoURI).
-		SetServerSelectionTimeout(5 * time.Second)
+		SetServerSelectionTimeout(5 * time.Second).
+		SetMonitor(nil)
 
 	// Connect to MongoDB
 	client, err := mongo.Connect(ctx, clientOptions)

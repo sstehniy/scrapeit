@@ -92,14 +92,13 @@ type ScrapeResultDetailTest = ScrapeResultDetail & {
   rawData: string;
 };
 
-export { FieldType, SelectorStatus };
+export { FieldType, SelectorStatus, ScrapeStatus };
 
 export type {
   ScrapeGroup,
   Field,
   Endpoint,
   PaginationConfig,
-  ScrapeStatus,
   FieldSelector,
   ScrapeResult,
   ScrapeResultTest,

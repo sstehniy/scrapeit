@@ -223,18 +223,19 @@ func setupCronJobs(e *echo.Echo, cronManager *cron.CronManager, client *mongo.Cl
 	}
 	for _, group := range groups {
 		for _, endpoint := range group.Endpoints {
+			if endpoint.Active {
+				cronManager.AddJob(cron.CronManagerJob{
+					GroupID:    group.ID.Hex(),
+					EndpointID: endpoint.ID,
+					Active:     true,
+					Interval:   endpoint.Interval,
 
-			cronManager.AddJob(cron.CronManagerJob{
-				GroupID:    group.ID.Hex(),
-				EndpointID: endpoint.ID,
-				Active:     true,
-				Interval:   endpoint.Interval,
-
-				Job: func() error {
-					fmt.Println("Running job for", group.ID.Hex(), endpoint.ID)
-					return handlers.HandleCallInternalScrapeEndpoint(e, group.ID.Hex(), endpoint.ID, client, cronManager)
-				},
-			})
+					Job: func() error {
+						fmt.Println("Running job for", group.ID.Hex(), endpoint.ID)
+						return handlers.HandleCallInternalScrapeEndpoint(e, group.ID.Hex(), endpoint.ID, client, cronManager)
+					},
+				})
+			}
 		}
 	}
 }

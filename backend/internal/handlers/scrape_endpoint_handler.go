@@ -52,21 +52,10 @@ func ScrapeEndpointHandler(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "Endpoint not found"})
 	}
 
-	if !body.Internal {
-		if !endpointToScrape.Active || endpointToScrape.Status != models.ScrapeStatusRunning {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Endpoint is already being scraped"})
-		}
+	browser := scraper.GetBrowser()
+	defer browser.Close()
 
-		endpointToScrape.Status = models.ScrapeStatusRunning
-		_, err = groupCollection.UpdateOne(c.Request().Context(), bson.M{"_id": relevantGroup.ID}, bson.M{"$set": bson.M{"endpoints": relevantGroup.Endpoints}})
-
-		if err != nil {
-			fmt.Println("Error updating group:", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-	}
-
-	results, toReplace, err := scraper.ScrapeEndpoint(*endpointToScrape, *relevantGroup, dbClient)
+	results, toReplace, err := scraper.ScrapeEndpoint(*endpointToScrape, *relevantGroup, dbClient, browser)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}

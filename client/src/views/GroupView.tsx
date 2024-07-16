@@ -53,7 +53,6 @@ export const GroupView: FC = () => {
   const navigate = useNavigate();
   const [headerRef, size] = useComponentSize<HTMLDivElement>();
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
-  const initialLoaded = useRef(false);
   const [showConfirmGroupArchive, setShowConfirmGroupArchive] = useState<{
     isOpen: boolean;
     onConfirm: ((versionTag: string) => void) | null;
@@ -62,6 +61,7 @@ export const GroupView: FC = () => {
     onConfirm: () => {},
   });
   const queryClient = useQueryClient();
+  const noSchemaMessageShown = useRef(false);
 
   const [searchConfig, setSearchConfig] =
     useState<SearchConfig>(defaultSearchConfig);
@@ -87,14 +87,15 @@ export const GroupView: FC = () => {
     },
   });
 
-  const { data: scrapeResultsExist } = useQuery<boolean>({
-    queryKey: ["scrapeResultsExist", groupId],
-    queryFn: () =>
-      axios
-        .get(`/api/scrape/results/not-empty/${groupId}`)
-        .then((res) => res.data.resultsNotEmpty),
-    enabled: !!groupId,
-  });
+  const { data: scrapeResultsExist, refetch: refetchScrapeResultsAxist } =
+    useQuery<boolean>({
+      queryKey: ["scrapeResultsExist", groupId],
+      queryFn: () =>
+        axios
+          .get(`/api/scrape/results/not-empty/${groupId}`)
+          .then((res) => res.data.resultsNotEmpty),
+      enabled: !!groupId,
+    });
 
   const {
     data: scrapeResults,
@@ -187,20 +188,21 @@ export const GroupView: FC = () => {
   });
 
   useEffect(() => {
-    if (!group) return;
-    if (!group.fields.length) {
-      setShowGroupSchemaSettings(true);
-      toast.info("Please configure the group schema");
-    }
+    if (!group || !!group.fields.length || noSchemaMessageShown.current) return;
+    noSchemaMessageShown.current = true;
+    setShowGroupSchemaSettings(true);
+    toast.info("Please configure the group schema");
   }, [group]);
 
   const handleUpdateGroupSchema = useCallback(
-    (fields: Field[], changes: FieldChange[]) => {
+    async (fields: Field[], changes: FieldChange[]) => {
       if (!group) return;
+
+      const exist = await refetchScrapeResultsAxist();
       if (
         group.fields.length &&
         changes.some((c) => c.type === "add_field") &&
-        scrapeResultsExist
+        exist.data
       ) {
         setShowConfirmGroupArchive({
           isOpen: true,
@@ -224,7 +226,7 @@ export const GroupView: FC = () => {
         setShowGroupSchemaSettings(false);
       }
     },
-    [group, scrapeResultsExist, updateGroupSchemaMutation],
+    [group, refetchScrapeResultsAxist, updateGroupSchemaMutation],
   );
 
   const handleScrapeAllEndpoints = useCallback(() => {

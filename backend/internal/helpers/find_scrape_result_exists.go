@@ -52,8 +52,8 @@ func FindScrapeResultExists(client *mongo.Client, endpointId string, groupId pri
 
 	potentialResultHashByLink := GenerateScrapeResultHash(linkValue)
 
-	fmt.Printf("Image id: %s, Image value: %s\n", imageFieldId, imageValue)
-	fmt.Printf("Link id: %s, Link value: %s\n", linkFieldId, linkValue)
+	// fmt.Printf("Image id: %s, Image value: %s\n", imageFieldId, imageValue)
+	// fmt.Printf("Link id: %s, Link value: %s\n", linkFieldId, linkValue)
 
 	query := bson.M{
 		"endpointId": endpointId,
@@ -62,9 +62,19 @@ func FindScrapeResultExists(client *mongo.Client, endpointId string, groupId pri
 			{"uniqueHash": potentialResultHashByLink},
 			{
 				"fields": bson.M{
-					"$elemMatch": bson.M{
-						"fieldId": imageFieldId,
-						"value":   imageValue,
+					"$all": []bson.M{
+						{
+							"$elemMatch": bson.M{
+								"fieldId": imageFieldId,
+								"value":   imageValue,
+							},
+						},
+						{
+							"$elemMatch": bson.M{
+								"fieldId": linkFieldId,
+								"value":   linkValue,
+							},
+						},
 					},
 				},
 			},
@@ -75,14 +85,14 @@ func FindScrapeResultExists(client *mongo.Client, endpointId string, groupId pri
 
 	singleResult := collection.FindOne(context.Background(), query)
 	if singleResult.Err() == mongo.ErrNoDocuments {
-		fmt.Printf("%s not found", potentialResultHashByLink)
+		// fmt.Printf("%s not found", potentialResultHashByLink)
 		result.Exists = false
 		return result, nil
 	} else if singleResult.Err() != nil {
 		return result, singleResult.Err()
 	}
 
-	fmt.Println("Found existing scrape result")
+	// fmt.Println("Found existing scrape result")
 
 	var scrapeResult models.ScrapeResult
 	err := singleResult.Decode(&scrapeResult)

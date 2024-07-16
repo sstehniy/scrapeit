@@ -15,6 +15,12 @@ func ExtractStringWithRegex(input, pattern string) (string, error) {
 	// Find the first match
 	match := re.FindStringSubmatch(input)
 
+	fmt.Printf("Matches: ")
+	for _, m := range match {
+		fmt.Printf("%s ", m)
+	}
+	fmt.Println()
+
 	// If a match is found, return the first captured group (or the entire match if no group)
 	if len(match) > 0 {
 		return match[0], nil

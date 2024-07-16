@@ -41,7 +41,10 @@ func ScrapeEndpointTestHandler(c echo.Context) error {
 		WithThumbnail: body.Group.WithThumbnail,
 	}
 
-	results, _, err := scraper.ScrapeEndpointTest(body.Group.Endpoints[0], group, dbClient)
+	browser := scraper.GetBrowser()
+	defer browser.Close()
+
+	results, _, err := scraper.ScrapeEndpointTest(body.Group.Endpoints[0], group, dbClient, browser)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}

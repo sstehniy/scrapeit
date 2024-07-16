@@ -36,9 +36,22 @@ export const ResultsTable: FC<ResultsTableProps> = ({
   group,
   height,
 }) => {
+  const renderResults = useMemo(() => {
+    return (
+      results?.map((result) => {
+        return {
+          ...result,
+          fields: result.fields.filter((f) => {
+            return group?.fields.some((gf) => gf.id === f.fieldId);
+          }),
+        };
+      }) || []
+    );
+  }, [group?.fields, results]);
+
   const columns = useMemo(() => {
-    if (!results || (results && results.length === 0) || !group) {
-      return [];
+    if (!group) {
+      return;
     }
     return [
       columnHelper.accessor("timestamp", {
@@ -117,10 +130,10 @@ export const ResultsTable: FC<ResultsTableProps> = ({
         }),
       ),
     ];
-  }, [group, results]);
+  }, [group, renderResults]);
 
   const table = useReactTable({
-    data: results || [],
+    data: renderResults || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
   });

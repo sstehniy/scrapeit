@@ -54,14 +54,30 @@ func (cm *CronManager) DestroyJob(groupId string, endpointId string) {
 
 	job := cm.getJob(groupId, endpointId)
 	if job != nil {
+		// Stop the cron job
 		cm.cron.Remove(job.ID)
+
+		// If the job is currently running, wait for it to finish
+		if job.Status == CronJobStatusRunning {
+			cm.logger.Info("Waiting for job to finish before destroying", "groupId", groupId, "endpointId", endpointId)
+			for job.Status == CronJobStatusRunning {
+				cm.mu.Unlock()
+				time.Sleep(100 * time.Millisecond)
+				cm.mu.Lock()
+			}
+		}
+
+		// Remove the job from the Jobs slice
 		for i, j := range cm.Jobs {
 			if j.GroupID == groupId && j.EndpointID == endpointId {
 				cm.Jobs = append(cm.Jobs[:i], cm.Jobs[i+1:]...)
-				cm.logger.Info("Job destroyed", "groupId", groupId, "endpointId", endpointId)
 				break
 			}
 		}
+
+		cm.logger.Info("Job destroyed", "groupId", groupId, "endpointId", endpointId)
+	} else {
+		cm.logger.Info("Job not found for destruction", "groupId", groupId, "endpointId", endpointId)
 	}
 	cm.mu.Unlock()
 	cm.formatAllJobs()
@@ -125,11 +141,11 @@ func (cm *CronManager) Stop() {
 
 func (cm *CronManager) UpdateJob(job CronManagerJob) {
 	cm.mu.Lock()
-	defer cm.mu.Unlock()
 
 	cm.destroyJob(job.GroupID, job.EndpointID)
 	cm.AddJob(job)
 	cm.logger.Info("Job updated", "groupId", job.GroupID, "endpointId", job.EndpointID)
+	cm.mu.Unlock()
 	cm.formatAllJobs()
 }
 
@@ -192,19 +208,31 @@ func (cm *CronManager) getJob(groupId string, endpointId string) *CronManagerJob
 
 func (cm *CronManager) destroyJob(groupId string, endpointId string) {
 	job := cm.getJob(groupId, endpointId)
-
 	if job != nil {
-
+		// Stop the cron job
 		cm.cron.Remove(job.ID)
-		cm.logger.Info("Job destroyed", "groupId", groupId, "endpointId", endpointId)
 
+		// If the job is currently running, wait for it to finish
+		if job.Status == CronJobStatusRunning {
+			cm.logger.Info("Waiting for job to finish before destroying", "groupId", groupId, "endpointId", endpointId)
+			for job.Status == CronJobStatusRunning {
+				cm.mu.Unlock()
+				time.Sleep(100 * time.Millisecond)
+				cm.mu.Lock()
+			}
+		}
+
+		// Remove the job from the Jobs slice
 		for i, j := range cm.Jobs {
 			if j.GroupID == groupId && j.EndpointID == endpointId {
-
 				cm.Jobs = append(cm.Jobs[:i], cm.Jobs[i+1:]...)
 				break
 			}
 		}
+
+		cm.logger.Info("Job destroyed", "groupId", groupId, "endpointId", endpointId)
+	} else {
+		cm.logger.Info("Job not found for destruction", "groupId", groupId, "endpointId", endpointId)
 	}
 }
 

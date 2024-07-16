@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"scrapeit/internal/cron"
 	"scrapeit/internal/models"
 	"time"
 
@@ -24,6 +25,10 @@ func UpdateScrapingGroupSchema(c echo.Context) error {
 	dbClient, ok := c.Get("db").(*mongo.Client)
 	if !ok {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
+	}
+	cronManager, ok := c.Get("cron").(*cron.CronManager)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
 	}
 
 	var req UpdateScrapingGroupSchemaRequest
@@ -54,6 +59,9 @@ func UpdateScrapingGroupSchema(c echo.Context) error {
 	}
 
 	if req.ShouldArchive {
+		for _, endpoint := range group.Endpoints {
+			cronManager.DestroyJob(group.ID.Hex(), endpoint.ID)
+		}
 		if req.VersionTag == "" {
 			return echo.NewHTTPError(http.StatusBadRequest, "Version tag is required to archive group")
 		}
@@ -171,6 +179,21 @@ func UpdateScrapingGroupSchema(c echo.Context) error {
 
 	if result.MatchedCount == 0 {
 		return echo.NewHTTPError(http.StatusNotFound, "Group not found")
+	}
+
+	for _, endpoint := range group.Endpoints {
+		if endpoint.Active {
+			cronManager.AddJob(cron.CronManagerJob{
+				GroupID:    group.ID.Hex(),
+				EndpointID: endpoint.ID,
+				Active:     true,
+				Interval:   endpoint.Interval,
+				Job: func() error {
+					fmt.Println("Running job for", group.ID.Hex(), endpoint.ID)
+					return HandleCallInternalScrapeEndpoint(c.Echo(), group.ID.Hex(), endpoint.ID, dbClient, cronManager)
+				},
+			})
+		}
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Group schema updated"})

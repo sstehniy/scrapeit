@@ -17,10 +17,10 @@ var (
 	mu sync.Mutex
 )
 
-func GetBrowser() (*rod.Browser, error) {
+func GetBrowser() *rod.Browser {
 	rodBrowserWsURL := os.Getenv("ROD_BROWSER_WS_URL")
 	if rodBrowserWsURL == "" {
-		return nil, fmt.Errorf("ROD_BROWSER_WS_URL environment variable not set")
+		panic("ROD_BROWSER_WS_URL is not set")
 	}
 
 	mu.Lock()
@@ -28,7 +28,7 @@ func GetBrowser() (*rod.Browser, error) {
 
 	browser := rod.New().ControlURL(rodBrowserWsURL).MustConnect().DefaultDevice(devices.LaptopWithHiDPIScreen)
 
-	return browser, nil
+	return browser
 }
 
 func GetStealthPage(browser *rod.Browser, url string, elementToWaitFor string) (*rod.Page, error) {
@@ -68,11 +68,8 @@ func GetStealthPage(browser *rod.Browser, url string, elementToWaitFor string) (
 }
 
 func ScrapeTest() (map[string]string, error) {
-	browser, err := GetBrowser()
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
+	browser := GetBrowser()
+
 	defer browser.Close()
 
 	page, err := GetStealthPage(browser, "https://app.zenrows.com/register", ".min-h-screen.flex.bg-secondary")

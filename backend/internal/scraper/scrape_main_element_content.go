@@ -30,18 +30,15 @@ func cleanHTML(input string) string {
 }
 
 func GetMainElementHTMLContent(url, elementSelector string, maxElements int) (string, error) {
-	browser, err := GetBrowser()
-	if err != nil {
-		fmt.Println(err)
-		return "", err
-	}
+	browser := GetBrowser()
 	defer browser.Close()
 
 	page, err := GetStealthPage(browser, url, elementSelector)
 	if err != nil {
-
 		return "", err
 	}
+
+	defer page.Close()
 
 	// scroll to the bottom of the page
 	SlowScrollToHalf(page)

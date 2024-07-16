@@ -17,7 +17,7 @@ const App = () => {
         <Route path="/" element={<GroupsOverview />} />
         <Route path="/group/:groupId" element={<GroupView />} />
         <Route path="*" element={<div>Not Found</div>} />
-      </Routes>{" "}
+      </Routes>
     </div>
   );
 };
@@ -31,7 +31,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
       <ToastContainer
         position="top-center"
-        autoClose={5000}
+        autoClose={3000}
         hideProgressBar={false}
         newestOnTop
         closeOnClick

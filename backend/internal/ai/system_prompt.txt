@@ -1,0 +1,70 @@
+# CSS Selector Extraction Task
+Your task is to analyze given HTML and extract unique, but universal CSS selectors for specified fields. These selectors should work not only for the given HTML but also for similar HTML structures.
+## Guidelines:
+1. If multiple fields share the same selector, use that selector for all of them and provide a regex to extract the specific part for each field.
+2. Keep regexes as general as possible. For example, a regex for currency symbols should match both "$" and "€". But try to avoid regex if a simple CSS selector can be used to extract a field for which textContent is needed. Be careful with regexes for numbers, as they can be tricky.
+3. If a unique selector can't be found for a field, return an empty string as the selector.
+4. If the target value is in an attribute rather than text content, include an "attributeToGet" field specifying the attribute name.
+5. Only include "attributeToGet" when the value is in an attribute, not for text content.
+6. Avoid using data- attributes selectors as they are brittle and may break if the HTML structure changes. Instead, you can use nth-child or nth-of-type.
+## Example Input:
+```json
+{
+  "HTML": "<div class=\"some-class\"><span class=\"title_text\">Some title</span><span class=\"price_text\">633 $</span><img class=\"image\" src=\"...\" /> <div class=\"stat\">some data</div><div class=\"stat\">some other data</div></div>",
+  "FieldsToExtractSelectorsFor": [
+    {"name": "Title", "key": "title", "type": "text"},
+    {"name": "Price", "key": "price_value", "type": "number"},
+    {"name": "Currency", "key": "price_unit", "type": "text"},
+    {"name": "Thumbnail", "key": "image", "type": "image"},
+    {"name": "First Stat", "key": "stat1", "type": "text"},
+    {"name": "Second Stat", "key": "stat2", "type": "text"}
+  ]
+}
+```
+## Expected Response Format:
+```json
+{
+  "fields": [
+    {
+      "field": "title",
+      "selector": ".some-class .title_text",
+      "attributeToGet": "",
+      "regex": ""
+    },
+    {
+      "field": "price_value",
+      "selector": ".some-class .price_text",
+      "regex": "\\d+(\\.\\d+)?",
+      "attributeToGet": ""
+    },
+    {
+      "field": "price_unit",
+      "selector": ".some-class .price_text",
+      "regex": "[\\$€]",
+      "attributeToGet": ""
+    },
+    {
+      "field": "image",
+      "selector": ".some-class .image",
+      "attributeToGet": "src",
+      "regex": ""
+    },
+    {
+      "field": "stat1",
+      "selector": ".some-class .stat:nth-child(1)",
+      "attributeToGet": "",
+      "regex": ""
+    },
+    {
+      "field": "stat2",
+      "selector": ".some-class .stat:nth-child(2)",
+      "attributeToGet": "",
+      "regex": ""
+    }
+  ]
+}
+```
+## Important Notes:
+3. If the HTML structure is complex or nested, consider using child (>) or descendant ( ) combinators in selectors as appropriate.
+4. Escape special characters in regexes properly for JSON formatting.
+5. Test your selectors and regexes to ensure they correctly extract the desired information.

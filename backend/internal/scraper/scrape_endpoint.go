@@ -22,13 +22,7 @@ func (e ScrapeEndpointError) Error() string {
 	return fmt.Sprintf("scrape endpoint error: %s", e.Message)
 }
 
-func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, client *mongo.Client) ([]models.ScrapeResult, []models.ScrapeResult, error) {
-
-	browser, err := GetBrowser()
-	if err != nil {
-		return nil, nil, fmt.Errorf("error getting browser: %w", err)
-	}
-	defer browser.Close()
+func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, client *mongo.Client, browser *rod.Browser) ([]models.ScrapeResult, []models.ScrapeResult, error) {
 
 	var allElements rod.Elements
 
@@ -210,7 +204,7 @@ func getElementDetails(element *rod.Element, selectors []models.FieldSelector) (
 		if selector.Regex != "" {
 			text, err = helpers.ExtractStringWithRegex(text, selector.Regex)
 			if err != nil {
-				fmt.Printf("Error extracting regex for selector %s: %v\n", selector.Selector, err)
+				// fmt.Printf("Error extracting regex for selector %s: %v\n", selector.Selector, err)
 				text = ""
 			}
 		}
@@ -233,13 +227,8 @@ func (e ScrapeEndpointTestError) Error() string {
 	return fmt.Sprintf("scrape endpoint test error: %s", e.Message)
 }
 
-func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, client *mongo.Client) ([]models.ScrapeResultTest, []models.ScrapeResultTest, error) {
+func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, client *mongo.Client, browser *rod.Browser) ([]models.ScrapeResultTest, []models.ScrapeResultTest, error) {
 	fmt.Println(("Scraping endpoint test"))
-	browser, err := GetBrowser()
-	if err != nil {
-		return nil, nil, fmt.Errorf("error getting browser: %w", err)
-	}
-	defer browser.Close()
 
 	var allElements rod.Elements
 
@@ -316,7 +305,7 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 		if selector.Regex != "" {
 			text, err = helpers.ExtractStringWithRegex(text, selector.Regex)
 			if err != nil {
-				fmt.Printf("Error extracting regex for selector %s: %v\n", selector.Selector, err)
+				// fmt.Printf("Error extracting regex for selector %s: %v\n", selector.Selector, err)
 				text = ""
 			}
 		}

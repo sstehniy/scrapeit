@@ -11,6 +11,7 @@ import {
   Field,
   ScrapeGroup,
   ScrapeResultTest,
+  ScrapeStatus,
   SelectorStatus,
 } from "../../types";
 import { FloatingAIChat } from "../FloatingAIChat";
@@ -31,6 +32,7 @@ const defaultEndpoint: Endpoint = {
   mainElementSelector: "",
   interval: "*/5 * * * *",
   active: true,
+  status: ScrapeStatus.IDLE,
   paginationConfig: {
     type: "url_parameter",
     parameter: "",

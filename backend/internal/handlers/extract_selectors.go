@@ -19,7 +19,7 @@ func ExtractSelectorsHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-	response, err := ai.ExtractSelectorsClaude(html, requestData.FieldsToExtractSelectorsFor)
+	response, err := ai.ExtractSelectors(html, requestData.FieldsToExtractSelectorsFor)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}

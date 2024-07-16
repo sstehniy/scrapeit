@@ -7,7 +7,7 @@ cmd = "go build -o main ./cmd"                                # command to build
 full_bin = "APP_ENV=dev ./main"                               # full command to run your binary with environment variables
 delay = 1000
 exclude_dir = ["assets", "tmp", "vendor"]
-include_ext = ["go", "tpl", "tmpl", "html"]
+include_ext = ["go", "tpl", "tmpl", "html", "txt"]
 exclude_regex = ["_test\\.go", "test.html", "screenshot.png"]
 
 [log]

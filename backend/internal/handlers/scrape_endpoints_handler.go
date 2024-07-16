@@ -73,7 +73,7 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 
 	for _, endpointId := range body.EndpointIds {
 		endpointToScrape := relevantGroup.GetEndpointById(endpointId)
-		if endpointToScrape != nil && endpointToScrape.Active && endpointToScrape.Status != models.ScrapeStatusRunning {
+		if endpointToScrape != nil && endpointToScrape.Active {
 			endpointsToScrape = append(endpointsToScrape, endpointToScrape)
 		}
 	}
@@ -82,24 +82,17 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "No idle endpoints to scrape"})
 	}
 
-	for _, endpoint := range endpointsToScrape {
-		// update group and set endpoint status to running
-		endpoint.Status = models.ScrapeStatusRunning
-		_, err := groupCollection.UpdateOne(c.Request().Context(), groupQuery, bson.M{"$set": bson.M{"endpoints": relevantGroup.Endpoints}})
-		if err != nil {
-			fmt.Println("Error updating group:", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-	}
-
 	resultsChan := make(chan []models.ScrapeResult)
 	toReplaceChan := make(chan []models.ScrapeResult)
+
+	browser := scraper.GetBrowser()
+	defer browser.Close()
 
 	for _, endpointToScrape := range endpointsToScrape {
 		fmt.Println("Scraping endpoints:", endpointToScrape.ID)
 
 		go func(endpoint models.Endpoint) {
-			results, toReplace, err := scraper.ScrapeEndpoint(endpoint, *relevantGroup, dbClient)
+			results, toReplace, err := scraper.ScrapeEndpoint(endpoint, *relevantGroup, dbClient, browser)
 			if err != nil {
 				fmt.Println("Error scraping endpoint:", err)
 				resultsChan <- []models.ScrapeResult{}

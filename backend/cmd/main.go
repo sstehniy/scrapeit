@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"scrapeit/internal/cron"
 	"scrapeit/internal/handlers"
+	"scrapeit/internal/helpers"
 	"scrapeit/internal/models"
 	"syscall"
 	"time"

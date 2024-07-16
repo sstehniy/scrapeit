@@ -20,7 +20,7 @@ export const TextInput: FC<TextInputProps> = ({
   return (
     <div className={wrapperClassName} style={wrapperStyle}>
       <label className={labelClassName} style={labelStyle}>
-        {label}
+        <span className="label-text">{label}</span>
       </label>
       <input
         type={props.type === undefined ? "text" : props.type}

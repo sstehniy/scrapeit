@@ -16,7 +16,8 @@ func GetScrapingGroups(c echo.Context) error {
 	if !ok {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
 	}
-	var allGroups []models.ScrapeGroup
+	fmt.Println("here")
+	allGroups := []models.ScrapeGroup{}
 
 	result, err := dbClient.Database("scrapeit").Collection("scrape_groups").Find(c.Request().Context(), bson.M{
 		"versionTag": "",

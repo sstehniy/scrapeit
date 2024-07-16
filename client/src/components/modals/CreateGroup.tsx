@@ -41,7 +41,7 @@ export const CreateGroupModal: FC<CreateGroupModalProps> = ({
       ]}
     >
       <div className="space-y-2 w-[450px]">
-        <label className="block font-medium text-gray-500">Name</label>
+        <label className="label">Name</label>
         <input
           type="text"
           name="name"

@@ -280,9 +280,9 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
               </svg>
             </div>
             <TextInput
-              labelClassName="block font-medium text-gray-500 mb-1"
+              labelClassName="label"
               className="input input-bordered w-full"
-              wrapperClassName="mb-4"
+              wrapperClassName="form-control mb-4"
               label="Name"
               name="name"
               id="name"
@@ -298,9 +298,9 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
               required
             />
             <TextInput
-              labelClassName="block font-medium text-gray-500 mb-1"
+              labelClassName="label"
               className="input input-bordered w-full"
-              wrapperClassName="mb-4"
+              wrapperClassName="form-control mb-4"
               label="Key"
               name="key"
               id="key"
@@ -314,9 +314,7 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
             />
 
             <div className="w-40">
-              <label className="block font-medium text-gray-500 mb-1">
-                Type
-              </label>
+              <label className="label">Type</label>
               <select
                 value={field.type}
                 onChange={(e) => {

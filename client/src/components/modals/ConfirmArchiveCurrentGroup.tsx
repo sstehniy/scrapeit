@@ -81,9 +81,9 @@ export const ConfirmArchiveCurrentGroup: FC<
           for the new ARCHIVED group.
         </p>
         <TextInput
-          labelClassName="block font-medium text-gray-500 mb-1"
+          labelClassName="label"
           className="input input-bordered w-full"
-          wrapperClassName="mb-4"
+          wrapperClassName="form-control mb-4"
           label="Version Tag"
           name="version_tag"
           id="version_tag"

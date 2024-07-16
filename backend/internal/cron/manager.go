@@ -117,6 +117,7 @@ func (cm *CronManager) Stop() {
 		cm.DestroyJob(job.GroupID, job.EndpointID)
 	}
 	cm.cron.Stop()
+	cm.logger.Info("Cron manager stopped")
 }
 
 func (cm *CronManager) UpdateJob(job CronManagerJob) {
@@ -178,12 +179,9 @@ func (cm *CronManager) destroyJob(groupId string, endpointId string) {
 			}
 		}
 	}
-	cm.formatAllJobs()
 }
 
 func (cm *CronManager) formatAllJobs() {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
 
 	type formattedJob struct {
 		ID         cron.EntryID

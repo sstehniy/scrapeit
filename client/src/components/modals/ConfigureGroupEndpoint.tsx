@@ -65,9 +65,9 @@ const FirstStepContent: FC<{
   return (
     <div className="w-[450px]">
       <TextInput
-        labelClassName="block font-medium text-gray-500 mb-1"
+        labelClassName="label"
         className="input input-bordered w-full"
-        wrapperClassName="mb-4"
+        wrapperClassName="form-control mb-4"
         label="Name"
         name="name"
         id="name"
@@ -82,9 +82,9 @@ const FirstStepContent: FC<{
       />
 
       <TextInput
-        labelClassName="block font-medium text-gray-500 mb-1"
+        labelClassName="label"
         className="input input-bordered w-full"
-        wrapperClassName="mb-4"
+        wrapperClassName="form-control mb-4"
         label="Endpoint URL"
         name="endpoint_name"
         id="endpoint_name"
@@ -99,9 +99,9 @@ const FirstStepContent: FC<{
       />
 
       <TextInput
-        labelClassName="block font-medium text-gray-500 mb-1"
+        labelClassName="label"
         className="input input-bordered w-full"
-        wrapperClassName="mb-4"
+        wrapperClassName="form-control mb-4"
         label="Main Element Selector"
         name="main_element_selector"
         id="main_element_selector"
@@ -229,9 +229,7 @@ const SecondStepContent: FC<{
       <div>
         Main Element Selector: <strong>{endpoint.mainElementSelector}</strong>
       </div>
-      <label className="block font-medium text-gray-500 mb-2">
-        Scrape Interval
-      </label>
+      <label className="label">Scrape Interval</label>
       <select
         className="select select-bordered w-full mb-4"
         value={endpoint.interval}
@@ -250,9 +248,7 @@ const SecondStepContent: FC<{
           </option>
         ))}
       </select>
-      <label className="block font-medium text-gray-500 mb-2">
-        Pagination Config
-      </label>
+      <label className="label">Pagination Config</label>
       <select
         className="select select-bordered w-full mb-4 "
         value={endpoint.paginationConfig.type}
@@ -273,7 +269,7 @@ const SecondStepContent: FC<{
         </option>
         <option value="url_path">URL Path</option>
       </select>
-      <label className="block font-medium text-gray-500 mb-2">Parameter</label>
+      <label className="label">Parameter</label>
       <input
         type="text"
         name="name"
@@ -295,7 +291,7 @@ const SecondStepContent: FC<{
       />
       <div className="flex gap-5 mb-10">
         <div className="flex-1">
-          <label className="block font-medium text-gray-500">Start</label>
+          <label className="label">Start</label>
           <input
             type="number"
             name="name"
@@ -317,7 +313,7 @@ const SecondStepContent: FC<{
           />
         </div>
         <div className="flex-1">
-          <label className="block font-medium text-gray-500">End</label>
+          <label className="label">End</label>
           <input
             type="number"
             name="name"
@@ -339,7 +335,7 @@ const SecondStepContent: FC<{
           />
         </div>
         <div className="flex-1">
-          <label className="block font-medium text-gray-500">Step</label>
+          <label className="label">Step</label>
           <input
             type="number"
             name="name"
@@ -368,7 +364,7 @@ const SecondStepContent: FC<{
               name="urlRegexToInsert"
               id="urlRegexToInsert"
               label="URL Regex To Insert"
-              labelClassName="block font-medium text-gray-500"
+              labelClassName="label label"
               className="input input-bordered w-full"
               value={endpoint.paginationConfig.urlRegexToInsert}
               onChange={(e) => {
@@ -416,9 +412,9 @@ const SecondStepContent: FC<{
             <div className="flex gap-3">
               <div className="flex-1">
                 <TextInput
-                  labelClassName="block font-medium text-gray-500 mb-1"
+                  labelClassName="label"
                   className="input input-bordered w-full"
-                  wrapperClassName="mb-4"
+                  wrapperClassName="form-control mb-4"
                   label="Field Name"
                   readOnly
                   disabled
@@ -427,9 +423,9 @@ const SecondStepContent: FC<{
               </div>
               <div className="flex-1">
                 <TextInput
-                  labelClassName="block font-medium text-gray-500 mb-1"
+                  labelClassName="label"
                   className="input input-bordered w-full"
-                  wrapperClassName="mb-4"
+                  wrapperClassName="form-control mb-4"
                   label="Field Key"
                   readOnly
                   disabled
@@ -438,9 +434,9 @@ const SecondStepContent: FC<{
               </div>
               <div className="w-1/3 mb-4">
                 <TextInput
-                  labelClassName="block font-medium text-gray-500 mb-1"
+                  labelClassName="label"
                   className="input input-bordered w-full mb-1"
-                  wrapperClassName=""
+                  wrapperClassName="form-control "
                   label="Selector"
                   value={
                     endpoint.detailFieldSelectors.find(
@@ -482,9 +478,9 @@ const SecondStepContent: FC<{
               </div>
               <div className="flex-1">
                 <TextInput
-                  labelClassName="block font-medium text-gray-500 mb-1"
+                  labelClassName="label"
                   className="input input-bordered w-full"
-                  wrapperClassName="mb-4"
+                  wrapperClassName="form-control mb-4"
                   label="Attribute"
                   value={
                     endpoint.detailFieldSelectors.find(
@@ -508,9 +504,9 @@ const SecondStepContent: FC<{
               </div>
               <div className="flex-1">
                 <TextInput
-                  labelClassName="block font-medium text-gray-500 mb-1"
+                  labelClassName="label"
                   className="input input-bordered w-full"
-                  wrapperClassName="mb-4"
+                  wrapperClassName="form-control mb-4"
                   label="Regex"
                   value={
                     endpoint.detailFieldSelectors.find(

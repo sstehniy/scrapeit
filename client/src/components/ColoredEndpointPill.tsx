@@ -1,13 +1,6 @@
 import { ScrapeGroup } from "../types";
 
-export const getColoredEndpointPill = (
-  endpointId: string,
-  group: ScrapeGroup,
-) => {
-  const endpoint = group.endpoints.find((e) => e.id === endpointId);
-  const name = endpoint?.name || "Unknown";
-
-  // Generate a color based on the name
+export const getBgAndTextColor = (name: string) => {
   const hash = name.split("").reduce((acc, char) => {
     return char.charCodeAt(0) + ((acc << 5) - acc);
   }, 0);
@@ -27,7 +20,18 @@ export const getColoredEndpointPill = (
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   };
   const textColor = getLuminance(color) > 0.179 ? "#000000" : "#ffffff";
+  return { color, textColor };
+};
 
+export const getColoredEndpointPill = (
+  endpointId: string,
+  group: ScrapeGroup,
+) => {
+  const endpoint = group.endpoints.find((e) => e.id === endpointId);
+  const name = endpoint?.name || "Unknown";
+
+  // Generate a color based on the name
+  const { color, textColor } = getBgAndTextColor(name);
   return (
     <span
       className="px-2 py-1 rounded-xl text-sm font-medium"

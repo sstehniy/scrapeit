@@ -16,13 +16,24 @@ import { toast } from "react-toastify";
 import { ConfigureGroupSchema } from "../components/modals/ConfigureGroupSchema";
 import { Button } from "../components/ui/Button";
 import { ConfirmArchiveCurrentGroup } from "../components/modals/ConfirmArchiveCurrentGroup";
+import { ResultsFilters } from "../components/ResultsFilters";
 
 const pageSize = 2000;
 
-const defaultSearchConfig = {
+export type SearchConfig = {
+  offset: number;
+  limit: number;
+  endpointIds: string[];
+  q: string;
+  isArchive: boolean;
+};
+
+const defaultSearchConfig: SearchConfig = {
   offset: 0,
   limit: pageSize,
   endpointIds: [] as string[],
+  q: "",
+  isArchive: false,
 };
 
 export type FieldChange = {
@@ -52,13 +63,8 @@ export const GroupView: FC = () => {
   });
   const queryClient = useQueryClient();
 
-  const [searchConfig, setSearchConfig] = useState({
-    offset: defaultSearchConfig.offset,
-    limit: defaultSearchConfig.limit,
-    endpointIds: defaultSearchConfig.endpointIds,
-  });
-
-  const [searchConfigChanged, setSearchConfigChanged] = useState(false);
+  const [searchConfig, setSearchConfig] =
+    useState<SearchConfig>(defaultSearchConfig);
 
   useEffect(() => {
     const handleResize = throttle(() => {
@@ -101,13 +107,15 @@ export const GroupView: FC = () => {
     hasMore: boolean;
   }>({
     queryKey: ["groupResults", groupId, searchConfig],
-    queryFn: ({ pageParam = 0 }) => {
+    queryFn: () => {
       return axios
         .get(`/api/scrape/results/${groupId}`, {
           params: {
-            offset: pageParam,
+            offset: searchConfig.offset,
             limit: searchConfig.limit,
             endpointIds: searchConfig.endpointIds.join(","),
+            q: searchConfig.q,
+            isArchive: searchConfig.isArchive,
           },
         })
         .then((res) => res.data);
@@ -120,6 +128,14 @@ export const GroupView: FC = () => {
     initialPageParam: defaultSearchConfig.offset,
     enabled: !!groupId && searchConfig.endpointIds.length > 0,
   });
+
+  useEffect(() => {
+    if (!group) return;
+    setSearchConfig((prev) => ({
+      ...prev,
+      endpointIds: group.endpoints.map((e) => e.id),
+    }));
+  }, [group]);
 
   const updateGroupSchemaMutation = useMutation({
     mutationFn: (data: {
@@ -152,7 +168,6 @@ export const GroupView: FC = () => {
       setSearchConfig({
         ...defaultSearchConfig,
         offset: 0,
-        endpointIds: group?.endpoints.map((e) => e.id) || [],
       });
       queryClient.invalidateQueries({ queryKey: ["groupResults", groupId] });
       toast.success("All endpoints scraped successfully");
@@ -168,15 +183,6 @@ export const GroupView: FC = () => {
       setShowGroupSchemaSettings(true);
       toast.info("Please configure the group schema");
     }
-  }, [group]);
-
-  useEffect(() => {
-    if (!group || initialLoaded.current || !group.endpoints.length) return;
-    initialLoaded.current = true;
-    setSearchConfig((prev) => ({
-      ...prev,
-      endpointIds: group.endpoints.map((e) => e.id),
-    }));
   }, [group]);
 
   const handleUpdateGroupSchema = useCallback(
@@ -215,16 +221,6 @@ export const GroupView: FC = () => {
   const handleScrapeAllEndpoints = useCallback(() => {
     scrapeAllEndpointsMutation.mutate();
   }, [scrapeAllEndpointsMutation]);
-
-  const resetSearch = useCallback(() => {
-    setSearchConfig({
-      offset: defaultSearchConfig.offset,
-      limit: defaultSearchConfig.limit,
-      endpointIds: group?.endpoints.map((e) => e.id) || [],
-    });
-    setSearchConfigChanged(false);
-    queryClient.invalidateQueries({ queryKey: ["groupResults", groupId] });
-  }, [group, groupId, queryClient]);
 
   if (!groupId) {
     return <Navigate to="/not-found" />;
@@ -333,7 +329,13 @@ export const GroupView: FC = () => {
           onConfirm={showConfirmGroupArchive.onConfirm || (() => {})}
         />
       )}
-
+      {group && (
+        <ResultsFilters
+          params={searchConfig}
+          group={group}
+          setParams={setSearchConfig}
+        />
+      )}
       {!!scrapeResults?.pages.length && group && (
         <ResultsTable
           group={group}

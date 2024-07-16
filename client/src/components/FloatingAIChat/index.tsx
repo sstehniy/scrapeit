@@ -108,9 +108,9 @@ const ChatWindow = ({
       </div>
       <div className="px-3">
         <MultilineTextInput
-          labelClassName="block font-medium text-gray-500 mb-1"
+          labelClassName="label"
           className="textarea textarea-bordered w-full text-lg"
-          wrapperClassName="mb-4"
+          wrapperClassName="form-control mb-4"
           label="Prompt"
           name="prompt"
           id="prompt"

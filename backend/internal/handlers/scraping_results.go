@@ -20,38 +20,60 @@ type GetScrapingResultsRespones struct {
 	HasMore bool                  `json:"hasMore"`
 }
 
+type GetScrapingResultsQueryParams struct {
+	Offset      int32    `query:"offset"`
+	Limit       int32    `query:"limit"`
+	EndpointIds []string `query:"endpointIds"`
+	GroupId     string   `query:"groupId"`
+	Q           string   `query:"q"`
+	IsArchive   bool     `query:"isArchive"`
+}
+
 func getScrapeResults(
-	ctx context.Context, groupId string, offset, limit int, endpointIds []string,
-	isArchive bool,
+	ctx context.Context, params GetScrapingResultsQueryParams,
 	client *mongo.Client,
 ) ([]models.ScrapeResult, bool, error) {
 
 	findOptions := options.FindOptions{}
-	findOptions.SetSkip(int64(offset))
-	findOptions.SetLimit(int64(limit))
-	findOptions.SetSort(bson.D{{Key: "timestamp", Value: -1}})
+	findOptions.SetSkip(int64(params.Offset))
+	findOptions.SetLimit(int64(params.Limit))
 
-	groupObjId, err := primitive.ObjectIDFromHex(groupId)
+	groupObjId, err := primitive.ObjectIDFromHex(params.GroupId)
 	if err != nil {
 		fmt.Println("error", err)
 		return nil, false, err
 	}
 	collectionName := "scrape_results"
 
-	if isArchive {
+	if params.IsArchive {
 		collectionName = "archived_scrape_results"
 	}
 
-	cursor, err := client.Database("scrapeit").Collection(collectionName).Find(ctx, bson.M{
-		"groupId":    groupObjId,
-		"endpointId": bson.M{"$in": endpointIds},
-	}, &findOptions)
+	filter := bson.M{}
+
+	if params.Q != "" {
+		fmt.Println("searching for", params.Q)
+		filter["$text"] = bson.M{"$search": "\"" + params.Q + "\""}
+		findOptions.SetSort(bson.M{"score": bson.M{"$meta": "textScore"}})
+		findOptions.SetProjection(bson.M{"score": bson.M{"$meta": "textScore"}})
+	} else {
+		filter = bson.M{
+			"groupId":    groupObjId,
+			"endpointId": bson.M{"$in": params.EndpointIds},
+		}
+		findOptions.SetSort(bson.D{{Key: "timestamp", Value: -1}})
+	}
+
+	fmt.Println("filter", filter)
+	fmt.Println("collection", collectionName)
+
+	cursor, err := client.Database("scrapeit").Collection(collectionName).Find(ctx, filter, &findOptions)
 	if err != nil {
 		return nil, false, err
 	}
 	defer cursor.Close(ctx)
 
-	var endpointResults []models.ScrapeResult
+	endpointResults := []models.ScrapeResult{}
 	for cursor.Next(ctx) {
 		var result models.ScrapeResult
 		if err := cursor.Decode(&result); err != nil {
@@ -61,16 +83,12 @@ func getScrapeResults(
 	}
 
 	hasMore := false
-	limit = limit + 1
+	limit := params.Limit + 1
 
-	newFindOptions := options.FindOptions{}
-	newFindOptions.SetSkip(int64(offset + limit))
-	newFindOptions.SetLimit(1)
+	findOptions.SetSkip(int64(params.Offset + limit))
+	findOptions.SetLimit(1)
 
-	hasMoreCursor, err := client.Database("scrapeit").Collection("scrape_results").Find(ctx, bson.M{
-		"groupId":    groupObjId,
-		"endpointId": bson.M{"$in": endpointIds},
-	}, &newFindOptions)
+	hasMoreCursor, err := client.Database("scrapeit").Collection("scrape_results").Find(ctx, filter, &findOptions)
 	if err != nil {
 		fmt.Println("error", err)
 		return nil, false, err
@@ -125,6 +143,9 @@ func GetScrapingResults(c echo.Context) error {
 			"error": "invalid value for parameter 'limitNumber': must be a positive number",
 		})
 	}
+
+	q := c.QueryParam("q")
+
 	// should be an array of endpoint ids
 	endpointIdsParam := c.QueryParam("endpointIds")
 
@@ -142,9 +163,18 @@ func GetScrapingResults(c echo.Context) error {
 		})
 	}
 
+	params := GetScrapingResultsQueryParams{
+		Offset:      int32(offsetNumber),
+		Limit:       int32(limitNumber),
+		IsArchive:   isArchive,
+		GroupId:     groupId,
+		Q:           q,
+		EndpointIds: endpointIds,
+	}
+
 	fmt.Println("endpointIds", endpointIds)
 
-	results, hasMore, err := getScrapeResults(c.Request().Context(), groupId, offsetNumber, limitNumber, endpointIds, isArchive, dbClient)
+	results, hasMore, err := getScrapeResults(c.Request().Context(), params, dbClient)
 	if err != nil {
 		fmt.Println("error", err)
 		return c.JSON(http.StatusOK, map[string]interface{}{})

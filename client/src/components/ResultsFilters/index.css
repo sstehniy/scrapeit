@@ -1,0 +1,3 @@
+.select-control {
+  @apply input input-bordered w-[350px] !important;
+}

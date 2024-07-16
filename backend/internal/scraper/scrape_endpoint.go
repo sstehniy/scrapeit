@@ -314,7 +314,7 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 			}
 		}
 		if selector.Regex != "" {
-			text, err = helpersExtractStringWithRegex(text, selector.Regex)
+			text, err = helpers.ExtractStringWithRegex(text, selector.Regex)
 			if err != nil {
 				fmt.Printf("Error extracting regex for selector %s: %v\n", selector.Selector, err)
 				text = ""

@@ -91,15 +91,18 @@ func main() {
 
 	api := e.Group("")
 
+	internal := e.Group("/internal")
+	internal.POST("/scrape/endpoint", handlers.ScrapeEndpointHandler)
+
 	// Home route
-	e.GET("/", handlers.Home)
+	api.GET("/", handlers.Home)
 
 	// Scrape routes
 	scrape := api.Group("/scrape")
+	scrape.GET("/test", handlers.Scrape)
 	scrape.GET("/results/:groupId", handlers.GetScrapingResults)
 	scrape.GET("/results/not-empty/:groupId", handlers.GetScrapingResultsNotEmpty)
 	scrape.POST("/endpoints", handlers.ScrapeEndpointsHandler)
-	scrape.POST("/endpoint", handlers.ScrapeEndpointHandler)
 	scrape.POST("/endpoint-test", handlers.ScrapeEndpointTestHandler)
 
 	// Scrape groups routes

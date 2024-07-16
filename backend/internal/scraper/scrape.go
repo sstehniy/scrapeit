@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sync"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/devices"
+	"github.com/go-rod/rod/lib/proto"
 	"github.com/go-rod/stealth"
 )
 
@@ -29,21 +31,38 @@ func GetBrowser() (*rod.Browser, error) {
 	return browser, nil
 }
 
-func GetStealthPage(browser *rod.Browser, url string) (*rod.Page, error) {
+func GetStealthPage(browser *rod.Browser, url string, elementToWaitFor string) (*rod.Page, error) {
+	page := stealth.MustPage(browser)
 
-	err := stealth.MustPage(browser).Navigate(url)
-	if err != nil {
-		fmt.Println("Error navigating: ", err)
-		return nil, err
-
+	// Navigate to the URL
+	if err := page.Navigate(url); err != nil {
+		return page, fmt.Errorf("error navigating: %w", err)
 	}
-	page := stealth.MustPage(browser).MustNavigate(url)
-	page.MustWaitLoad()
 
-	page.MustSetViewport(1920, 1080,
-		2.0,
-		false,
-	)
+	// Wait for load and element to be visible (max 5 seconds)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err := page.Context(ctx).MustWaitLoad().WaitElementsMoreThan(elementToWaitFor, 0)
+	fmt.Println("Waited for load and element")
+
+	if err != nil {
+		if err == context.DeadlineExceeded {
+			fmt.Println("Load and element wait timeout exceeded")
+		} else {
+			fmt.Println("Error waiting for load and element:", err)
+		}
+
+		// If timeout, try to wait for navigation (max 5 seconds)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		page.Context(ctx).WaitNavigation(proto.PageLifecycleEventNameNetworkAlmostIdle)
+		fmt.Println("Waited for navigation")
+	}
+
+	// Set viewport and take screenshot
+	page.MustSetViewport(1920, 1080, 2.0, false)
 
 	return page, nil
 }
@@ -56,7 +75,11 @@ func ScrapeTest() (map[string]string, error) {
 	}
 	defer browser.Close()
 
-	page := browser.MustPage("https://brightdata.com/solutions/rotating-proxies").MustWaitLoad().MustWindowFullscreen()
+	page, err := GetStealthPage(browser, "https://app.zenrows.com/register", ".min-h-screen.flex.bg-secondary")
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
 	// get current page dimensions
 	defer func() {
 		if r := recover(); r != nil {
@@ -69,7 +92,7 @@ func ScrapeTest() (map[string]string, error) {
 }
 
 const (
-	scrollDelay = 150 // milliseconds
+	scrollDelay = 100 // milliseconds
 )
 
 func SlowScrollToHalf(page *rod.Page) error {

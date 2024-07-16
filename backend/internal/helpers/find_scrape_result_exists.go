@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"scrapeit/internal/models"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -92,8 +93,8 @@ func FindScrapeResultExists(client *mongo.Client, endpointId string, groupId pri
 	areSame := true
 	for _, field := range scrapeResult.Fields {
 		for _, potentialField := range resultFields {
-			if field.FieldID == potentialField.FieldID && field.Value != potentialField.Value && field.FieldID != imageFieldId && field.FieldID != linkFieldId {
-				fmt.Println("Field", field.FieldID, "is different")
+			if strings.Trim(potentialField.Value, " ") != "" && field.FieldID == potentialField.FieldID && field.Value != potentialField.Value && field.FieldID != imageFieldId && field.FieldID != linkFieldId {
+				fmt.Println("Field", field.Value, "is different from", potentialField.Value)
 				areSame = false
 				break
 			}

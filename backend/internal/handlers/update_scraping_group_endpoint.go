@@ -22,7 +22,10 @@ func UpdateScrapingGroupEndpoint(c echo.Context) error {
 	if !ok {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
 	}
-
+	cronManager, ok := c.Get("cron").(*cron.CronManager)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
+	}
 	groupIdString := c.Param("groupId")
 	endpointId := c.Param("endpointId")
 
@@ -51,6 +54,16 @@ func UpdateScrapingGroupEndpoint(c echo.Context) error {
 	}
 
 	newEndpoint := req.Endpoint
+
+	foundJob := cronManager.GetJob(groupIdString, endpointId)
+
+	if foundJob != nil && !newEndpoint.Active {
+		cronManager.StopJob(groupIdString, endpointId)
+	}
+
+	if foundJob != nil && !foundJob.Active && newEndpoint.Active {
+		cronManager.StartJob(groupIdString, endpointId)
+	}
 
 	oldEndpoint := group.GetEndpointById(endpointId)
 	if oldEndpoint == nil {

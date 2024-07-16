@@ -73,9 +73,12 @@ func (cm *CronManager) AddJob(job CronManagerJob) {
 	cm.Jobs = append(cm.Jobs, &job)
 	addedJob := cm.getJob(job.GroupID, job.EndpointID)
 	cm.logger.Info("Adding new job", "groupId", job.GroupID, "endpointId", job.EndpointID, "interval", job.Interval)
-	fmt.Println("here")
 
 	entryId, err := cm.cron.AddFunc(addedJob.Interval, func() {
+		if !addedJob.Active {
+			cm.logger.Info("Job inactive", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID)
+			return
+		}
 		if addedJob.Status == CronJobStatusRunning {
 			cm.logger.Info("Job already running", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID)
 			return
@@ -145,6 +148,30 @@ func (cm *CronManager) UpdateJobInterval(groupId, endpointId, interval string) {
 	cm.formatAllJobs()
 }
 
+func (cm *CronManager) StopJob(groupId string, endpointId string) {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+
+	job := cm.getJob(groupId, endpointId)
+	if job != nil {
+		job.Active = false
+		cm.logger.Info("Job stopped", "groupId", groupId, "endpointId", endpointId)
+	}
+
+}
+
+func (cm *CronManager) StartJob(groupId string, endpointId string) {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+
+	job := cm.getJob(groupId, endpointId)
+	if job != nil {
+		job.Active = true
+		cm.logger.Info("Job started", "groupId", groupId, "endpointId", endpointId)
+	}
+
+}
+
 func (cm *CronManager) GetJob(groupId string, endpointId string) *CronManagerJob {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
@@ -201,7 +228,9 @@ func (cm *CronManager) formatAllJobs() {
 		})
 	}
 
+	fmt.Println("--------------------")
 	for _, log := range jobsToLog {
 		fmt.Printf("Job: %v\n", log)
 	}
+	fmt.Println("--------------------")
 }

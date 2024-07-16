@@ -70,6 +70,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
         </div>
         <Select
           isMulti
+          isSearchable={false}
           options={group.endpoints.map((e) => ({
             value: e.id,
             label: e.name,
@@ -77,6 +78,8 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
           classNames={{
             container: (_) => "",
             control: (_) => "select-control",
+            valueContainer: (_) => "select-value-container",
+            multiValue: (_) => "select-multivalue",
           }}
           styles={{
             multiValue: (base, props) => {
@@ -90,7 +93,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
               };
             },
             multiValueLabel: (base, props) => {
-              const { color, textColor } = getBgAndTextColor(props.data.label);
+              const { textColor } = getBgAndTextColor(props.data.label);
               return {
                 ...base,
                 color: textColor,
@@ -104,12 +107,20 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
           }))}
           onChange={(selected) => {
             const ids = selected.map((s) => s.value);
-            setEndpoints(
-              selected.map(
-                (s) => group.endpoints.find((e) => e.id === s.value)!,
-              ),
-            );
-            setParams({ ...params, endpointIds: ids });
+            if (selected.length === 0) {
+              setEndpoints([]);
+              setParams({
+                ...params,
+                endpointIds: group.endpoints.map((e) => e.id),
+              });
+            } else {
+              setEndpoints(
+                selected.map(
+                  (s) => group.endpoints.find((e) => e.id === s.value)!,
+                ),
+              );
+              setParams({ ...params, endpointIds: ids });
+            }
           }}
         />
       </div>

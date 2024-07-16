@@ -36,7 +36,7 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 		urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
 		fmt.Println("Scraping URL: ", urlWithPagination)
 
-		page, err := GetStealthPage(browser, urlWithPagination)
+		page, err := GetStealthPage(browser, urlWithPagination, endpointToScrape.MainElementSelector)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error getting page: %w", err)
 		}
@@ -247,7 +247,7 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 		urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
 		fmt.Println("Scraping URL: ", urlWithPagination)
 
-		page, err := GetStealthPage(browser, urlWithPagination)
+		page, err := GetStealthPage(browser, urlWithPagination, endpointToScrape.MainElementSelector)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error getting page: %w", err)
 		}

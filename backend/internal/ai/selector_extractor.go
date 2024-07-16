@@ -28,7 +28,7 @@ Guidelines:
 Example input:
 {
  "HTML": "<div class=\"some-class\"><span class=\"title_text\">Some title</span><span class=\"price_text\">633 $</span><img class=\"image\" src=\"...\" /></div>",
- "FieldsToExtractSelectorsFor": ["title", "price_value", "price_unit", "image"]
+ "FieldsToExtractSelectorsFor": [{"name": "Title", key: "title", type: "text"}, {"name": "Price", key: "price_value", type: "number"}, {"name": "Currency", key: "price_unit", type: "text"}, {"name": "Thumbnail", key: "image", type: "image"}]
 }
 Your response should always be in the following JSON format:
 {
@@ -138,16 +138,26 @@ func countTokens(messages []openai.ChatCompletionMessage, model string) (int, er
 	return tokenCount, nil
 }
 
-func ExtractSelectorsClaude(html string, fieldsToExtract []string) (ExtractSelectorsResponse, error) {
+func ExtractSelectorsClaude(html string, fieldsToExtract []models.FieldToExtractSelectorsFor) (ExtractSelectorsResponse, error) {
 	ctx := context.Background()
 
 	client := anthropic.NewClient(os.Getenv("ANTHROPIC_API_KEY"))
+
+	fieldsToExtractJsonString, err := json.Marshal(fieldsToExtract)
+	if err != nil {
+		fmt.Println(err)
+		return ExtractSelectorsResponse{}, err
+
+	}
+
+	fieldsToExtractString := string(fieldsToExtractJsonString)
+	fmt.Printf("Fields to extract: %v\n", fieldsToExtractString)
 
 	responseStart := `{"fields":`
 
 	dialogue := []anthropic.Message{
 		anthropic.NewUserTextMessage(fmt.Sprintf(`{HTML: %v, FieldsToExtractSelectorsFor:
-			%v}`, html, fieldsToExtract)),
+			%v}`, html, fieldsToExtractString)),
 		anthropic.NewAssistantTextMessage(responseStart),
 	}
 

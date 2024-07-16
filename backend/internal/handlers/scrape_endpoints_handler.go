@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"scrapeit/internal/cron"
 	"scrapeit/internal/models"
 	"scrapeit/internal/scraper"
 
@@ -28,6 +29,25 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
+	cronManager, ok := c.Get("cron").(*cron.CronManager)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
+	}
+
+	for _, id := range body.EndpointIds {
+		existingJob := cronManager.GetJob(body.GroupId, id)
+		if existingJob != nil && existingJob.Status == cron.CronJobStatusRunning {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Enpoint is already being scraped in background"})
+		}
+		cronManager.StopJob(body.GroupId, id)
+	}
+
+	defer func() {
+		for _, id := range body.EndpointIds {
+			cronManager.StartJob(body.GroupId, id)
+		}
+	}()
+
 	var relevantGroup *models.ScrapeGroup
 
 	groupId, err := primitive.ObjectIDFromHex(body.GroupId)
@@ -49,12 +69,26 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
-	var endpointsToScrape []models.Endpoint
+	var endpointsToScrape []*models.Endpoint
 
 	for _, endpointId := range body.EndpointIds {
 		endpointToScrape := relevantGroup.GetEndpointById(endpointId)
-		if endpointToScrape != nil {
-			endpointsToScrape = append(endpointsToScrape, *endpointToScrape)
+		if endpointToScrape != nil && endpointToScrape.Active && endpointToScrape.Status != models.ScrapeStatusRunning {
+			endpointsToScrape = append(endpointsToScrape, endpointToScrape)
+		}
+	}
+
+	if len(endpointsToScrape) == 0 {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "No idle endpoints to scrape"})
+	}
+
+	for _, endpoint := range endpointsToScrape {
+		// update group and set endpoint status to running
+		endpoint.Status = models.ScrapeStatusRunning
+		_, err := groupCollection.UpdateOne(c.Request().Context(), groupQuery, bson.M{"$set": bson.M{"endpoints": relevantGroup.Endpoints}})
+		if err != nil {
+			fmt.Println("Error updating group:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
 
@@ -74,7 +108,7 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 				resultsChan <- results
 				toReplaceChan <- toReplace
 			}
-		}(endpointToScrape)
+		}(*endpointToScrape)
 	}
 
 	var results []models.ScrapeResult
@@ -99,11 +133,15 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 		}
 	}
 
+	fmt.Println("To replace results:", len(toReplaceResults))
+
 	// Update existing results
 	if len(toReplaceResults) > 0 {
+
 		var bulkWrites []mongo.WriteModel
 		for _, r := range toReplaceResults {
-			update := mongo.NewUpdateOneModel().
+
+			update := mongo.NewUpdateManyModel().
 				SetFilter(bson.M{"uniqueHash": r.UniqueHash, "groupId": r.GroupId}).
 				SetUpdate(bson.M{"$set": bson.M{
 					"fields":    r.Fields,
@@ -115,6 +153,16 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 		_, err = allResultsCollection.BulkWrite(c.Request().Context(), bulkWrites)
 		if err != nil {
 			fmt.Println("Error updating existing results:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+	}
+
+	// update group and set endpoint status to idle
+	for _, endpoint := range endpointsToScrape {
+		endpoint.Status = models.ScrapeStatusIdle
+		_, err := groupCollection.UpdateOne(c.Request().Context(), groupQuery, bson.M{"$set": bson.M{"endpoints": relevantGroup.Endpoints}})
+		if err != nil {
+			fmt.Println("Error updating group:", err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}

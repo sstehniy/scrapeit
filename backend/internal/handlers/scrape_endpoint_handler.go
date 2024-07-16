@@ -15,6 +15,7 @@ import (
 type ScraperEndpointHandlerRequest struct {
 	EndpointId string `json:"endpointId"`
 	GroupId    string `json:"groupId"`
+	Internal   bool   `json:"internal"`
 }
 
 func ScrapeEndpointHandler(c echo.Context) error {
@@ -51,6 +52,20 @@ func ScrapeEndpointHandler(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "Endpoint not found"})
 	}
 
+	if !body.Internal {
+		if !endpointToScrape.Active || endpointToScrape.Status != models.ScrapeStatusRunning {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Endpoint is already being scraped"})
+		}
+
+		endpointToScrape.Status = models.ScrapeStatusRunning
+		_, err = groupCollection.UpdateOne(c.Request().Context(), bson.M{"_id": relevantGroup.ID}, bson.M{"$set": bson.M{"endpoints": relevantGroup.Endpoints}})
+
+		if err != nil {
+			fmt.Println("Error updating group:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+	}
+
 	results, toReplace, err := scraper.ScrapeEndpoint(*endpointToScrape, *relevantGroup, dbClient)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -85,6 +100,14 @@ func ScrapeEndpointHandler(c echo.Context) error {
 			fmt.Println("Error updating existing results:", err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
+	}
+
+	// update group and set endpoint status to idle
+	endpointToScrape.Status = models.ScrapeStatusIdle
+	_, err = groupCollection.UpdateOne(c.Request().Context(), groupQuery, bson.M{"$set": bson.M{"endpoints": relevantGroup.Endpoints}})
+	if err != nil {
+		fmt.Println("Error updating group:", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, results)

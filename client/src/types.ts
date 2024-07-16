@@ -49,8 +49,8 @@ type PaginationConfig = {
 };
 
 enum ScrapeStatus {
-  SUCCESS = "success",
-  FAILED = "failed",
+  RUNNING = "running",
+  IDLE = "idle",
 }
 
 enum SelectorStatus {

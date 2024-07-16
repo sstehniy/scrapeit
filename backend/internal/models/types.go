@@ -95,9 +95,9 @@ type Endpoint struct {
 	MainElementSelector  string           `json:"mainElementSelector" bson:"mainElementSelector"`
 	DetailFieldSelectors []FieldSelector  `json:"detailFieldSelectors" bson:"detailFieldSelectors"`
 	Interval             string           `json:"interval,omitempty" bson:"interval,omitempty"`
-	Active               *bool            `json:"active,omitempty" bson:"active,omitempty"`
-	LastScraped          *time.Time       `json:"lastScraped,omitempty" bson:"lastScraped,omitempty"`
-	Status               *ScrapeStatus    `json:"status,omitempty" bson:"status,omitempty"`
+	Active               bool             `json:"active,omitempty" bson:"active,omitempty"`
+	LastScraped          time.Time        `json:"lastScraped,omitempty" bson:"lastScraped,omitempty"`
+	Status               ScrapeStatus     `json:"status,omitempty" bson:"status,omitempty"`
 }
 
 type PaginationConfigType string
@@ -122,8 +122,8 @@ type PaginationConfig struct {
 type ScrapeStatus string
 
 const (
-	ScrapeStatusSuccess ScrapeStatus = "success"
-	ScrapeStatusFailed  ScrapeStatus = "failed"
+	ScrapeStatusIdle    ScrapeStatus = "idle"
+	ScrapeStatusRunning ScrapeStatus = "running"
 )
 
 type SelectorStatusValue string
@@ -159,10 +159,16 @@ type FieldSelectorsResponse struct {
 	AttributeToGet string `json:"attributeToGet" bson:"attributeToGet"`
 }
 
+type FieldToExtractSelectorsFor struct {
+	Name string `json:"name"`
+	Key  string `json:"key"`
+	Type string `json:"type"`
+}
+
 type FieldSelectorsRequest struct {
-	URL                         string   `json:"url" bson:"url"`
-	MainElementSelector         string   `json:"mainElementSelector" bson:"mainElementSelector"`
-	FieldsToExtractSelectorsFor []string `json:"fieldsToExtractSelectorsFor" bson:"fieldsToExtractSelectorsFor"`
+	URL                         string                       `json:"url" bson:"url"`
+	MainElementSelector         string                       `json:"mainElementSelector" bson:"mainElementSelector"`
+	FieldsToExtractSelectorsFor []FieldToExtractSelectorsFor `json:"fieldsToExtractSelectorsFor" bson:"fieldsToExtractSelectorsFor"`
 }
 
 type ScrapeResult struct {

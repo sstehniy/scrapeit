@@ -37,18 +37,12 @@ func GetMainElementHTMLContent(url, elementSelector string, maxElements int) (st
 	}
 	defer browser.Close()
 
-	page, err := GetStealthPage(browser, url)
+	page, err := GetStealthPage(browser, url, elementSelector)
 	if err != nil {
 
 		return "", err
 	}
 
-	page.MustWaitElementsMoreThan(
-		elementSelector, 0,
-	).MustSetViewport(1920, 1080,
-		2.0,
-		false,
-	)
 	// scroll to the bottom of the page
 	SlowScrollToHalf(page)
 	page.MustWaitLoad()

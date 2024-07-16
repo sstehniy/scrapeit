@@ -696,20 +696,6 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
   const [loadingSampleData, setLoadingSampleData] = useState(false);
   const [sampleData, setSampleData] = useState<ScrapeResultTest[]>([]);
 
-  // useEffect(() => {
-  //   if (isOpen) {
-  //     setCurrentStep(0);
-  //     setFirstStepErrors({});
-  //     setSecondStepErrors({});
-  //     setTestElementError(null);
-  //     setTestElementResult(null);
-  //     setTestElementLoading(false);
-  //     setFieldsWithLoadingSelectors([]);
-  //     setLoadingSampleData(false);
-  //     setSampleData([]);
-  //   }
-  // }, [isOpen]);
-
   useEffect(() => {
     if (editEndpoint) {
       setEndpoint(editEndpoint);
@@ -759,7 +745,13 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
         const response = await axios.post("/api/selectors/extract", {
           url: endpoint.url,
           mainElementSelector: endpoint.mainElementSelector,
-          fieldsToExtractSelectorsFor: [field.key],
+          fieldsToExtractSelectorsFor: [
+            {
+              key: field.key,
+              name: field.name,
+              type: field.type,
+            },
+          ],
         });
         console.log("Extracted selectors", response.data);
         setEndpoint((prev) => ({
@@ -792,7 +784,11 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
     const response = await axios.post("/api/selectors/extract", {
       url: endpoint.url,
       mainElementSelector: endpoint.mainElementSelector,
-      fieldsToExtractSelectorsFor: fields.map((field) => field.key),
+      fieldsToExtractSelectorsFor: fields.map((field) => ({
+        key: field.key,
+        name: field.name,
+        type: field.type,
+      })),
     });
     console.log("Extracted selectors", response.data);
     setEndpoint((prev) => ({
@@ -818,11 +814,19 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
   }, [endpoint.mainElementSelector, endpoint.url, fields]);
 
   const handleTestScrape = useCallback(async () => {
+    const endpointCopy: Endpoint = {
+      ...endpoint,
+      paginationConfig: {
+        ...endpoint.paginationConfig,
+        end: endpoint.paginationConfig.start,
+      },
+    };
+
     const group: ScrapeGroup = {
       id: "1",
       name: "Test Group",
       fields,
-      endpoints: [endpoint],
+      endpoints: [endpointCopy],
       withThumbnail: false,
       created: new Date().toISOString(),
       updated: new Date().toISOString(),

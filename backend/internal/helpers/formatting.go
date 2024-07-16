@@ -16,9 +16,7 @@ func ExtractStringWithRegex(input, pattern string) (string, error) {
 	match := re.FindStringSubmatch(input)
 
 	// If a match is found, return the first captured group (or the entire match if no group)
-	if len(match) > 1 {
-		return match[1], nil
-	} else if len(match) == 1 {
+	if len(match) > 0 {
 		return match[0], nil
 	}
 

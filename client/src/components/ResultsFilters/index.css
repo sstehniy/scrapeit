@@ -1,3 +1,13 @@
 .select-control {
-  @apply input input-bordered w-[350px] !important;
+  @apply input input-bordered w-[450px] !important;
+}
+
+.select-value-container {
+  flex-wrap: nowrap !important;
+  gap: 5px !important;
+  overflow-x: auto !important;
+}
+
+.select-multivalue {
+  flex-shrink: 0 !important;
 }

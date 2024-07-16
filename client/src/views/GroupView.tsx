@@ -18,7 +18,7 @@ import { Button } from "../components/ui/Button";
 import { ConfirmArchiveCurrentGroup } from "../components/modals/ConfirmArchiveCurrentGroup";
 import { ResultsFilters } from "../components/ResultsFilters";
 
-const pageSize = 2000;
+const pageSize = 50;
 
 export type SearchConfig = {
   offset: number;
@@ -164,16 +164,25 @@ export const GroupView: FC = () => {
         groupId: group?.id,
         endpointIds: group?.endpoints.map((e) => e.id),
       }),
+    onMutate: () => {
+      toast.info("Scraping all endpoints...");
+    },
     onSuccess: () => {
-      setSearchConfig({
-        ...defaultSearchConfig,
-        offset: 0,
-      });
+      setSearchConfig((prev) => ({ ...prev, offset: 0 }));
       queryClient.invalidateQueries({ queryKey: ["groupResults", groupId] });
       toast.success("All endpoints scraped successfully");
     },
-    onError: () => {
-      toast.error("Failed to scrape all endpoints");
+    onError: (err) => {
+      console.log(err);
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      if (err.response.data.error) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        toast.warn(err.response.data.error);
+      } else {
+        toast.error("Failed to scrape all endpoints");
+      }
     },
   });
 
@@ -308,6 +317,13 @@ export const GroupView: FC = () => {
             onScrapeAllEndpoints={handleScrapeAllEndpoints}
           />
         )}
+        {group && (
+          <ResultsFilters
+            params={searchConfig}
+            group={group}
+            setParams={setSearchConfig}
+          />
+        )}
       </div>
       {showGroupSchemaSettings && (
         <ConfigureGroupSchema
@@ -329,13 +345,7 @@ export const GroupView: FC = () => {
           onConfirm={showConfirmGroupArchive.onConfirm || (() => {})}
         />
       )}
-      {group && (
-        <ResultsFilters
-          params={searchConfig}
-          group={group}
-          setParams={setSearchConfig}
-        />
-      )}
+
       {!!scrapeResults?.pages.length && group && (
         <ResultsTable
           group={group}
@@ -343,7 +353,7 @@ export const GroupView: FC = () => {
           loadMore={() => {
             fetchNextPage();
           }}
-          height={windowHeight - size.height - 100}
+          height={windowHeight - size.height - 80}
           loading={isLoading || isFetchingNextPage}
           results={scrapeResults.pages
             .flatMap((page) => page.results)

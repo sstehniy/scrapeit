@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 	"os/signal"
 	"scrapeit/internal/cron"
 	"scrapeit/internal/handlers"
-	"scrapeit/internal/helpers"
 	"scrapeit/internal/models"
 	"syscall"
 	"time"
@@ -18,7 +16,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -157,64 +154,16 @@ func main() {
 	fmt.Println("Cleanup completed. Goodbye!")
 }
 
-func prepopulateScrapeGroups(client *mongo.Client) error {
-	// drop the collection
-	collection := client.Database("scrapeit").Collection("scrape_groups")
-	if err := collection.Drop(context.Background()); err != nil {
-		fmt.Println("Error dropping collection:", err)
-		return err
-	}
-
-	resultsCollection := client.Database("scrapeit").Collection("scrape_results")
-	if err := resultsCollection.Drop(context.Background()); err != nil {
-		fmt.Println("Error dropping results collection:", err)
-		return err
-	}
-
-	archivedResultsCollection := client.Database("scrapeit").Collection("archived_scrape_results")
-	if err := archivedResultsCollection.Drop(context.Background()); err != nil {
-		fmt.Println("Error dropping archived results collection:", err)
-		return err
-	}
-
-	byteValue, err := helpers.ReadJson("/internal/data/scraping_groups.json")
-	if err != nil {
-		fmt.Println("Error reading JSON groups:", err)
-		return err
-	}
-	var groups []models.ScrapeGroupLocal
-	if err := json.Unmarshal(byteValue, &groups); err != nil {
-		fmt.Println("Error unmarshaling JSON bytes:", err)
-		return err
-	}
-	collection = client.Database("scrapeit").Collection("scrape_groups")
-	for _, group := range groups {
-		groupDb := models.ScrapeGroup{
-			ID:        primitive.NewObjectID(),
-			Name:      group.Name,
-			Fields:    group.Fields,
-			Endpoints: group.Endpoints,
-		}
-		_, err := collection.InsertOne(context.Background(), groupDb)
-		if err != nil {
-			fmt.Println("Error inserting group:", err)
-			return err
-		} else {
-			fmt.Println("Group inserted successfully", group.Name)
-		}
-
-	}
-	return nil
-}
-
 func setupCronJobs(e *echo.Echo, cronManager *cron.CronManager, client *mongo.Client) {
 	collection := client.Database("scrapeit").Collection("scrape_groups")
 	groups := []models.ScrapeGroup{}
 	cursor, err := collection.Find(context.Background(), bson.M{
 		"versionTag": "",
 	})
+
 	if err != nil {
 		fmt.Println("Error getting groups:", err)
+
 		return
 	}
 	if err := cursor.All(context.Background(), &groups); err != nil {

@@ -6,11 +6,10 @@ require (
 	github.com/go-rod/rod v0.116.0
 	github.com/go-rod/stealth v0.4.9
 	github.com/google/uuid v1.6.0
-	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/liushuangls/go-anthropic v1.6.0
 	github.com/pkoukk/tiktoken-go v0.1.7
-	github.com/robfig/cron/v3 v3.0.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/sashabaranov/go-openai v1.26.2
 	go.mongodb.org/mongo-driver v1.16.0
 )

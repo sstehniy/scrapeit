@@ -108,11 +108,11 @@ export const GroupView: FC = () => {
     hasMore: boolean;
   }>({
     queryKey: ["groupResults", groupId, searchConfig],
-    queryFn: () => {
+    queryFn: ({ pageParam }) => {
       return axios
         .get(`/api/scrape/results/${groupId}`, {
           params: {
-            offset: searchConfig.offset,
+            offset: pageParam,
             limit: searchConfig.limit,
             endpointIds: searchConfig.endpointIds.join(","),
             q: searchConfig.q,
@@ -146,6 +146,17 @@ export const GroupView: FC = () => {
       shouldArchive?: boolean;
     }) => {
       return axios.put(`/api/scrape-groups/${groupId}/schema`, data);
+    },
+    onMutate: (data) => {
+      setShowGroupSchemaSettings(false);
+      setShowConfirmGroupArchive({
+        isOpen: false,
+        onConfirm: null,
+      });
+      if (data.shouldArchive)
+        toast.info(
+          "Updating group schema... Once completed, all current results will disappear",
+        );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["group", groupId] });
@@ -212,11 +223,6 @@ export const GroupView: FC = () => {
               changes,
               versionTag,
               shouldArchive: true,
-            });
-            setShowGroupSchemaSettings(false);
-            setShowConfirmGroupArchive({
-              isOpen: false,
-              onConfirm: null,
             });
           },
         });

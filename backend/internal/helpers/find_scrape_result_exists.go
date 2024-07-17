@@ -14,6 +14,7 @@ import (
 type FindScrapeResultExistsResult struct {
 	Exists       bool
 	NeedsReplace bool
+	RepalceID    *primitive.ObjectID
 }
 
 type ResultDetailFieldWithoutId struct {
@@ -113,6 +114,9 @@ func FindScrapeResultExists(client *mongo.Client, endpointId string, groupId pri
 	}
 
 	result.NeedsReplace = !areSame
+	if !areSame {
+		result.RepalceID = &scrapeResult.ID
+	}
 
 	return result, nil
 }

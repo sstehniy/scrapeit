@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-func ExtractStringWithRegex(input, pattern string) (string, error) {
+func ExtractStringWithRegex(input, pattern string, regexMatchIndexToUse int) (string, error) {
 	// Compile the regex pattern
 	re, err := regexp.Compile(pattern)
 	if err != nil {
@@ -19,11 +19,14 @@ func ExtractStringWithRegex(input, pattern string) (string, error) {
 	for _, m := range match {
 		fmt.Printf("%s ", m)
 	}
-	fmt.Println()
+	fmt.Println("regexMatchIndexToUse: ", regexMatchIndexToUse)
 
 	// If a match is found, return the first captured group (or the entire match if no group)
 	if len(match) > 0 {
-		return match[0], nil
+		if len(match) < regexMatchIndexToUse {
+			return match[0], nil
+		}
+		return match[regexMatchIndexToUse], nil
 	}
 
 	// Return an empty string and an error if no match is found

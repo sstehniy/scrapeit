@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren, useCallback, useState } from "react";
+import { FC, useCallback, useState } from "react";
 import { Endpoint, ScrapeGroup, SelectorStatus } from "../../types";
 import { getColoredEndpointPill } from "../ColoredEndpointPill";
 import { getBaseUrl } from "../../util/url";
@@ -7,6 +7,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { Button } from "../ui/Button";
 import { ConfirmRemoveEndpoint } from "../modals/ConfirmRemoveEndpoint";
+import { WithTooltip } from "../ui/WithTooltip";
 
 type GroupEndpointsProps = {
   group: ScrapeGroup;
@@ -272,19 +273,5 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
         />
       )}
     </div>
-  );
-};
-
-const WithTooltip: FC<
-  PropsWithChildren<{
-    tooltip: string;
-  }>
-> = ({ children, tooltip, ...props }) => {
-  return tooltip ? (
-    <div className="tooltip" data-tip={tooltip}>
-      {children}
-    </div>
-  ) : (
-    <>{children}</>
   );
 };

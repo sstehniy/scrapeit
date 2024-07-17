@@ -126,28 +126,28 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 		}
 	}
 
-	fmt.Println("To replace results:", len(toReplaceResults))
-
 	// Update existing results
 	if len(toReplaceResults) > 0 {
 
 		var bulkWrites []mongo.WriteModel
 		for _, r := range toReplaceResults {
 
-			update := mongo.NewUpdateManyModel().
-				SetFilter(bson.M{"uniqueHash": r.UniqueHash, "groupId": r.GroupId}).
+			update := mongo.NewUpdateOneModel().
+				SetFilter(bson.M{"_id": r.ID}).
 				SetUpdate(bson.M{"$set": bson.M{
 					"fields":    r.Fields,
 					"timestamp": r.Timestamp,
 				}})
 			bulkWrites = append(bulkWrites, update)
 		}
-
-		_, err = allResultsCollection.BulkWrite(c.Request().Context(), bulkWrites)
+		fmt.Println(len(bulkWrites))
+		// !!! TODO: The shit doesnt get updated
+		res, err := allResultsCollection.BulkWrite(c.Request().Context(), bulkWrites)
 		if err != nil {
 			fmt.Println("Error updating existing results:", err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
+		fmt.Printf("Write result: %v", res.MatchedCount)
 	}
 
 	// update group and set endpoint status to idle

@@ -162,6 +162,7 @@ func filterElements(fields []models.Field, results []models.ScrapeResult, endpoi
 		}
 
 		if filterResult.NeedsReplace {
+			element.ID = *filterResult.RepalceID
 			toReplace = append(toReplace, element)
 		} else if !filterResult.Exists {
 			filtered = append(filtered, element)
@@ -202,7 +203,7 @@ func getElementDetails(element *rod.Element, selectors []models.FieldSelector) (
 			}
 		}
 		if selector.Regex != "" {
-			text, err = helpers.ExtractStringWithRegex(text, selector.Regex)
+			text, err = helpers.ExtractStringWithRegex(text, selector.Regex, selector.RegexMatchIndexToUse)
 			if err != nil {
 				// fmt.Printf("Error extracting regex for selector %s: %v\n", selector.Selector, err)
 				text = ""
@@ -303,7 +304,7 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 			}
 		}
 		if selector.Regex != "" {
-			text, err = helpers.ExtractStringWithRegex(text, selector.Regex)
+			text, err = helpers.ExtractStringWithRegex(text, selector.Regex, selector.RegexMatchIndexToUse)
 			if err != nil {
 				// fmt.Printf("Error extracting regex for selector %s: %v\n", selector.Selector, err)
 				text = ""

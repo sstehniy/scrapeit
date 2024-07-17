@@ -54,7 +54,10 @@ export const Modal: FC<PropsWithChildren<ModalProps>> = ({
         zIndex: 1000,
       }}
     >
-      <div className="modal-box max-w-max px-14" ref={modalContentRef}>
+      <div
+        className="modal-box max-w-max px-14 overflow-x-hidden"
+        ref={modalContentRef}
+      >
         <Button
           className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
           onClick={onClose}

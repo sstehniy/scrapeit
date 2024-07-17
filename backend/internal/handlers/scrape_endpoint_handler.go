@@ -71,18 +71,19 @@ func ScrapeEndpointHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Update existing results
 	if len(toReplace) > 0 {
 		var bulkWrites []mongo.WriteModel
 		for _, r := range toReplace {
 			update := mongo.NewUpdateOneModel().
-				SetFilter(bson.M{"uniqueHash": r.UniqueHash, "groupId": r.GroupId}).
+				SetFilter(bson.M{"_id": r.ID}).
 				SetUpdate(bson.M{"$set": bson.M{
 					"fields":    r.Fields,
 					"timestamp": r.Timestamp,
 				}})
 			bulkWrites = append(bulkWrites, update)
 		}
+
+		fmt.Println("Len writes", len(bulkWrites))
 
 		_, err = allResultsCollection.BulkWrite(c.Request().Context(), bulkWrites)
 		if err != nil {

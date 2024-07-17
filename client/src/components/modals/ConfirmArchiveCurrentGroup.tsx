@@ -82,7 +82,7 @@ export const ConfirmArchiveCurrentGroup: FC<
         </p>
         <TextInput
           labelClassName="label"
-          className="input input-bordered w-full"
+          className="input input-bordered flex items-center gap-2"
           wrapperClassName="form-control mb-4"
           label="Version Tag"
           name="version_tag"

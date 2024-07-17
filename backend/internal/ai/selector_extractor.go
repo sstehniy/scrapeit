@@ -1,10 +1,13 @@
 package ai
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"scrapeit/internal/models"
 
@@ -157,4 +160,110 @@ func ExtractSelectorsClaude(html string, fieldsToExtract []models.FieldToExtract
 	}
 
 	return response, nil
+}
+
+func ExtractSelectorsMistral(html string, fieldsToExtract []models.FieldToExtractSelectorsFor) (ExtractSelectorsResponse, error) {
+	ctx := context.Background()
+
+	fieldsToExtractJsonString, err := json.Marshal(fieldsToExtract)
+	if err != nil {
+		fmt.Println(err)
+		return ExtractSelectorsResponse{}, err
+
+	}
+
+	fieldsToExtractString := string(fieldsToExtractJsonString)
+	fmt.Printf("Fields to extract: %v\n", fieldsToExtractString)
+
+	jsonData, err := json.Marshal(map[string]interface{}{
+		"model": "mistral-small-latest",
+		"messages": []map[string]interface{}{
+			{
+				"role":    "system",
+				"content": getSystemPromptFromFile(),
+			},
+			{
+				"role": "user",
+				"content": fmt.Sprintf(`{HTML: %v, FieldsToExtractSelectorsFor:
+					%v}`, html, fieldsToExtractString),
+			},
+		},
+		"response_format": map[string]string{
+			"type": "json_object",
+		},
+	})
+	if err != nil {
+		return ExtractSelectorsResponse{}, fmt.Errorf("error marshaling request data: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.mistral.ai/v1/chat/completions", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return ExtractSelectorsResponse{}, fmt.Errorf("error creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+"wUtGVjXlkkkqKN7Dz2tjyjWlQSYDa2TV")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return ExtractSelectorsResponse{}, fmt.Errorf("error making request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return ExtractSelectorsResponse{}, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	type MistralResponse struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+
+	var response MistralResponse
+
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return ExtractSelectorsResponse{}, fmt.Errorf("error decoding response: %w", err)
+	}
+	fmt.Println(response)
+
+	var extractSelectorsResponse ExtractSelectorsResponse
+	err = json.Unmarshal([]byte(response.Choices[0].Message.Content), &extractSelectorsResponse)
+
+	if err != nil {
+		return ExtractSelectorsResponse{}, fmt.Errorf("error unmarshaling response: %w", err)
+	}
+
+	// resp, err := client.CreateMessages(ctx, anthropic.MessagesRequest{
+	// 	Model:     "claude-3-5-sonnet-20240620",
+	// 	Messages:  dialogue,
+	// 	System:    getSystemPromptFromFile(),
+	// 	MaxTokens: 4096,
+	// })
+	// if err != nil {
+	// 	var e *anthropic.APIError
+	// 	if errors.As(err, &e) {
+	// 		fmt.Printf("Messages error, type: %s, message: %s", e.Type, e.Message)
+	// 	} else {
+	// 		fmt.Printf("Messages error: %v\n", err)
+	// 	}
+	// 	return ExtractSelectorsResponse{}, err
+	// }
+	// fmt.Println(responseStart + resp.Content[0].Text)
+
+	// dataToValidate := []byte(responseStart + resp.Content[0].Text)
+	// var response ExtractSelectorsResponse
+	// err = json.Unmarshal(dataToValidate, &response)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return ExtractSelectorsResponse{}, err
+	// }
+
+	return extractSelectorsResponse, nil
 }

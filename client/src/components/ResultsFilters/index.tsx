@@ -36,7 +36,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
     <div className="flex justify-end gap-4">
       <TextInput
         labelClassName="label"
-        className="input input-bordered w-full"
+        className="input input-bordered flex items-center gap-2"
         wrapperClassName="form-control mb-4"
         label="Search"
         name="q"
@@ -50,7 +50,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
       />
       <TextInput
         labelClassName="label"
-        className="input input-bordered w-full"
+        className="input input-bordered flex items-center gap-2"
         wrapperClassName="form-control mb-4"
         label="Limit"
         name="limit"
@@ -76,7 +76,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
             label: e.name,
           }))}
           classNames={{
-            container: (_) => "",
+            container: (_) => "select-container",
             control: (_) => "select-control",
             valueContainer: (_) => "select-value-container",
             multiValue: (_) => "select-multivalue",

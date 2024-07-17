@@ -136,12 +136,13 @@ const (
 
 // FieldSelector represents a selector for a field
 type FieldSelector struct {
-	ID             string              `json:"id" bson:"id"`
-	FieldID        string              `json:"fieldId" bson:"fieldId"`
-	Selector       string              `json:"selector" bson:"selector"`
-	Regex          string              `json:"regex" bson:"regex"`
-	AttributeToGet string              `json:"attributeToGet" bson:"attributeToGet"`
-	SelectorStatus SelectorStatusValue `json:"selectorStatus" bson:"selectorStatus"`
+	ID                   string              `json:"id" bson:"id"`
+	FieldID              string              `json:"fieldId" bson:"fieldId"`
+	Selector             string              `json:"selector" bson:"selector"`
+	Regex                string              `json:"regex" bson:"regex"`
+	AttributeToGet       string              `json:"attributeToGet" bson:"attributeToGet"`
+	RegexMatchIndexToUse int                 `json:"regexMatchIndexToUse" bson:"regexMatchIndexToUse"`
+	SelectorStatus       SelectorStatusValue `json:"selectorStatus" bson:"selectorStatus"`
 }
 
 // SearchConfig represents search configuration for an endpoint
@@ -153,16 +154,18 @@ type SearchConfig struct {
 }
 
 type FieldSelectorsResponse struct {
-	Field          string `json:"field" bson:"field"`
-	Selector       string `json:"selector" bson:"selector"`
-	Regex          string `json:"regex" bson:"regex"`
-	AttributeToGet string `json:"attributeToGet" bson:"attributeToGet"`
+	Field                string `json:"field" bson:"field"`
+	Selector             string `json:"selector" bson:"selector"`
+	Regex                string `json:"regex" bson:"regex"`
+	RegexMatchIndexToUse int    `json:"regexMatchIndexToUse" bson:"regexMatchIndexToUse"`
+	AttributeToGet       string `json:"attributeToGet" bson:"attributeToGet"`
 }
 
 type FieldToExtractSelectorsFor struct {
-	Name string `json:"name"`
-	Key  string `json:"key"`
-	Type string `json:"type"`
+	Name   string `json:"name"`
+	Key    string `json:"key"`
+	Type   string `json:"type"`
+	Remark string `json:"remark"`
 }
 
 type FieldSelectorsRequest struct {

@@ -65,6 +65,7 @@ type FieldSelector = {
   selector: string;
   attributeToGet: string;
   regex: string;
+  regexMatchIndexToUse: number;
   selectorStatus: SelectorStatus;
 };
 

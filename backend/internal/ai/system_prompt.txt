@@ -29,37 +29,43 @@ Your task is to analyze given HTML and extract unique, but universal CSS selecto
       "field": "title",
       "selector": ".some-class .title_text",
       "attributeToGet": "",
-      "regex": ""
+      "regex": "",
+      "regexMatchIndexToUse": 0
     },
     {
       "field": "price_value",
       "selector": ".some-class .price_text",
       "regex": "\\d+(\\.\\d+)?",
-      "attributeToGet": ""
+      "attributeToGet": "",
+      "regexMatchIndexToUse": 0
     },
     {
       "field": "price_unit",
       "selector": ".some-class .price_text",
       "regex": "[\\$€]",
-      "attributeToGet": ""
+      "attributeToGet": "",
+      "regexMatchIndexToUse": 0
     },
     {
       "field": "image",
       "selector": ".some-class .image",
       "attributeToGet": "src",
-      "regex": ""
+      "regex": "",
+      "regexMatchIndexToUse": 0
     },
     {
       "field": "stat1",
       "selector": ".some-class .stat:nth-child(1)",
       "attributeToGet": "",
-      "regex": ""
+      "regex": "",
+      "regexMatchIndexToUse": 0
     },
     {
       "field": "stat2",
       "selector": ".some-class .stat:nth-child(2)",
       "attributeToGet": "",
-      "regex": ""
+      "regex": "",
+      "regexMatchIndexToUse": 0
     }
   ]
 }

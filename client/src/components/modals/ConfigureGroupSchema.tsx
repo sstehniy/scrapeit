@@ -281,7 +281,7 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
             </div>
             <TextInput
               labelClassName="label"
-              className="input input-bordered w-full"
+              className="input input-bordered flex items-center gap-2"
               wrapperClassName="form-control mb-4"
               label="Name"
               name="name"
@@ -299,7 +299,7 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
             />
             <TextInput
               labelClassName="label"
-              className="input input-bordered w-full"
+              className="input input-bordered flex items-center gap-2"
               wrapperClassName="form-control mb-4"
               label="Key"
               name="key"

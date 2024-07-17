@@ -68,7 +68,7 @@ const FirstStepContent: FC<{
     <div className="w-[450px]">
       <TextInput
         labelClassName="label"
-        className="input input-bordered w-full"
+        className="input input-bordered flex items-center gap-2"
         wrapperClassName="form-control mb-4"
         label="Name"
         name="name"
@@ -85,7 +85,7 @@ const FirstStepContent: FC<{
 
       <TextInput
         labelClassName="label"
-        className="input input-bordered w-full"
+        className="input input-bordered flex items-center gap-2"
         wrapperClassName="form-control mb-4"
         label="Endpoint URL"
         name="endpoint_name"
@@ -102,7 +102,7 @@ const FirstStepContent: FC<{
 
       <TextInput
         labelClassName="label"
-        className="input input-bordered w-full"
+        className="input input-bordered flex items-center gap-2"
         wrapperClassName="form-control mb-4"
         label="Main Element Selector"
         name="main_element_selector"
@@ -156,12 +156,20 @@ const FirstStepContent: FC<{
   );
 };
 
+type Remark = {
+  fieldId: string;
+  remark: string;
+};
+
 const SecondStepContent: FC<{
   endpoint: Endpoint;
   setEndpoint: React.Dispatch<React.SetStateAction<Endpoint>>;
   fields: Field[];
-  handleExtractSelectorsForAllFields: () => Promise<void>;
-  handleExtractSelectorForField: (field: Field) => Promise<void>;
+  handleExtractSelectorsForAllFields: (remarks: Remark[]) => Promise<void>;
+  handleExtractSelectorForField: (
+    field: Field,
+    remark: string,
+  ) => Promise<void>;
   fieldsWithLoadingSelectors: string[];
   handleTestScrape: () => Promise<void>;
   validateSecondStep: (ep: Endpoint) => boolean;
@@ -179,6 +187,9 @@ const SecondStepContent: FC<{
   sampleData,
   validateSecondStep,
 }) => {
+  const [remarks, setRemarks] = useState<Remark[]>(
+    fields.map((field) => ({ fieldId: field.id, remark: "" })),
+  );
   const intervals = [
     {
       label: "Every minute",
@@ -218,15 +229,40 @@ const SecondStepContent: FC<{
       <div>
         Name: <strong>{endpoint.name}</strong>
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 my-2">
         <span>URL:</span>
-        <strong
-          style={{
-            display: "block",
-          }}
-        >
-          {endpoint.url}
-        </strong>
+        <label className="input input-bordered input-sm flex items-center gap-1 w-1/2 ">
+          <input
+            type="text"
+            readOnly
+            className="grow"
+            defaultValue={endpoint.url}
+          />
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(endpoint.url).then(() => {
+                toast.success("Endpoit URL successfully copied to clipboard", {
+                  autoClose: 1000,
+                });
+              });
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1}
+              stroke="currentColor"
+              className="size-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+              />
+            </svg>
+          </button>
+        </label>
       </div>
       <div>
         Main Element Selector: <strong>{endpoint.mainElementSelector}</strong>
@@ -276,7 +312,7 @@ const SecondStepContent: FC<{
         type="text"
         name="name"
         id="name"
-        className="input input-bordered w-full mb-4"
+        className="input input-bordered flex items-center gap-2 w-fullmb-4"
         value={endpoint.paginationConfig.parameter}
         onChange={(e) => {
           const newEndpoint = {
@@ -291,14 +327,15 @@ const SecondStepContent: FC<{
         }}
         required
       />
-      <div className="flex gap-5 mb-10">
+      <div className="flex gap-5 mb-10 w-full">
         <div className="flex-1">
           <label className="label">Start</label>
           <input
             type="number"
             name="name"
             id="name"
-            className="input input-bordered w-full "
+            min={0}
+            className="input input-bordered flex items-center gap-2 w-full"
             value={endpoint.paginationConfig.start}
             onChange={(e) => {
               const newEndpoint = {
@@ -320,7 +357,8 @@ const SecondStepContent: FC<{
             type="number"
             name="name"
             id="name"
-            className="input input-bordered w-full "
+            min={0}
+            className="input input-bordered flex items-center gap-2 w-full"
             value={endpoint.paginationConfig.end}
             onChange={(e) => {
               const newEndpoint = {
@@ -344,7 +382,7 @@ const SecondStepContent: FC<{
             id="name"
             min={1}
             step={1}
-            className="input input-bordered w-full "
+            className="input input-bordered flex items-center gap-2 w-full"
             value={endpoint.paginationConfig.step}
             onChange={(e) => {
               const newEndpoint = {
@@ -367,7 +405,7 @@ const SecondStepContent: FC<{
               id="urlRegexToInsert"
               label="URL Regex To Insert"
               labelClassName="label label"
-              className="input input-bordered w-full"
+              className="input input-bordered flex items-center gap-2"
               value={endpoint.paginationConfig.urlRegexToInsert}
               onChange={(e) => {
                 const newEndpoint = {
@@ -388,7 +426,9 @@ const SecondStepContent: FC<{
       <div className="w-full flex justify-end">
         <Button
           className="btn btn-primary btn-sm mb-2"
-          onClick={handleExtractSelectorsForAllFields}
+          onClick={() => {
+            handleExtractSelectorsForAllFields(remarks);
+          }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -409,37 +449,37 @@ const SecondStepContent: FC<{
       </div>
 
       <div className="w-full">
-        {fields.map((field) => (
+        {fields.map((field, idx) => (
           <div key={field.id}>
             <div className="flex gap-3">
-              <div className="flex-1">
+              <div className="w-36">
                 <TextInput
                   labelClassName="label"
-                  className="input input-bordered w-full"
+                  className="input input-bordered flex items-center gap-2"
                   wrapperClassName="form-control mb-4"
-                  label="Field Name"
+                  label={idx > 0 ? "" : "Field Name"}
                   readOnly
                   disabled
                   value={field.name}
                 />
               </div>
-              <div className="flex-1">
+              <div className="w-36">
                 <TextInput
                   labelClassName="label"
-                  className="input input-bordered w-full"
+                  className="input input-bordered flex items-center gap-2"
                   wrapperClassName="form-control mb-4"
-                  label="Field Key"
+                  label={idx > 0 ? "" : "Field Key"}
                   readOnly
                   disabled
                   value={field.key}
                 />
               </div>
-              <div className="w-1/3 mb-4">
+              <div className="flex-1 mb-4">
                 <TextInput
                   labelClassName="label"
-                  className="input input-bordered w-full mb-1"
+                  className="input input-bordered flex items-center gap-2 w-fullmb-1"
                   wrapperClassName="form-control "
-                  label="Selector"
+                  label={idx > 0 ? "" : "Selector"}
                   value={
                     endpoint.detailFieldSelectors.find(
                       (selector) => selector.fieldId === field.id,
@@ -478,12 +518,12 @@ const SecondStepContent: FC<{
                   </div>
                 )}
               </div>
-              <div className="flex-1">
+              <div className="w-28">
                 <TextInput
                   labelClassName="label"
-                  className="input input-bordered w-full"
+                  className="input input-bordered flex items-center gap-2"
                   wrapperClassName="form-control mb-4"
-                  label="Attribute"
+                  label={idx > 0 ? "" : "Attribute"}
                   value={
                     endpoint.detailFieldSelectors.find(
                       (selector) => selector.fieldId === field.id,
@@ -504,12 +544,12 @@ const SecondStepContent: FC<{
                   }}
                 />
               </div>
-              <div className="flex-1">
+              <div className="w-36">
                 <TextInput
                   labelClassName="label"
-                  className="input input-bordered w-full"
+                  className="input input-bordered flex items-center gap-2"
                   wrapperClassName="form-control mb-4"
-                  label="Regex"
+                  label={idx > 0 ? "" : "Regex"}
                   value={
                     endpoint.detailFieldSelectors.find(
                       (selector) => selector.fieldId === field.id,
@@ -530,8 +570,35 @@ const SecondStepContent: FC<{
                   }}
                 />
               </div>
+              <div className="flex-1">
+                <TextInput
+                  labelClassName="label"
+                  className="input input-bordered flex items-center gap-2"
+                  wrapperClassName="form-control mb-4"
+                  label={idx > 0 ? "" : "Remarks"}
+                  tooltip={
+                    "This data is not saved, only helpfull for smart extract)"
+                  }
+                  value={remarks.find((r) => r.fieldId === field.id)!.remark}
+                  onChange={(e) => {
+                    setRemarks((prev) =>
+                      prev.map((pr) =>
+                        pr.fieldId === field.id
+                          ? { ...pr, remark: e.target.value }
+                          : pr,
+                      ),
+                    );
+                  }}
+                />
+              </div>
               <div
                 className="btn btn-square btn-sm mt-9 btn-outline"
+                onClick={() => {
+                  handleExtractSelectorForField(
+                    field,
+                    remarks.find((r) => r.fieldId === field.id)!.remark,
+                  );
+                }}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -552,11 +619,6 @@ const SecondStepContent: FC<{
                     strokeWidth={1.5}
                     stroke="currentColor"
                     className="size-5"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      handleExtractSelectorForField(field);
-                    }}
                   >
                     <path
                       strokeLinecap="round"
@@ -709,6 +771,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
           attributeToGet: "",
           selector: "",
           regex: "",
+          regexMatchIndexToUse: 0,
           selectorStatus: SelectorStatus.NEW,
         }));
       setEndpoint({
@@ -737,7 +800,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
   }, [endpoint.mainElementSelector, endpoint.url]);
 
   const handleExtractSelectorForField = useCallback(
-    async (field: Field) => {
+    async (field: Field, remark: string) => {
       if (fieldsWithLoadingSelectors.includes(field.id)) {
         return;
       }
@@ -752,6 +815,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
               key: field.key,
               name: field.name,
               type: field.type,
+              remark,
             },
           ],
         });
@@ -781,39 +845,44 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
     [endpoint.mainElementSelector, endpoint.url, fieldsWithLoadingSelectors],
   );
 
-  const handleExtractSelectorsForAllFields = useCallback(async () => {
-    setFieldsWithLoadingSelectors(fields.map((field) => field.id));
-    const response = await axios.post("/api/selectors/extract", {
-      url: endpoint.url,
-      mainElementSelector: endpoint.mainElementSelector,
-      fieldsToExtractSelectorsFor: fields.map((field) => ({
-        key: field.key,
-        name: field.name,
-        type: field.type,
-      })),
-    });
-    console.log("Extracted selectors", response.data);
-    setEndpoint((prev) => ({
-      ...prev,
-      detailFieldSelectors: prev.detailFieldSelectors.map((selector) => {
-        const field = fields.find((f) => f.id === selector.fieldId);
-        console.log("Field", field, selector);
-        const extractedField = response.data.fields.find(
-          (extractedField: any) => extractedField.field === field?.key,
-        );
-        if (!extractedField) {
-          return selector;
-        }
-        return {
-          ...selector,
-          selector: extractedField.selector,
-          attributeToGet: extractedField.attributeToGet,
-          regex: extractedField.regex,
-        };
-      }),
-    }));
-    setFieldsWithLoadingSelectors([]);
-  }, [endpoint.mainElementSelector, endpoint.url, fields]);
+  const handleExtractSelectorsForAllFields = useCallback(
+    async (remarks: Remark[]) => {
+      setFieldsWithLoadingSelectors(fields.map((field) => field.id));
+      const response = await axios.post("/api/selectors/extract", {
+        url: endpoint.url,
+        mainElementSelector: endpoint.mainElementSelector,
+        fieldsToExtractSelectorsFor: fields.map((field) => ({
+          key: field.key,
+          name: field.name,
+          type: field.type,
+          remark: remarks.find((r) => r.fieldId === field.id)?.remark,
+        })),
+      });
+      console.log("Extracted selectors", response.data);
+      setEndpoint((prev) => ({
+        ...prev,
+        detailFieldSelectors: prev.detailFieldSelectors.map((selector) => {
+          const field = fields.find((f) => f.id === selector.fieldId);
+          console.log("Field", field, selector);
+          const extractedField = response.data.fields.find(
+            (extractedField: any) => extractedField.field === field?.key,
+          );
+          if (!extractedField) {
+            return selector;
+          }
+          return {
+            ...selector,
+            selector: extractedField.selector,
+            attributeToGet: extractedField.attributeToGet,
+            regex: extractedField.regex,
+            regexMatchIndexToUse: extractedField.regexMatchIndexToUse,
+          };
+        }),
+      }));
+      setFieldsWithLoadingSelectors([]);
+    },
+    [endpoint.mainElementSelector, endpoint.url, fields],
+  );
 
   const handleTestScrape = useCallback(async () => {
     const endpointCopy: Endpoint = {

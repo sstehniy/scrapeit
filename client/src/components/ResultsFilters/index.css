@@ -11,3 +11,7 @@
 .select-multivalue {
   flex-shrink: 0 !important;
 }
+
+.select-menu {
+  @apply bg-slate-700
+}

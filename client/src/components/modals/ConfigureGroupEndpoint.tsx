@@ -826,6 +826,8 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
             selector.fieldId === field.id
               ? {
                   ...selector,
+                  regexMatchIndexToUse:
+                    response.data.fields[0]?.regexMatchIndexToUse,
                   selector: response.data.fields[0]?.selector || "",
                   attributeToGet: response.data.fields[0]?.attributeToGet || "",
                   regex: response.data.fields[0]?.regex || "",

@@ -76,10 +76,11 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
             label: e.name,
           }))}
           classNames={{
-            container: (_) => "select-container",
-            control: (_) => "select-control",
-            valueContainer: (_) => "select-value-container",
-            multiValue: (_) => "select-multivalue",
+            container: () => "select-container",
+            control: () => "select-control",
+            valueContainer: () => "select-value-container",
+            multiValue: () => "select-multivalue",
+            menu: () => "select-menu",
           }}
           styles={{
             multiValue: (base, props) => {

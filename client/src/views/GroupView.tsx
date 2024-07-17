@@ -163,7 +163,9 @@ export const GroupView: FC = () => {
       queryClient.invalidateQueries({
         queryKey: ["scrapeResultsExist", groupId],
       });
-      toast.success("Group schema updated successfully");
+      toast.success(
+        "Group schema updated successfully. Please modify the endpoints to start automatic scraping",
+      );
     },
     onError: () => {
       toast.error("Failed to update group schema");

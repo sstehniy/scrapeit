@@ -55,28 +55,11 @@ func UpdateScrapingGroupEndpoint(c echo.Context) error {
 
 	newEndpoint := req.Endpoint
 
-	foundJob := cronManager.GetJob(groupIdString, endpointId)
-
-	if foundJob != nil && !newEndpoint.Active {
-		cronManager.StopJob(groupIdString, endpointId)
-	}
-
-	if foundJob != nil && !foundJob.Active && newEndpoint.Active {
-		cronManager.StartJob(groupIdString, endpointId)
-	}
+	cronManager.DestroyJob(groupIdString, endpointId)
 
 	oldEndpoint := group.GetEndpointById(endpointId)
 	if oldEndpoint == nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid Endpoint Id")
-	}
-
-	if newEndpoint.Interval != oldEndpoint.Interval {
-		cronManager, ok := c.Get("cron").(*cron.CronManager)
-		if !ok {
-			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
-		}
-		fmt.Println("Updating job interval")
-		cronManager.UpdateJobInterval(groupIdString, endpointId, newEndpoint.Interval)
 	}
 
 	for _, oldSelector := range oldEndpoint.DetailFieldSelectors {
@@ -112,6 +95,27 @@ func UpdateScrapingGroupEndpoint(c echo.Context) error {
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to update group")
+	}
+
+	someFieldNeedsUpdate := false
+	for _, field := range newEndpoint.DetailFieldSelectors {
+		if field.SelectorStatus != models.SelectorStatusOk {
+			someFieldNeedsUpdate = true
+			break
+		}
+	}
+
+	if !someFieldNeedsUpdate {
+		cronManager.AddJob(cron.CronManagerJob{
+			GroupID:    groupId.Hex(),
+			EndpointID: newEndpoint.ID,
+			Active:     true,
+			Interval:   newEndpoint.Interval,
+			Job: func() error {
+				fmt.Println("Running job for", group.ID.Hex(), newEndpoint.ID)
+				return HandleCallInternalScrapeEndpoint(c.Echo(), group.ID.Hex(), newEndpoint.ID, dbClient, cronManager)
+			},
+		})
 	}
 
 	return c.String(http.StatusOK, "UpdateScrapingGroupEndpoint")

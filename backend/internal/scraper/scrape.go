@@ -89,7 +89,7 @@ func ScrapeTest() (map[string]string, error) {
 }
 
 const (
-	scrollDelay = 100 // milliseconds
+	scrollDelay = 150 // milliseconds
 )
 
 func SlowScrollToHalf(page *rod.Page) error {

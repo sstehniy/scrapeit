@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/xml"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -184,6 +185,12 @@ type ScrapeResult struct {
 	GroupVersionTag string               `json:"groupVersionTag" bson:"groupVersionTag"`
 }
 
+type ScrapeResultDetail struct {
+	ID      string `json:"id" bson:"id"`
+	FieldID string `json:"fieldId" bson:"fieldId"`
+	Value   string `json:"value" bson:"value"`
+}
+
 type ScrapeResultTest struct {
 	ID              primitive.ObjectID       `json:"id"`
 	UniqueHash      string                   `json:"uniqueHash"`
@@ -194,10 +201,34 @@ type ScrapeResultTest struct {
 	GroupVersionTag string                   `json:"groupVersionTag"`
 }
 
-type ScrapeResultDetail struct {
-	ID      string `json:"id" bson:"id"`
-	FieldID string `json:"fieldId" bson:"fieldId"`
-	Value   string `json:"value" bson:"value"`
+type ExportType string
+
+const (
+	ExportTypePDF   ExportType = "pdf"
+	ExportTypeEXCEL ExportType = "excel"
+	ExportTypeCSV   ExportType = "csv"
+	ExportTypeXML   ExportType = "xml"
+	ExportTypeJSON  ExportType = "json"
+)
+
+type ExportScrapeResultDetail struct {
+	XMLName   xml.Name `xml:"field"`
+	ID        string   `json:"id" xml:"id"`
+	FieldName string   `json:"fieldName" xml:"fieldName"`
+	FieldID   string   `json:"fieldId" xml:"fieldId"`
+	Value     string   `json:"value" xml:"value"`
+}
+
+type ExportScrapeResult struct {
+	XMLName         xml.Name                   `xml:"ScrapeResult"`
+	ID              string                     `json:"id" xml:"id"`
+	EndpointName    string                     `json:"endpointName" xml:"endpointName"`
+	EndpointID      string                     `json:"endpointId" xml:"endpointId"`
+	GroupName       string                     `json:"groupName" xml:"groupName"`
+	GroupId         string                     `json:"groupId" xml:"groupId"`
+	Fields          []ExportScrapeResultDetail `json:"fields" xml:"fields>field"`
+	Timestamp       string                     `json:"timestamp" xml:"timestamp"`
+	GroupVersionTag string                     `json:"groupVersionTag" xml:"groupVersionTag"`
 }
 
 type ScrapeResultDetailTest struct {

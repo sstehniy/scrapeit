@@ -5,6 +5,7 @@ import { TextInput } from "../ui/TextInput";
 import Select from "react-select";
 import "./index.css";
 import { getBgAndTextColor } from "../ColoredEndpointPill";
+import axios from "axios";
 
 type ResultsFiltersProps = {
   params: SearchConfig;
@@ -34,6 +35,35 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
 
   return (
     <div className="flex justify-end gap-4">
+      <button
+        className="btn btn-sm btn-primary"
+        onClick={async () => {
+          const response = await axios.post(
+            "http://localhost:5173/api/scrape/results/export/6696e3b1eeec25d85003277a",
+            {
+              type: "xml",
+              fileName: "test",
+              deleteAfterExport: false,
+            },
+            {
+              responseType: "blob",
+            },
+          );
+          const url = window.URL.createObjectURL(new Blob([response.data]));
+          const a = document.createElement("a");
+          a.style.display = "none";
+          a.href = url;
+          a.download = "test.xml";
+
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+
+          window.URL.revokeObjectURL(url);
+        }}
+      >
+        Export
+      </button>
       <TextInput
         labelClassName="label"
         className="input input-bordered flex items-center gap-2"

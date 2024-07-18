@@ -84,7 +84,7 @@ func ExportGroupResultsHandler(c echo.Context) error {
 	}
 
 	var results []models.ScrapeResult
-	sortOpt := options.Find().SetSort(bson.D{{Key: "timestamp", Value: -1}})
+	sortOpt := options.Find().SetSort(bson.D{{Key: "timestampLastUpdated", Value: -1}})
 
 	cursor, err := dbClient.Database("scrapeit").Collection(collectionName).Find(context.Background(), bson.M{
 		"groupId":         groupIdForResults,

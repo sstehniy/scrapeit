@@ -61,12 +61,13 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 			return nil, nil, fmt.Errorf("error getting element details: %w", err)
 		}
 		result := models.ScrapeResult{
-			ID:         primitive.NewObjectID(),
-			UniqueHash: helpers.GenerateScrapeResultHash(getFieldValueByFieldName(relevantGroup.Fields, "link", details)),
-			EndpointID: endpointToScrape.ID,
-			GroupId:    relevantGroup.ID,
-			Fields:     details,
-			Timestamp:  time.Now().Format(time.RFC3339),
+			ID:                  primitive.NewObjectID(),
+			UniqueHash:          helpers.GenerateScrapeResultHash(getFieldValueByFieldName(relevantGroup.Fields, "link", details)),
+			EndpointID:          endpointToScrape.ID,
+			GroupId:             relevantGroup.ID,
+			Fields:              details,
+			TimestampInitial:    time.Now().Format(time.RFC3339),
+			TimestampLastUpdate: time.Now().Format(time.RFC3339),
 		}
 		results = append(results, result)
 	}

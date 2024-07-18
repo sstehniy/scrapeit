@@ -135,13 +135,13 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 			update := mongo.NewUpdateOneModel().
 				SetFilter(bson.M{"_id": r.ID}).
 				SetUpdate(bson.M{"$set": bson.M{
-					"fields":    r.Fields,
-					"timestamp": r.Timestamp,
+					"fields":              r.Fields,
+					"timestampLastUpdate": r.TimestampLastUpdate,
 				}})
 			bulkWrites = append(bulkWrites, update)
 		}
 		fmt.Println(len(bulkWrites))
-		// !!! TODO: The shit doesnt get updated
+
 		res, err := allResultsCollection.BulkWrite(c.Request().Context(), bulkWrites)
 		if err != nil {
 			fmt.Println("Error updating existing results:", err)

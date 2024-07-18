@@ -54,8 +54,12 @@ export const ResultsTable: FC<ResultsTableProps> = ({
       return;
     }
     return [
-      columnHelper.accessor("timestamp", {
-        header: "Timestamp",
+      columnHelper.accessor("timestampInitial", {
+        header: "Created",
+        cell: (row) => parseTime(row.getValue()),
+      }),
+      columnHelper.accessor("timestampLastUpdated", {
+        header: "Updated",
         cell: (row) => parseTime(row.getValue()),
       }),
       columnHelper.accessor("endpointId", {

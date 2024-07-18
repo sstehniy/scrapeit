@@ -176,13 +176,14 @@ type FieldSelectorsRequest struct {
 }
 
 type ScrapeResult struct {
-	ID              primitive.ObjectID   `json:"id" bson:"_id,omitempty"`
-	UniqueHash      string               `json:"uniqueHash" bson:"uniqueHash"`
-	EndpointID      string               `json:"endpointId" bson:"endpointId"`
-	GroupId         primitive.ObjectID   `json:"groupId" bson:"groupId"`
-	Fields          []ScrapeResultDetail `json:"fields" bson:"fields"`
-	Timestamp       string               `json:"timestamp" bson:"timestamp"`
-	GroupVersionTag string               `json:"groupVersionTag" bson:"groupVersionTag"`
+	ID                  primitive.ObjectID   `json:"id" bson:"_id,omitempty"`
+	UniqueHash          string               `json:"uniqueHash" bson:"uniqueHash"`
+	EndpointID          string               `json:"endpointId" bson:"endpointId"`
+	GroupId             primitive.ObjectID   `json:"groupId" bson:"groupId"`
+	Fields              []ScrapeResultDetail `json:"fields" bson:"fields"`
+	TimestampInitial    string               `json:"timestampInitial" bson:"timestampInitial"`
+	TimestampLastUpdate string               `json:"timestampLastUpdated" bson:"timestampLastUpdated"`
+	GroupVersionTag     string               `json:"groupVersionTag" bson:"groupVersionTag"`
 }
 
 type ScrapeResultDetail struct {
@@ -220,15 +221,16 @@ type ExportScrapeResultDetail struct {
 }
 
 type ExportScrapeResult struct {
-	XMLName         xml.Name                   `xml:"ScrapeResult"`
-	ID              string                     `json:"id" xml:"id"`
-	EndpointName    string                     `json:"endpointName" xml:"endpointName"`
-	EndpointID      string                     `json:"endpointId" xml:"endpointId"`
-	GroupName       string                     `json:"groupName" xml:"groupName"`
-	GroupId         string                     `json:"groupId" xml:"groupId"`
-	Fields          []ExportScrapeResultDetail `json:"fields" xml:"fields>field"`
-	Timestamp       string                     `json:"timestamp" xml:"timestamp"`
-	GroupVersionTag string                     `json:"groupVersionTag" xml:"groupVersionTag"`
+	XMLName             xml.Name                   `xml:"ScrapeResult"`
+	ID                  string                     `json:"id" xml:"id"`
+	EndpointName        string                     `json:"endpointName" xml:"endpointName"`
+	EndpointID          string                     `json:"endpointId" xml:"endpointId"`
+	GroupName           string                     `json:"groupName" xml:"groupName"`
+	GroupId             string                     `json:"groupId" xml:"groupId"`
+	Fields              []ExportScrapeResultDetail `json:"fields" xml:"fields>field"`
+	TimestampInitial    string                     `json:"timestampInitial" xml:"timestampInitial"`
+	TimestampLastUpdate string                     `json:"timestampLastUpdated" xml:"timestampLastUpdated"`
+	GroupVersionTag     string                     `json:"groupVersionTag" xml:"groupVersionTag"`
 }
 
 type ScrapeResultDetailTest struct {

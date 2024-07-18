@@ -35,14 +35,15 @@ func transformResultsForExport(inputResults []models.ScrapeResult, group models.
 
 		}
 		data[idx] = models.ExportScrapeResult{
-			ID:              res.ID.Hex(),
-			EndpointName:    getEndpointNameById(&group.Endpoints, res.EndpointID),
-			EndpointID:      res.EndpointID,
-			GroupName:       group.Name,
-			GroupId:         group.ID.Hex(),
-			Fields:          exportDetails,
-			Timestamp:       res.Timestamp,
-			GroupVersionTag: res.GroupVersionTag,
+			ID:                  res.ID.Hex(),
+			EndpointName:        getEndpointNameById(&group.Endpoints, res.EndpointID),
+			EndpointID:          res.EndpointID,
+			GroupName:           group.Name,
+			GroupId:             group.ID.Hex(),
+			Fields:              exportDetails,
+			TimestampInitial:    res.TimestampInitial,
+			TimestampLastUpdate: res.TimestampLastUpdate,
+			GroupVersionTag:     res.GroupVersionTag,
 		}
 	}
 

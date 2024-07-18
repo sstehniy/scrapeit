@@ -56,13 +56,13 @@ func ExtractSelectors(html string, fieldsToExtract []models.FieldToExtractSelect
 				%v}`, html, fieldsToExtractString),
 		},
 	}
-	tokenCount, err := countTokens(dialogue, openai.GPT4o)
+	tokenCount, err := countTokens(dialogue, "gpt-4o-mini")
 	if err != nil {
 		return ExtractSelectorsResponse{}, fmt.Errorf("error counting tokens: %w", err)
 	}
 	fmt.Printf("Token count for request: %d\n", tokenCount)
 	resp, err := client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model:    openai.GPT4o,
+		Model:    "gpt-4o-mini",
 		Messages: dialogue,
 		ResponseFormat: &openai.ChatCompletionResponseFormat{
 			Type: openai.ChatCompletionResponseFormatTypeJSONObject,
@@ -83,7 +83,8 @@ func ExtractSelectors(html string, fieldsToExtract []models.FieldToExtractSelect
 		return ExtractSelectorsResponse{}, err
 	}
 
-	responseTokens, err := countTokens([]openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content}}, openai.GPT4)
+	responseTokens, err := countTokens([]openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content}}, "gpt-4o-mini")
+	fmt.Printf("Input cost: %.2f, Output cost: %.2f", float32(tokenCount)*0.15/1000000, float32(responseTokens)*0.6/1000000)
 	if err != nil {
 		fmt.Printf("Error counting response tokens: %v\n", err)
 	} else {

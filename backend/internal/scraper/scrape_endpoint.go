@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"scrapeit/internal/helpers"
@@ -154,7 +155,7 @@ func filterElements(fields []models.Field, results []models.ScrapeResult, endpoi
 	var toReplace []models.ScrapeResult
 	for _, element := range results {
 
-		filterResult, err := helpers.FindScrapeResultExists(client, endpointId, groupId, element.Fields, fields)
+		filterResult, err := helpers.FindScrapeResultExists(context.Background(), client, endpointId, groupId, element.Fields, fields)
 
 		if err != nil {
 			fmt.Println("Failed to find existing", err)
@@ -162,7 +163,7 @@ func filterElements(fields []models.Field, results []models.ScrapeResult, endpoi
 		}
 
 		if filterResult.NeedsReplace {
-			element.ID = *filterResult.RepalceID
+			element.ID = *filterResult.ReplaceID
 			toReplace = append(toReplace, element)
 		} else if !filterResult.Exists {
 			filtered = append(filtered, element)

@@ -75,7 +75,7 @@ type ScrapeResult = {
   endpointId: string;
   groupId: string;
   fields: ScrapeResultDetail[];
-  timestampLastUpdated: Date;
+  timestampLastUpdate: Date;
   TimestampInitial: Date;
   groupVersionTag: string;
 };

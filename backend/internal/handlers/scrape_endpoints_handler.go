@@ -24,11 +24,15 @@ type ScraperEndpointsHandlerResponse struct {
 }
 
 func ScrapeEndpointsHandler(c echo.Context) error {
+	fmt.Println("here")
 	var body ScraperEndpointsHandlerRequest
 	if err := c.Bind(&body); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
-
+	dbClient, ok := c.Get("db").(*mongo.Client)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
+	}
 	cronManager, ok := c.Get("cron").(*cron.CronManager)
 	if !ok {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
@@ -37,7 +41,7 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 	for _, id := range body.EndpointIds {
 		existingJob := cronManager.GetJob(body.GroupId, id)
 		if existingJob != nil && existingJob.Status == cron.CronJobStatusRunning {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Enpoint is already being scraped in background"})
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Endpoint is already being scraped in background"})
 		}
 		cronManager.StopJob(body.GroupId, id)
 	}
@@ -56,10 +60,7 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 	}
 
 	groupQuery := bson.M{"_id": groupId}
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
+
 	groupCollection := dbClient.Database("scrapeit").Collection("scrape_groups")
 	groupResult := groupCollection.FindOne(c.Request().Context(), groupQuery)
 	if groupResult.Err() != nil {
@@ -73,8 +74,12 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 
 	for _, endpointId := range body.EndpointIds {
 		endpointToScrape := relevantGroup.GetEndpointById(endpointId)
-		if endpointToScrape != nil && endpointToScrape.Active {
+		fmt.Println(*endpointToScrape)
+		if endpointToScrape != nil {
+			fmt.Println("not null")
 			endpointsToScrape = append(endpointsToScrape, endpointToScrape)
+		} else {
+			fmt.Println("null")
 		}
 	}
 
@@ -140,7 +145,7 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 				}})
 			bulkWrites = append(bulkWrites, update)
 		}
-		fmt.Println(len(bulkWrites))
+		fmt.Println("How many will be updated", len(bulkWrites))
 
 		res, err := allResultsCollection.BulkWrite(c.Request().Context(), bulkWrites)
 		if err != nil {

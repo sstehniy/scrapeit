@@ -33,7 +33,7 @@ func (l *SimpleLogger) Error(msg string, keysAndValues ...interface{}) {
 }
 
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	DbClient, err := models.GetDbClient()
 	fmt.Println("Connected to MongoDB")
@@ -114,6 +114,7 @@ func main() {
 	// Endpoints within scrape groups
 	groups.POST("/:groupId/endpoints", handlers.CreateScrapingGroupEndpoint)
 	groups.DELETE("/:groupId/endpoints/:endpointId", handlers.DeleteScrapingGroupEndpoint)
+	groups.DELETE("/:groupId/endpoints/results/:endpointId", handlers.DeleteScrapingGroupEndpointResults)
 	groups.PUT("/:groupId/endpoints/:endpointId", handlers.UpdateScrapingGroupEndpoint)
 
 	// Selector routes
@@ -124,9 +125,9 @@ func main() {
 	ai := api.Group("/ai")
 	ai.POST("/completion", handlers.CompletionHandler)
 	fmt.Println("Starting server on port 8080")
-	fmt.Println("Setting up cron jobs")
-	setupCronJobs(e, cronManager, DbClient)
-	fmt.Println("Cron jobs set up")
+	// fmt.Println("Setting up cron jobs")
+	// setupCronJobs(e, cronManager, DbClient)
+	// fmt.Println("Cron jobs set up")
 
 	go func() {
 		quit := make(chan os.Signal, 1)

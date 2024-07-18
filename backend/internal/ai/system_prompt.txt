@@ -6,12 +6,14 @@ Your task is to analyze given HTML and extract unique, but universal CSS selecto
 3. If a unique selector can't be found for a field, return an empty string as the selector.
 4. If the target value is in an attribute rather than text content, include an "attributeToGet" field specifying the attribute name.
 5. Only include "attributeToGet" when the value is in an attribute, not for text content.
-6. Avoid using data- attributes selectors as they are brittle and may break if the HTML structure changes. Instead, you can use nth-child or nth-of-type.
+6. You can also use data attributes, as well as nth-child or nth-of-type pseudo classes.
+7. Pay special attention to the field "Unique Identifier for Result". The selector you provide for this field will be used to identify scrape results after initial extraction to determine if a result is new or already seen. It could be for example a data attribute or a link href (choose href if no other options found!).
 ## Example Input:
 ```json
 {
-  "HTML": "<div class=\"some-class\"><span class=\"title_text\">Some title</span><span class=\"price_text\">633 $</span><img class=\"image\" src=\"...\" /> <div class=\"stat\">some data</div><div class=\"stat\">some other data</div></div>",
+  "HTML": "<div data-someAttribute="unique_identifier" class=\"some-class\"><span class=\"title_text\">Some title</span><span class=\"price_text\">633 $</span><img class=\"image\" src=\"...\" /> <div class=\"stat\">some data</div><div class=\"stat\">some other data</div></div>",
   "FieldsToExtractSelectorsFor": [
+    {"name": "Unique Identifier for Result", "key": "unique_identifier", "type": "text"},
     {"name": "Title", "key": "title", "type": "text"},
     {"name": "Price", "key": "price_value", "type": "number"},
     {"name": "Currency", "key": "price_unit", "type": "text"},
@@ -25,6 +27,13 @@ Your task is to analyze given HTML and extract unique, but universal CSS selecto
 ```json
 {
   "fields": [
+    {
+      "field": "unique_identifier",
+      "selector": ".some-class",
+      "attributeToGet": "data-someAttribute",
+      "regex": "",
+      "regexMatchIndexToUse": 0
+    },
     {
       "field": "title",
       "selector": ".some-class .title_text",

@@ -43,7 +43,8 @@ func GetStealthPage(browser *rod.Browser, url string, elementToWaitFor string) (
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err := page.Context(ctx).MustWaitLoad().WaitElementsMoreThan(elementToWaitFor, 0)
+	err := page.Context(ctx).MustWaitLoad().MustWaitIdle().WaitElementsMoreThan(elementToWaitFor, 0)
+
 	fmt.Println("Waited for load and element")
 
 	if err != nil {
@@ -89,7 +90,7 @@ func ScrapeTest() (map[string]string, error) {
 }
 
 const (
-	scrollDelay = 150 // milliseconds
+	scrollDelay = 200 // milliseconds
 )
 
 func SlowScrollToHalf(page *rod.Page) error {

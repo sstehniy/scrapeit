@@ -182,7 +182,7 @@ type ScrapeResult struct {
 	GroupId             primitive.ObjectID   `json:"groupId" bson:"groupId"`
 	Fields              []ScrapeResultDetail `json:"fields" bson:"fields"`
 	TimestampInitial    string               `json:"timestampInitial" bson:"timestampInitial"`
-	TimestampLastUpdate string               `json:"timestampLastUpdated" bson:"timestampLastUpdated"`
+	TimestampLastUpdate string               `json:"timestampLastUpdate" bson:"timestampLastUpdate"`
 	GroupVersionTag     string               `json:"groupVersionTag" bson:"groupVersionTag"`
 }
 
@@ -229,7 +229,7 @@ type ExportScrapeResult struct {
 	GroupId             string                     `json:"groupId" xml:"groupId"`
 	Fields              []ExportScrapeResultDetail `json:"fields" xml:"fields>field"`
 	TimestampInitial    string                     `json:"timestampInitial" xml:"timestampInitial"`
-	TimestampLastUpdate string                     `json:"timestampLastUpdated" xml:"timestampLastUpdated"`
+	TimestampLastUpdate string                     `json:"timestampLastUpdate" xml:"timestampLastUpdate"`
 	GroupVersionTag     string                     `json:"groupVersionTag" xml:"groupVersionTag"`
 }
 

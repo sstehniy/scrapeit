@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	LinkFieldKey  = "link"
-	ImageFieldKey = "image"
+	LinkFieldUniqueID = "unique_identifier"
 )
 
 type FindScrapeResultExistsResult struct {
@@ -32,52 +31,27 @@ func FindScrapeResultExists(ctx context.Context, client *mongo.Client, endpointI
 		NeedsReplace: false,
 	}
 
-	linkFieldId, imageFieldId := "", ""
+	uniqueIdFieldId := ""
 	for _, field := range schema {
-		switch field.Key {
-		case LinkFieldKey:
-			linkFieldId = field.ID
-		case ImageFieldKey:
-			imageFieldId = field.ID
+		if field.Key == LinkFieldUniqueID {
+			uniqueIdFieldId = field.ID
 		}
 	}
 
-	linkValue, imageValue := "", ""
+	uniqueIdValue := ""
 	for _, field := range resultFields {
 		switch field.FieldID {
-		case linkFieldId:
-			linkValue = field.Value
-		case imageFieldId:
-			imageValue = field.Value
+		case uniqueIdFieldId:
+			uniqueIdValue = field.Value
 		}
 	}
 
-	potentialResultHashByLink := GenerateScrapeResultHash(linkValue)
+	potentialResultHash := GenerateScrapeResultHash(uniqueIdValue)
 
 	query := bson.M{
 		"endpointId": endpointId,
 		"groupId":    groupId,
-		"$or": []bson.M{
-			{"uniqueHash": potentialResultHashByLink},
-			{
-				"fields": bson.M{
-					"$all": []bson.M{
-						{
-							"$elemMatch": bson.M{
-								"fieldId": imageFieldId,
-								"value":   imageValue,
-							},
-						},
-						{
-							"$elemMatch": bson.M{
-								"fieldId": linkFieldId,
-								"value":   linkValue,
-							},
-						},
-					},
-				},
-			},
-		},
+		"uniqueHash": potentialResultHash,
 	}
 
 	collection := client.Database("scrapeit").Collection("scrape_results")
@@ -97,8 +71,10 @@ func FindScrapeResultExists(ctx context.Context, client *mongo.Client, endpointI
 
 	areSame := true
 	for _, field := range scrapeResult.Fields {
+
 		for _, potentialField := range resultFields {
-			if potentialField.FieldID != linkFieldId &&
+
+			if potentialField.FieldID != uniqueIdFieldId &&
 				field.FieldID == potentialField.FieldID &&
 				field.Value != potentialField.Value {
 				areSame = false

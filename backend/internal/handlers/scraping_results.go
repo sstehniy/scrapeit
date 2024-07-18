@@ -59,7 +59,7 @@ func getScrapeResults(
 			"groupId":    groupObjId,
 			"endpointId": bson.M{"$in": params.EndpointIds},
 		}
-		findOptions.SetSort(bson.D{{Key: "timestampLastUpdated", Value: -1}})
+		findOptions.SetSort(bson.D{{Key: "timestampLastUpdate", Value: -1}})
 	}
 
 	fmt.Println("filter", filter)

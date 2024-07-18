@@ -84,12 +84,14 @@ func ExtractSelectors(html string, fieldsToExtract []models.FieldToExtractSelect
 	}
 
 	responseTokens, err := countTokens([]openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content}}, "gpt-4o-mini")
-	fmt.Printf("Input cost: %.2f, Output cost: %.2f", float32(tokenCount)*0.15/1000000, float32(responseTokens)*0.6/1000000)
+
 	if err != nil {
 		fmt.Printf("Error counting response tokens: %v\n", err)
 	} else {
 		fmt.Printf("Token count for response: %d\n", responseTokens)
 	}
+
+	fmt.Printf("Input cost: %.2f, Output cost: %.2f", float32(tokenCount)*0.15/1000000, float32(responseTokens)*0.6/1000000)
 
 	return response, nil
 

@@ -42,6 +42,26 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
       onConfirm: () => {},
     });
 
+  const handleDeleteEndpointResults = useCallback(
+    async (endpointId: string) => {
+      setShowConfirmRemoveEndpointModal({
+        isOpen: true,
+        onConfirm: async () => {
+          try {
+            await axios.delete(
+              `/api/scrape-groups/${group.id}/endpoints/results/${endpointId}`,
+            );
+            onEndpointChange();
+          } catch (e) {
+            toast.error("Failed to delete endpoint");
+            console.error(e);
+          }
+        },
+      });
+    },
+    [group.id, onEndpointChange],
+  );
+
   const handleDeleteEndpoint = useCallback(
     async (endpointId: string) => {
       setShowConfirmRemoveEndpointModal({
@@ -137,6 +157,26 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
                   </svg>
                 </div>
               )}
+              <Button
+                onClick={() => {
+                  handleDeleteEndpointResults(endpoint.id);
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="size-5 hover:text-warning"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125 2.25 2.25m0 0 2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"
+                  />
+                </svg>
+              </Button>
               <Button
                 onClick={() => {
                   setShowEditEndpointModal({

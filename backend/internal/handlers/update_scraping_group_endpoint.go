@@ -105,7 +105,7 @@ func UpdateScrapingGroupEndpoint(c echo.Context) error {
 		}
 	}
 
-	if !someFieldNeedsUpdate {
+	if !someFieldNeedsUpdate && newEndpoint.Active {
 		cronManager.AddJob(cron.CronManagerJob{
 			GroupID:    groupId.Hex(),
 			EndpointID: newEndpoint.ID,

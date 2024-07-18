@@ -58,7 +58,7 @@ export const ResultsTable: FC<ResultsTableProps> = ({
         header: "Created",
         cell: (row) => parseTime(row.getValue()),
       }),
-      columnHelper.accessor("timestampLastUpdated", {
+      columnHelper.accessor("timestampLastUpdate", {
         header: "Updated",
         cell: (row) => parseTime(row.getValue()),
       }),

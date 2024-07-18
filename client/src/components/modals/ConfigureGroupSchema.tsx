@@ -19,18 +19,26 @@ const defaultFields: Field[] = [
   {
     id: v4(),
     isFullyEditable: false,
-    name: "",
-    key: "link",
-    type: FieldType.LINK,
+    key: "unique_identifier",
+    name: "Unique Identifier for Result",
+    type: FieldType.TEXT,
     order: 0,
   },
   {
     id: v4(),
-    isFullyEditable: false,
-    name: "",
+    isFullyEditable: true,
+    name: "Link",
+    key: "link",
+    type: FieldType.LINK,
+    order: 1,
+  },
+  {
+    id: v4(),
+    isFullyEditable: true,
+    name: "Image",
     key: "image",
     type: FieldType.IMAGE,
-    order: 1,
+    order: 2,
   },
 ];
 
@@ -295,6 +303,7 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
                   e.target.value,
                 );
               }}
+              disabled={!keyEditable(field)}
               required
             />
             <TextInput

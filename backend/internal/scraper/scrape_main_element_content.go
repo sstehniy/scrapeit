@@ -13,18 +13,13 @@ func cleanHTML(input string) string {
 	// Regular expression to match inline styles
 	styleRegex := regexp.MustCompile(`\s*style\s*=\s*"[^"]*"`)
 
-	// Regular expression to match data attributes
-	dataAttrRegex := regexp.MustCompile(`\s*data-[a-zA-Z0-9\-_]+\s*=\s*"[^"]*"`)
-
 	// remove all svgs
 	svgRegex := regexp.MustCompile(`<svg[^>]*>.*?</svg>`)
 
 	// Remove all inline styles and data attributes
 	withoutStyles := styleRegex.ReplaceAllString(noNewlines, "")
 
-	withoutDataAttrs := dataAttrRegex.ReplaceAllString(withoutStyles, "")
-
-	withoutSVGs := svgRegex.ReplaceAllString(withoutDataAttrs, "")
+	withoutSVGs := svgRegex.ReplaceAllString(withoutStyles, "")
 
 	return withoutSVGs
 }

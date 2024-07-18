@@ -71,6 +71,8 @@ func ScrapeEndpointHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
+	fmt.Println("Here go the to replace", toReplace)
+
 	if len(toReplace) > 0 {
 		var bulkWrites []mongo.WriteModel
 		for _, r := range toReplace {

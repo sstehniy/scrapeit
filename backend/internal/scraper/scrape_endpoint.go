@@ -62,7 +62,7 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 		}
 		result := models.ScrapeResult{
 			ID:                  primitive.NewObjectID(),
-			UniqueHash:          helpers.GenerateScrapeResultHash(getFieldValueByFieldName(relevantGroup.Fields, "link", details)),
+			UniqueHash:          helpers.GenerateScrapeResultHash(getFieldValueByFieldName(relevantGroup.Fields, "unique_identifier", details)),
 			EndpointID:          endpointToScrape.ID,
 			GroupId:             relevantGroup.ID,
 			Fields:              details,

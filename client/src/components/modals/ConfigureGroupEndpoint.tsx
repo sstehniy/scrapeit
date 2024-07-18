@@ -31,7 +31,7 @@ const defaultEndpoint: Endpoint = {
   detailFieldSelectors: [],
   mainElementSelector: "",
   interval: "*/5 * * * *",
-  active: true,
+  active: false,
   status: ScrapeStatus.IDLE,
   paginationConfig: {
     type: "url_parameter",
@@ -227,11 +227,16 @@ const SecondStepContent: FC<{
   return (
     <div>
       <div>
-        Name: <strong>{endpoint.name}</strong>
+        <label className="label cursor-pointer w-[600px]">
+          <span className="label-text text-lg">Name:</span>{" "}
+          <strong className="text-xl">{endpoint.name}</strong>
+        </label>
       </div>
-      <div className="flex items-center gap-1 my-2">
-        <span>URL:</span>
-        <label className="input input-bordered input-sm flex items-center gap-1 w-1/2 ">
+      <div className="flex items-center gap-5 mb-2  w-[600px] justify-between">
+        <label className="label cursor-pointer ">
+          <span className="label-text text-lg">URL:</span>
+        </label>
+        <label className="input input-bordered input-sm flex items-center gap-1 flex-1 ">
           <input
             type="text"
             readOnly
@@ -265,27 +270,54 @@ const SecondStepContent: FC<{
         </label>
       </div>
       <div>
-        Main Element Selector: <strong>{endpoint.mainElementSelector}</strong>
+        <label className="label cursor-pointer  w-[600px] mb-2">
+          <span className="label-text text-lg">
+            Scrape in backgroundMain Element Selector:
+          </span>
+          <strong>{endpoint.mainElementSelector}</strong>
+        </label>
       </div>
-      <label className="label">Scrape Interval</label>
-      <select
-        className="select select-bordered w-full mb-4"
-        value={endpoint.interval}
-        onChange={(e) => {
-          const newEndpoint = {
-            ...endpoint,
-            interval: e.target.value,
-          };
-          validateSecondStep(newEndpoint);
-          setEndpoint(newEndpoint);
-        }}
-      >
-        {intervals.map((interval) => (
-          <option key={interval.value} value={interval.value}>
-            {interval.label}
-          </option>
-        ))}
-      </select>
+      <div className="form-control  w-[600px] mb-2">
+        <label className="label cursor-pointer">
+          <span className="label-text text-lg">Scrape in background</span>
+          <input
+            type="checkbox"
+            className="toggle"
+            checked={endpoint.active}
+            onChange={() => {
+              const newEndpoint = {
+                ...endpoint,
+                active: !endpoint.active,
+              };
+              validateSecondStep(newEndpoint);
+              setEndpoint(newEndpoint);
+            }}
+          />
+        </label>
+      </div>
+      {endpoint.active && (
+        <>
+          <label className="label">Scrape Interval</label>
+          <select
+            className="select select-bordered w-full mb-4"
+            value={endpoint.interval}
+            onChange={(e) => {
+              const newEndpoint = {
+                ...endpoint,
+                interval: e.target.value,
+              };
+              validateSecondStep(newEndpoint);
+              setEndpoint(newEndpoint);
+            }}
+          >
+            {intervals.map((interval) => (
+              <option key={interval.value} value={interval.value}>
+                {interval.label}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
       <label className="label">Pagination Config</label>
       <select
         className="select select-bordered w-full mb-4 "

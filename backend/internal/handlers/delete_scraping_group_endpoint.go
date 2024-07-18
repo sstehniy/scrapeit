@@ -39,7 +39,7 @@ func deleteScrapingGroupEndpoint(dbClient *mongo.Client, groupId, endpointId str
 
 	// remove all scrape results for this endpoint
 	scrapeResultsCollection := dbClient.Database("scrapeit").Collection("scrape_results")
-	_, err = scrapeResultsCollection.DeleteMany(context.TODO(), bson.M{"endpointId": endpointId, "groupId": groupId})
+	_, err = scrapeResultsCollection.DeleteMany(context.TODO(), bson.M{"endpointId": endpointId, "groupId": groupIdObj})
 
 	return err
 }

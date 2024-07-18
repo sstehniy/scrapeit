@@ -2,20 +2,30 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"scrapeit/internal/cron"
 
 	"github.com/labstack/echo/v4"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func deleteScrapingGroupEndpointResults(dbClient *mongo.Client, groupId, endpointId string) error {
-
+	// print params
+	fmt.Printf("groupId: %v\n", groupId)
+	fmt.Printf("endpointId: %v\n", endpointId)
 	// remove all scrape results for this endpoint
 	scrapeResultsCollection := dbClient.Database("scrapeit").Collection("scrape_results")
-	_, err := scrapeResultsCollection.DeleteMany(context.TODO(), bson.M{"endpointId": endpointId, "groupId": groupId})
+	groupIdObj, err := primitive.ObjectIDFromHex(groupId)
+	if err != nil {
+		return err
+	}
+	result, err := scrapeResultsCollection.DeleteMany(context.TODO(), bson.M{"endpointId": endpointId, "groupId": groupIdObj})
+
+	fmt.Printf("Delete count: %v\n", result.DeletedCount)
 
 	return err
 }

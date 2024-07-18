@@ -99,6 +99,7 @@ func main() {
 	scrape.GET("/test", handlers.Scrape)
 	scrape.GET("/results/:groupId", handlers.GetScrapingResults)
 	scrape.GET("/results/not-empty/:groupId", handlers.GetScrapingResultsNotEmpty)
+	scrape.POST("/results/export/:groupId", handlers.ExportGroupResultsHandler)
 	scrape.POST("/endpoints", handlers.ScrapeEndpointsHandler)
 	scrape.POST("/endpoint-test", handlers.ScrapeEndpointTestHandler)
 

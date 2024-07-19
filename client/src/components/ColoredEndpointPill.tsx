@@ -34,7 +34,7 @@ export const getColoredEndpointPill = (
   const { color, textColor } = getBgAndTextColor(name);
   return (
     <span
-      className="px-2 py-1 rounded-xl text-sm font-medium"
+      className="px-2 py-1 rounded-xl text-sm font-medium text-nowrap"
       style={{
         backgroundColor: color,
         color: textColor,

@@ -46,7 +46,7 @@ func FindScrapeResultExists(ctx context.Context, client *mongo.Client, endpointI
 		}
 	}
 
-	potentialResultHash := GenerateScrapeResultHash(uniqueIdValue)
+	potentialResultHash := GenerateScrapeResultHash(endpointId + uniqueIdValue)
 
 	query := bson.M{
 		"endpointId": endpointId,
@@ -76,6 +76,7 @@ func FindScrapeResultExists(ctx context.Context, client *mongo.Client, endpointI
 
 			if potentialField.FieldID != uniqueIdFieldId &&
 				field.FieldID == potentialField.FieldID &&
+				potentialField.Value != "" &&
 				field.Value != potentialField.Value {
 				areSame = false
 				break

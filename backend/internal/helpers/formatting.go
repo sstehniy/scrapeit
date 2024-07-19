@@ -36,28 +36,23 @@ func ExtractStringWithRegex(input, pattern string, regexMatchIndexToUse int) (st
 	return "", fmt.Errorf("no match found")
 }
 
-func CastTextNumberStringToFloat(priceStrAny interface{}) float64 {
-	if priceStrAny == nil {
-		return 0
-	}
-	// Convert the input to a string
-	priceStr := fmt.Sprintf("%v", priceStrAny)
-
+func CastPriceStringToFloat(priceStr string) float64 {
 	// Remove currency symbols and spaces
 	currencySymbols := regexp.MustCompile(`[^\d.,-]`)
 	cleanedStr := currencySymbols.ReplaceAllString(priceStr, "")
 	cleanedStr = strings.ReplaceAll(cleanedStr, " ", "")
 
-	// Identify and handle different formatting styles
+	// Handle different formatting styles
+	// Case: Multiple dots or multiple commas
 	if strings.Count(cleanedStr, ".") > 1 {
-		// Case: Dots as thousand separators, comma as decimal
+		// Assume dots as thousand separators and comma as decimal
 		cleanedStr = strings.ReplaceAll(cleanedStr, ".", "")
 		cleanedStr = strings.Replace(cleanedStr, ",", ".", 1)
 	} else if strings.Count(cleanedStr, ",") > 1 {
-		// Case: Commas as thousand separators, dot as decimal
+		// Assume commas as thousand separators and dot as decimal
 		cleanedStr = strings.ReplaceAll(cleanedStr, ",", "")
 	} else if strings.Count(cleanedStr, ",") == 1 && strings.Count(cleanedStr, ".") == 1 {
-		// Mixed case: Assume last occurrence is the decimal separator
+		// Mixed case: Assume the last occurrence is the decimal separator
 		if strings.LastIndex(cleanedStr, ".") > strings.LastIndex(cleanedStr, ",") {
 			cleanedStr = strings.Replace(cleanedStr, ",", "", -1)
 		} else {
@@ -67,6 +62,13 @@ func CastTextNumberStringToFloat(priceStrAny interface{}) float64 {
 	} else if strings.Count(cleanedStr, ",") == 1 {
 		// Case: Single comma, assume decimal separator
 		cleanedStr = strings.Replace(cleanedStr, ",", ".", 1)
+	} else if strings.Count(cleanedStr, ".") == 1 {
+		// Case: Single dot
+		parts := strings.Split(cleanedStr, ".")
+		if len(parts[1]) > 2 {
+			// If there are more than two decimal places, assume it's a thousand separator
+			cleanedStr = strings.ReplaceAll(cleanedStr, ".", "")
+		}
 	}
 
 	// Convert the cleaned string to float64
@@ -74,8 +76,7 @@ func CastTextNumberStringToFloat(priceStrAny interface{}) float64 {
 	if err != nil {
 		return 0
 	}
-
-	fmt.Println("Float value: ", math.Round(floatVal*100)/100)
+	fmt.Printf("Original value: %v, Float value: %f \n", priceStr, math.Round(floatVal*100)/100)
 
 	return math.Round(floatVal*100) / 100
 }

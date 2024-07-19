@@ -40,10 +40,10 @@ func GetStealthPage(browser *rod.Browser, url string, elementToWaitFor string) (
 	}
 
 	// Wait for load and element to be visible (max 5 seconds)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	err := page.Context(ctx).MustWaitLoad().MustWaitIdle().WaitElementsMoreThan(elementToWaitFor, 0)
+	err := page.Context(ctx).MustWaitLoad().MustWaitIdle().MustWaitStable().WaitElementsMoreThan(elementToWaitFor, 0)
 
 	fmt.Println("Waited for load and element")
 
@@ -122,8 +122,8 @@ func SlowScrollToHalf(page *rod.Page) error {
 			return fmt.Errorf("failed to scroll: %w", err)
 		}
 
-		// Wait for a short time to allow content to load
 		time.Sleep(scrollDelay * time.Millisecond)
+		page.MustWaitRequestIdle()
 
 		// Print progress
 		fmt.Printf("\rScrolling: %d/%d pixels", currentScroll, totalHeight)
@@ -180,8 +180,8 @@ func SlowScrollToBottom(page *rod.Page) error {
 			return fmt.Errorf("failed to scroll: %w", err)
 		}
 
-		// Wait for a short time to allow content to load
 		time.Sleep(scrollDelay * time.Millisecond)
+		page.MustWaitRequestIdle()
 
 		// Print progress
 		fmt.Printf("\rScrolling: %d/%d pixels", currentScroll, totalHeight)

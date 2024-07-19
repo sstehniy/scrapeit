@@ -18,7 +18,7 @@ import { Button } from "../components/ui/Button";
 import { ConfirmArchiveCurrentGroup } from "../components/modals/ConfirmArchiveCurrentGroup";
 import { ResultsFilters } from "../components/ResultsFilters";
 
-const pageSize = 50;
+const pageSize = 500;
 
 export type SearchConfig = {
   offset: number;

@@ -72,67 +72,69 @@ export const ResultsTable: FC<ResultsTableProps> = ({
           );
         },
       }),
-      ...group.fields.map((field) =>
-        columnHelper.accessor(field.name, {
-          header: field.name,
-          cell: (row) => {
-            const value = row.row.original.fields.find(
-              (result: any) => result.fieldId === field.id,
-            );
+      ...group.fields
+        .filter((f) => f.key !== "unique_identifier")
+        .map((field) =>
+          columnHelper.accessor(field.name, {
+            header: field.name,
+            cell: (row) => {
+              const value = row.row.original.fields.find(
+                (result: any) => result.fieldId === field.id,
+              );
 
-            switch (field.type) {
-              case "image": {
-                let imageUrl = value?.value;
-                const endpoint = group.endpoints.find(
-                  (e) => e.id === row.row.original.endpointId,
-                );
-                if (imageUrl && imageUrl.startsWith("/")) {
-                  const baseLink = getBaseUrl(endpoint?.url || "", true);
-                  imageUrl = `${baseLink}${imageUrl}`;
-                }
-                return (
-                  <div className="shrink-0 w-28">
-                    <img
-                      src={
-                        imageUrl ||
-                        "https://via.assets.so/img.jpg?w=135&h=100&tc=grey&bg=lightgrey&t=thumbnail"
-                      }
-                      alt={field.name}
-                      loading="lazy"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "contain",
-                      }}
-                    />
-                  </div>
-                );
-              }
-              case "link": {
-                const endpoint = group.endpoints.find(
-                  (e) => e.id === row.row.original.endpointId,
-                );
-                if (value?.value.startsWith("http")) {
+              switch (field.type) {
+                case "image": {
+                  let imageUrl = value?.value;
+                  const endpoint = group.endpoints.find(
+                    (e) => e.id === row.row.original.endpointId,
+                  );
+                  if (imageUrl && imageUrl.startsWith("/")) {
+                    const baseLink = getBaseUrl(endpoint?.url || "", true);
+                    imageUrl = `${baseLink}${imageUrl}`;
+                  }
                   return (
-                    <a href={value?.value} target="_blank">
+                    <div className="shrink-0 w-28">
+                      <img
+                        src={
+                          imageUrl ||
+                          "https://via.assets.so/img.jpg?w=135&h=100&tc=grey&bg=lightgrey&t=thumbnail"
+                        }
+                        alt={field.name}
+                        loading="lazy"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                        }}
+                      />
+                    </div>
+                  );
+                }
+                case "link": {
+                  const endpoint = group.endpoints.find(
+                    (e) => e.id === row.row.original.endpointId,
+                  );
+                  if (value?.value.startsWith("http")) {
+                    return (
+                      <a href={value?.value} target="_blank">
+                        Link
+                      </a>
+                    );
+                  }
+                  const baseLink = getBaseUrl(endpoint?.url || "", true);
+
+                  return (
+                    <a href={`${baseLink}${value?.value}`} target="_blank">
                       Link
                     </a>
                   );
                 }
-                const baseLink = getBaseUrl(endpoint?.url || "", true);
-
-                return (
-                  <a href={`${baseLink}${value?.value}`} target="_blank">
-                    Link
-                  </a>
-                );
+                default:
+                  return value?.value;
               }
-              default:
-                return value?.value;
-            }
-          },
-        }),
-      ),
+            },
+          }),
+        ),
     ];
   }, [group, renderResults]);
 

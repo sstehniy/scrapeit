@@ -53,7 +53,9 @@ func getScrapeResults(
 
 	if params.Q != "" {
 		fmt.Println("searching for", params.Q)
-		filter["fields"] = bson.M{"$elemMatch": bson.M{"value": bson.M{"$regex": params.Q, "$options": "i"}}}
+		filter["$text"] = bson.M{"$search": "\"" + params.Q + "\""}
+		findOptions.SetSort(bson.M{"score": bson.M{"$meta": "textScore"}})
+		findOptions.SetProjection(bson.M{"score": bson.M{"$meta": "textScore"}})
 	} else {
 		filter = bson.M{
 			"groupId":    groupObjId,

@@ -62,7 +62,7 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 		}
 		result := models.ScrapeResult{
 			ID:                  primitive.NewObjectID(),
-			UniqueHash:          helpers.GenerateScrapeResultHash(getFieldValueByFieldName(relevantGroup.Fields, "unique_identifier", details)),
+			UniqueHash:          helpers.GenerateScrapeResultHash(endpointToScrape.ID + getFieldValueByFieldName(relevantGroup.Fields, "unique_identifier", details)),
 			EndpointID:          endpointToScrape.ID,
 			GroupId:             relevantGroup.ID,
 			Fields:              details,
@@ -184,31 +184,36 @@ func filterElements(fields []models.Field, results []models.ScrapeResult, endpoi
 
 func getElementDetails(element *rod.Element, selectors []models.FieldSelector) ([]models.ScrapeResultDetail, error) {
 	details := make([]models.ScrapeResultDetail, 0, len(selectors))
+
 	for _, selector := range selectors {
+		text := ""
 		fieldElement, err := element.Element(selector.Selector)
-		if err != nil {
 
-			fmt.Printf("Error finding element for selector %s: %v\n", selector.Selector, err)
-			details = append(details, models.ScrapeResultDetail{
-				ID:      uuid.New().String(),
-				FieldID: selector.FieldID,
-				Value:   "",
-			})
-			continue
-		}
-		text := fieldElement.MustEval("() => this.textContent").String()
-
-		if selector.AttributeToGet != "" {
-			attr, err := fieldElement.Attribute(selector.AttributeToGet)
-			if err == nil {
-				text = *attr
+		if err == nil {
+			text = fieldElement.MustEval("() => this.textContent").String()
+			if strings.TrimSpace(selector.AttributeToGet) != "" {
+				if attr, err := fieldElement.Attribute(selector.AttributeToGet); err == nil && attr != nil {
+					text = *attr
+				}
+			}
+			if strings.TrimSpace(selector.Regex) != "" {
+				if extractedText, err := helpers.ExtractStringWithRegex(text, selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+					text = extractedText
+				}
 			}
 		}
-		if selector.Regex != "" {
-			text, err = helpers.ExtractStringWithRegex(text, selector.Regex, selector.RegexMatchIndexToUse)
-			if err != nil {
-				// fmt.Printf("Error extracting regex for selector %s: %v\n", selector.Selector, err)
-				text = ""
+
+		if strings.TrimSpace(text) == "" {
+			// Try to get data from the element itself if fieldElement is not found or text is empty
+			if strings.TrimSpace(selector.AttributeToGet) != "" {
+				if attr, err := element.Attribute(selector.AttributeToGet); err == nil && attr != nil {
+					text = *attr
+				}
+			}
+			if strings.TrimSpace(selector.Regex) != "" {
+				if extractedText, err := helpers.ExtractStringWithRegex(text, selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+					text = extractedText
+				}
 			}
 		}
 
@@ -217,8 +222,10 @@ func getElementDetails(element *rod.Element, selectors []models.FieldSelector) (
 			FieldID: selector.FieldID,
 			Value:   text,
 		}
+
 		details = append(details, detail)
 	}
+
 	return details, nil
 }
 
@@ -284,41 +291,51 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 
 func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelector) ([]models.ScrapeResultDetailTest, error) {
 	details := make([]models.ScrapeResultDetailTest, 0, len(selectors))
+
 	for _, selector := range selectors {
+		text := ""
 		fieldElement, err := element.Element(selector.Selector)
-		if err != nil {
 
-			fmt.Printf("Error finding element for selector %s: %v\n", selector.Selector, err)
-			details = append(details, models.ScrapeResultDetailTest{
-				ID:      uuid.New().String(),
-				FieldID: selector.FieldID,
-				Value:   "",
-				RawData: "",
-			})
-			continue
-		}
-		text := fieldElement.MustEval("() => this.textContent").String()
-
-		if selector.AttributeToGet != "" {
-			attr, err := fieldElement.Attribute(selector.AttributeToGet)
-			if err == nil {
-				text = *attr
+		if err == nil {
+			text = fieldElement.MustEval("() => this.textContent").String()
+			if strings.TrimSpace(selector.AttributeToGet) != "" {
+				if attr, err := fieldElement.Attribute(selector.AttributeToGet); err == nil && attr != nil {
+					text = *attr
+				}
+			}
+			if strings.TrimSpace(selector.Regex) != "" {
+				if extractedText, err := helpers.ExtractStringWithRegex(text, selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+					text = extractedText
+				}
 			}
 		}
-		if selector.Regex != "" {
-			text, err = helpers.ExtractStringWithRegex(text, selector.Regex, selector.RegexMatchIndexToUse)
-			if err != nil {
-				// fmt.Printf("Error extracting regex for selector %s: %v\n", selector.Selector, err)
-				text = ""
+
+		if text == "" {
+			// Try to get data from the element itself if fieldElement is not found or text is empty
+			if strings.TrimSpace(selector.AttributeToGet) != "" {
+				if attr, err := element.Attribute(selector.AttributeToGet); err == nil && attr != nil {
+					text = *attr
+				}
 			}
+			if strings.TrimSpace(selector.Regex) != "" {
+				if extractedText, err := helpers.ExtractStringWithRegex(text, selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+					text = extractedText
+				}
+			}
+		}
+
+		rawData := ""
+		if fieldElement != nil {
+			rawData = fieldElement.MustHTML()
 		}
 
 		detail := models.ScrapeResultDetailTest{
 			ID:      uuid.New().String(),
 			FieldID: selector.FieldID,
 			Value:   text,
-			RawData: fieldElement.MustHTML(),
+			RawData: rawData,
 		}
+
 		details = append(details, detail)
 	}
 

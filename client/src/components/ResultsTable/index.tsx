@@ -1,5 +1,5 @@
 import { FC, useMemo } from "react";
-import { ScrapeGroup, ScrapeResult } from "../../types";
+import { FieldType, ScrapeGroup, ScrapeResult } from "../../types";
 import {
   createColumnHelper,
   flexRender,
@@ -51,7 +51,7 @@ export const ResultsTable: FC<ResultsTableProps> = ({
 
   const columns = useMemo(() => {
     if (!group) {
-      return;
+      return [];
     }
     return [
       columnHelper.accessor("timestampInitial", {
@@ -83,7 +83,7 @@ export const ResultsTable: FC<ResultsTableProps> = ({
               );
 
               switch (field.type) {
-                case "image": {
+                case FieldType.IMAGE: {
                   let imageUrl = value?.value;
                   const endpoint = group.endpoints.find(
                     (e) => e.id === row.row.original.endpointId,
@@ -110,7 +110,7 @@ export const ResultsTable: FC<ResultsTableProps> = ({
                     </div>
                   );
                 }
-                case "link": {
+                case FieldType.LINK: {
                   const endpoint = group.endpoints.find(
                     (e) => e.id === row.row.original.endpointId,
                   );
@@ -136,7 +136,7 @@ export const ResultsTable: FC<ResultsTableProps> = ({
           }),
         ),
     ];
-  }, [group, renderResults]);
+  }, [group]);
 
   const table = useReactTable({
     data: renderResults || [],

@@ -42,7 +42,7 @@ func FindScrapeResultExists(ctx context.Context, client *mongo.Client, endpointI
 	for _, field := range resultFields {
 		switch field.FieldID {
 		case uniqueIdFieldId:
-			uniqueIdValue = field.Value
+			uniqueIdValue = field.Value.(string)
 		}
 	}
 

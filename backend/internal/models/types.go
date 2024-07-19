@@ -187,9 +187,9 @@ type ScrapeResult struct {
 }
 
 type ScrapeResultDetail struct {
-	ID      string `json:"id" bson:"id"`
-	FieldID string `json:"fieldId" bson:"fieldId"`
-	Value   string `json:"value" bson:"value"`
+	ID      string      `json:"id" bson:"id"`
+	FieldID string      `json:"fieldId" bson:"fieldId"`
+	Value   interface{} `json:"value" bson:"value"`
 }
 
 type ScrapeResultTest struct {
@@ -213,11 +213,11 @@ const (
 )
 
 type ExportScrapeResultDetail struct {
-	XMLName   xml.Name `xml:"field"`
-	ID        string   `json:"id" xml:"id"`
-	FieldName string   `json:"fieldName" xml:"fieldName"`
-	FieldID   string   `json:"fieldId" xml:"fieldId"`
-	Value     string   `json:"value" xml:"value"`
+	XMLName   xml.Name    `xml:"field"`
+	ID        string      `json:"id" xml:"id"`
+	FieldName string      `json:"fieldName" xml:"fieldName"`
+	FieldID   string      `json:"fieldId" xml:"fieldId"`
+	Value     interface{} `json:"value" xml:"value"`
 }
 
 type ExportScrapeResult struct {
@@ -234,10 +234,10 @@ type ExportScrapeResult struct {
 }
 
 type ScrapeResultDetailTest struct {
-	ID      string `json:"id"`
-	FieldID string `json:"fieldId"`
-	Value   string `json:"value"`
-	RawData string `json:"rawData"`
+	ID      string      `json:"id"`
+	FieldID string      `json:"fieldId"`
+	Value   interface{} `json:"value"`
+	RawData string      `json:"rawData"`
 }
 
 type FieldChangeType string

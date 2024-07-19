@@ -55,14 +55,14 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 
 	results := make([]models.ScrapeResult, 0, len(allElements))
 	for _, element := range allElements {
-		details, err := getElementDetails(element, endpointToScrape.DetailFieldSelectors)
+		details, err := getElementDetails(element, endpointToScrape.DetailFieldSelectors, relevantGroup.Fields)
 
 		if err != nil {
 			return nil, nil, fmt.Errorf("error getting element details: %w", err)
 		}
 		result := models.ScrapeResult{
 			ID:                  primitive.NewObjectID(),
-			UniqueHash:          helpers.GenerateScrapeResultHash(endpointToScrape.ID + getFieldValueByFieldKey(relevantGroup.Fields, "unique_identifier", details)),
+			UniqueHash:          helpers.GenerateScrapeResultHash(endpointToScrape.ID + getFieldValueByFieldKey(relevantGroup.Fields, "unique_identifier", details).(string)),
 			EndpointID:          endpointToScrape.ID,
 			GroupId:             relevantGroup.ID,
 			Fields:              details,
@@ -128,7 +128,7 @@ func findLinkFieldId(fields []models.Field) string {
 	return ""
 }
 
-func getFieldValueByFieldKey(fields []models.Field, fieldKey string, details []models.ScrapeResultDetail) string {
+func getFieldValueByFieldKey(fields []models.Field, fieldKey string, details []models.ScrapeResultDetail) interface{} {
 	for _, field := range fields {
 		if field.Key == fieldKey {
 			for _, detail := range details {
@@ -182,11 +182,11 @@ func filterElements(fields []models.Field, results []models.ScrapeResult, endpoi
 	return filtered, toReplace, nil
 }
 
-func getElementDetails(element *rod.Element, selectors []models.FieldSelector) ([]models.ScrapeResultDetail, error) {
+func getElementDetails(element *rod.Element, selectors []models.FieldSelector, fields []models.Field) ([]models.ScrapeResultDetail, error) {
 	details := make([]models.ScrapeResultDetail, 0, len(selectors))
 
 	for _, selector := range selectors {
-		text := ""
+		var text interface{} = ""
 		fieldElement, err := element.Element(selector.Selector)
 
 		if err == nil {
@@ -197,13 +197,13 @@ func getElementDetails(element *rod.Element, selectors []models.FieldSelector) (
 				}
 			}
 			if strings.TrimSpace(selector.Regex) != "" {
-				if extractedText, err := helpers.ExtractStringWithRegex(text, selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+				if extractedText, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
 					text = extractedText
 				}
 			}
 		}
 
-		if strings.TrimSpace(text) == "" {
+		if strings.TrimSpace(text.(string)) == "" {
 			// Try to get data from the element itself if fieldElement is not found or text is empty
 			if strings.TrimSpace(selector.AttributeToGet) != "" {
 				if attr, err := element.Attribute(selector.AttributeToGet); err == nil && attr != nil {
@@ -211,9 +211,21 @@ func getElementDetails(element *rod.Element, selectors []models.FieldSelector) (
 				}
 			}
 			if strings.TrimSpace(selector.Regex) != "" {
-				if extractedText, err := helpers.ExtractStringWithRegex(text, selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+				if extractedText, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
 					text = extractedText
 				}
+			}
+		}
+
+		var relevantFieldType models.FieldType
+		for _, field := range fields {
+			if field.ID == selector.FieldID {
+				relevantFieldType = field.Type
+			}
+		}
+		if relevantFieldType == "number" {
+			if text != "" {
+				text = helpers.CastTextNumberStringToFloat(text.(string))
 			}
 		}
 
@@ -270,7 +282,7 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 
 	results := make([]models.ScrapeResultTest, 0, len(allElements))
 	for _, element := range allElements {
-		details, err := getElementDetailsTest(element, endpointToScrape.DetailFieldSelectors)
+		details, err := getElementDetailsTest(element, endpointToScrape.DetailFieldSelectors, relevantGroup.Fields)
 
 		if err != nil {
 			return nil, nil, fmt.Errorf("error getting element details: %w", err)
@@ -289,11 +301,11 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 	return results, nil, nil
 }
 
-func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelector) ([]models.ScrapeResultDetailTest, error) {
+func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelector, fields []models.Field) ([]models.ScrapeResultDetailTest, error) {
 	details := make([]models.ScrapeResultDetailTest, 0, len(selectors))
 
 	for _, selector := range selectors {
-		text := ""
+		var text interface{} = ""
 		fieldElement, err := element.Element(selector.Selector)
 
 		if err == nil {
@@ -304,7 +316,7 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 				}
 			}
 			if strings.TrimSpace(selector.Regex) != "" {
-				if extractedText, err := helpers.ExtractStringWithRegex(text, selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+				if extractedText, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
 					text = extractedText
 				}
 			}
@@ -318,7 +330,7 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 				}
 			}
 			if strings.TrimSpace(selector.Regex) != "" {
-				if extractedText, err := helpers.ExtractStringWithRegex(text, selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+				if extractedText, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
 					text = extractedText
 				}
 			}
@@ -329,6 +341,17 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 			rawData = fieldElement.MustHTML()
 		}
 
+		var relevantFieldType models.FieldType
+		for _, field := range fields {
+			if field.ID == selector.FieldID {
+				relevantFieldType = field.Type
+			}
+		}
+		if relevantFieldType == "number" {
+			if text != "" {
+				text = helpers.CastTextNumberStringToFloat(text.(string))
+			}
+		}
 		detail := models.ScrapeResultDetailTest{
 			ID:      uuid.New().String(),
 			FieldID: selector.FieldID,

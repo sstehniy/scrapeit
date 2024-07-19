@@ -65,16 +65,18 @@ func CreateScrapingGroupEndpoint(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
 	}
 
-	cronManager.AddJob(cron.CronManagerJob{
-		GroupID:    groupIdParam,
-		EndpointID: body.NewEndpoint.ID,
-		Interval:   body.NewEndpoint.Interval,
-		Active:     true,
-		Job: func() error {
-			fmt.Println("Running job for", groupIdParam, body.NewEndpoint.ID)
-			return HandleCallInternalScrapeEndpoint(c.Echo(), groupIdParam, body.NewEndpoint.ID, dbClient, cronManager)
-		},
-	})
+	if body.NewEndpoint.Active {
+		cronManager.AddJob(cron.CronManagerJob{
+			GroupID:    groupIdParam,
+			EndpointID: body.NewEndpoint.ID,
+			Interval:   body.NewEndpoint.Interval,
+			Active:     true,
+			Job: func() error {
+				fmt.Println("Running job for", groupIdParam, body.NewEndpoint.ID)
+				return HandleCallInternalScrapeEndpoint(c.Echo(), groupIdParam, body.NewEndpoint.ID, dbClient, cronManager)
+			},
+		})
+	}
 
 	return c.JSON(http.StatusOK, CreateScrapingGroupResponse{Success: true})
 }

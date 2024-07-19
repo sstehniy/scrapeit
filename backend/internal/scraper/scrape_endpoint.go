@@ -141,6 +141,19 @@ func getFieldValueByFieldKey(fields []models.Field, fieldKey string, details []m
 	return ""
 }
 
+func getFieldValueByFieldKeyTest(fields []models.Field, fieldKey string, details []models.ScrapeResultDetailTest) interface{} {
+	for _, field := range fields {
+		if field.Key == fieldKey {
+			for _, detail := range details {
+				if detail.FieldID == field.ID {
+					return detail.Value
+				}
+			}
+		}
+	}
+	return ""
+}
+
 func findLinkSelector(selectors []models.FieldSelector, linkFieldId string) models.FieldSelector {
 	for _, selector := range selectors {
 		if selector.FieldID == linkFieldId {
@@ -155,6 +168,12 @@ func filterElements(fields []models.Field, results []models.ScrapeResult, endpoi
 	var filtered []models.ScrapeResult
 	var toReplace []models.ScrapeResult
 	for _, element := range results {
+		uniqueId := getFieldValueByFieldKey(fields, "unique_identifier", element.Fields)
+		fmt.Println("Unique ID: ", uniqueId)
+		if uniqueId == "" {
+			fmt.Println("Unique ID is empty, skipping")
+			continue
+		}
 
 		filterResult, err := helpers.FindScrapeResultExists(context.Background(), client, endpointId, groupId, element.Fields, fields)
 
@@ -283,6 +302,12 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 	results := make([]models.ScrapeResultTest, 0, len(allElements))
 	for _, element := range allElements {
 		details, err := getElementDetailsTest(element, endpointToScrape.DetailFieldSelectors, relevantGroup.Fields)
+		uniqueId := getFieldValueByFieldKeyTest(relevantGroup.Fields, "unique_identifier", details).(string)
+		fmt.Println("Unique ID: ", uniqueId)
+		if uniqueId == "" {
+			fmt.Println("Unique ID is empty, skipping")
+			continue
+		}
 
 		if err != nil {
 			return nil, nil, fmt.Errorf("error getting element details: %w", err)

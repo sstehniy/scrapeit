@@ -62,7 +62,7 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 		}
 		result := models.ScrapeResult{
 			ID:                  primitive.NewObjectID(),
-			UniqueHash:          helpers.GenerateScrapeResultHash(endpointToScrape.ID + getFieldValueByFieldName(relevantGroup.Fields, "unique_identifier", details)),
+			UniqueHash:          helpers.GenerateScrapeResultHash(endpointToScrape.ID + getFieldValueByFieldKey(relevantGroup.Fields, "unique_identifier", details)),
 			EndpointID:          endpointToScrape.ID,
 			GroupId:             relevantGroup.ID,
 			Fields:              details,
@@ -128,9 +128,9 @@ func findLinkFieldId(fields []models.Field) string {
 	return ""
 }
 
-func getFieldValueByFieldName(fields []models.Field, fieldName string, details []models.ScrapeResultDetail) string {
+func getFieldValueByFieldKey(fields []models.Field, fieldKey string, details []models.ScrapeResultDetail) string {
 	for _, field := range fields {
-		if field.Key == fieldName {
+		if field.Key == fieldKey {
 			for _, detail := range details {
 				if detail.FieldID == field.ID {
 					return detail.Value

@@ -214,7 +214,7 @@ const (
 )
 
 type ExportScrapeResultDetail struct {
-	XMLName   xml.Name    `xml:"field"`
+	XMLName   xml.Name    `xml:"field" json:"-"`
 	ID        string      `json:"id" xml:"id"`
 	FieldName string      `json:"fieldName" xml:"fieldName"`
 	FieldID   string      `json:"fieldId" xml:"fieldId"`
@@ -222,7 +222,7 @@ type ExportScrapeResultDetail struct {
 }
 
 type ExportScrapeResult struct {
-	XMLName             xml.Name                   `xml:"ScrapeResult"`
+	XMLName             xml.Name                   `xml:"ScrapeResult" json:"-"`
 	ID                  string                     `json:"id" xml:"id"`
 	EndpointName        string                     `json:"endpointName" xml:"endpointName"`
 	EndpointID          string                     `json:"endpointId" xml:"endpointId"`

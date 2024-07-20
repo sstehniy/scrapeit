@@ -22,3 +22,37 @@ func GetFileExtension(exportType models.ExportType) (string, error) {
 	}
 
 }
+
+func inputToRecords(input []models.ExportScrapeResult) ([]map[string]interface{}, []string) {
+	records := []map[string]interface{}{}
+	valueHeaderKeys := []string{}
+	for _, scrapeResult := range input {
+		record := map[string]interface{}{}
+		record["id"] = scrapeResult.ID
+		record["endpointName"] = scrapeResult.EndpointName
+		record["endpointId"] = scrapeResult.EndpointID
+		record["groupName"] = scrapeResult.GroupName
+		record["groupId"] = scrapeResult.GroupId
+		record["timestampInitial"] = scrapeResult.TimestampInitial
+		record["timestampLastUpdate"] = scrapeResult.TimestampLastUpdate
+		record["groupVersionTag"] = scrapeResult.GroupVersionTag
+
+		for _, value := range scrapeResult.Fields {
+			record[value.FieldName] = value.Value
+			if !contains(valueHeaderKeys, value.FieldName) {
+				valueHeaderKeys = append(valueHeaderKeys, value.FieldName)
+			}
+		}
+		records = append(records, record)
+	}
+	return records, valueHeaderKeys
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}

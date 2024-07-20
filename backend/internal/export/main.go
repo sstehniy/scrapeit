@@ -14,6 +14,8 @@ func CreateResultsExportFile(inputResults []models.ScrapeResult, group models.Sc
 		return getXmlBytes(transformed)
 	case models.ExportTypeJSON:
 		return getJsonBytes(transformed)
+	case models.ExportTypeCSV:
+		return getCsvBytes(transformed)
 	}
 
 	return nil, nil

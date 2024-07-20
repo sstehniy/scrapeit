@@ -78,7 +78,7 @@ func CastPriceStringToFloat(priceStr string) float64 {
 	if err != nil {
 		return 0
 	}
-	fmt.Printf("Original value: %v, Float value: %f \n", priceStr, math.Round(floatVal*100)/100)
+	// fmt.Printf("Original value: %v, Float value: %f \n", priceStr, math.Round(floatVal*100)/100)
 
 	return math.Round(floatVal*100) / 100
 }

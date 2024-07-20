@@ -59,6 +59,14 @@ enum SelectorStatus {
   NEW = "new",
 }
 
+enum ExportType {
+  PDF = "pdf",
+  EXCEL = "excel",
+  CSV = "csv",
+  XML = "xml",
+  JSON = "json",
+}
+
 type FieldSelector = {
   id: string;
   fieldId: string;
@@ -94,7 +102,7 @@ type ScrapeResultDetailTest = ScrapeResultDetail & {
   rawData: string;
 };
 
-export { FieldType, SelectorStatus, ScrapeStatus };
+export { FieldType, SelectorStatus, ScrapeStatus, ExportType };
 
 export type {
   ScrapeGroup,

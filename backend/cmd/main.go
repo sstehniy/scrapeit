@@ -24,6 +24,9 @@ type SimpleLogger struct {
 	logger *log.Logger
 }
 
+
+
+
 func (l *SimpleLogger) Info(msg string, keysAndValues ...interface{}) {
 	l.logger.Printf("INFO: %s %v", msg, keysAndValues)
 }
@@ -35,7 +38,12 @@ func (l *SimpleLogger) Error(msg string, keysAndValues ...interface{}) {
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	
 	DbClient, err := models.GetDbClient()
+
+
+
 	fmt.Println("Connected to MongoDB")
 	if err != nil {
 		panic(err)

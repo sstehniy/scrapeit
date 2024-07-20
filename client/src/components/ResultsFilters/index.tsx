@@ -1,11 +1,14 @@
 import { FC, useEffect, useState } from "react";
 import { SearchConfig } from "../../views/GroupView";
-import { Endpoint, ScrapeGroup } from "../../types";
+import { Endpoint, ExportType, ScrapeGroup } from "../../types";
 import { TextInput } from "../ui/TextInput";
 import Select from "react-select";
 import "./index.css";
 import { getBgAndTextColor } from "../ColoredEndpointPill";
 import axios from "axios";
+import { ConfigureExportModal } from "../modals/ConfigureExport";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "react-toastify";
 
 type ResultsFiltersProps = {
   params: SearchConfig;
@@ -21,6 +24,13 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
   const [q, setQ] = useState("");
   const [limit, setLimit] = useState(30);
   const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
+  const [showExportOptionsModal, setShowExportOptionsModal] = useState<{
+    isOpen: boolean;
+    onConfirm: ((name: string, type: ExportType) => void) | null;
+  }>({
+    isOpen: false,
+    onConfirm: null,
+  });
 
   useEffect(() => {
     const endpoints = group.endpoints.filter((e) =>
@@ -33,41 +43,51 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
     setLimit(limit);
   }, [group.endpoints, params.endpointIds, params.limit, params.q]);
 
-  return (
-    <div className="flex justify-end gap-4">
-      <button
-        className="btn btn-sm btn-primary"
-        onClick={async () => {
-          const response = await axios.post(
-            "http://localhost:5173/api/scrape/results/export/6696e3b1eeec25d85003277a",
-            {
-              type: "xml",
-              fileName: "test",
-              deleteAfterExport: false,
-            },
-            {
-              responseType: "blob",
-            },
-          );
+  const exportMutation = useMutation({
+    mutationFn: (data: { name: string; type: ExportType }) =>
+      axios
+        .post(
+          `/api/scrape/results/export/${group.id}`,
+          {
+            type: data.type,
+            fileName: data.name,
+            deleteAfterExport: false,
+          },
+          {
+            responseType: "blob",
+          },
+        )
+        .then((response) => {
           const url = window.URL.createObjectURL(new Blob([response.data]));
           const a = document.createElement("a");
           a.style.display = "none";
           a.href = url;
-          a.download = "test.xml";
+          a.download = `${data.name}.${data.type}`;
 
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
 
           window.URL.revokeObjectURL(url);
-        }}
-      >
-        Export
-      </button>
+        }),
+    onMutate: () => {
+      setShowExportOptionsModal({ isOpen: false, onConfirm: null });
+    },
+    onSuccess: () => {
+      toast.success("Exported successfully");
+    },
+    onError: () => {
+      toast.error("Failed to export");
+    },
+    networkMode: "always",
+  });
+
+  return (
+    <div className="flex justify-end items-end gap-4 mb-4">
       <TextInput
         labelClassName="label"
         className="input input-bordered flex items-center gap-2"
-        wrapperClassName="form-control mb-4"
+        wrapperClassName="form-control"
         label="Search"
         name="q"
         id="q"
@@ -81,7 +101,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
       <TextInput
         labelClassName="label"
         className="input input-bordered flex items-center gap-2"
-        wrapperClassName="form-control mb-4"
+        wrapperClassName="form-control"
         label="Limit"
         name="limit"
         id="limit"
@@ -155,6 +175,33 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
           }}
         />
       </div>
+      <button
+        className="btn btn-primary"
+        onClick={() => {
+          setShowExportOptionsModal({
+            isOpen: true,
+            onConfirm: (name, type) => {
+              exportMutation.mutate({ name, type });
+            },
+          });
+        }}
+      >
+        Export
+      </button>
+      {showExportOptionsModal.isOpen && (
+        <ConfigureExportModal
+          defaultName={group.name + "-" + new Date().toLocaleDateString()}
+          isOpen={showExportOptionsModal.isOpen}
+          onClose={() =>
+            setShowExportOptionsModal({ isOpen: false, onConfirm: null })
+          }
+          onConfirm={(name, type) => {
+            if (showExportOptionsModal.onConfirm) {
+              showExportOptionsModal.onConfirm(name, type);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -43,7 +43,7 @@ func GetStealthPage(browser *rod.Browser, url string, elementToWaitFor string) (
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	err := page.Context(ctx).MustWaitLoad().MustWaitIdle().MustWaitStable().WaitElementsMoreThan(elementToWaitFor, 0)
+	err := page.Context(ctx).MustWaitLoad().MustWaitIdle().WaitElementsMoreThan(elementToWaitFor, 0)
 
 	fmt.Println("Waited for load and element")
 
@@ -62,7 +62,6 @@ func GetStealthPage(browser *rod.Browser, url string, elementToWaitFor string) (
 		fmt.Println("Waited for navigation")
 	}
 
-	// Set viewport and take screenshot
 	page.MustSetViewport(1920, 1080, 2.0, false)
 
 	return page, nil
@@ -111,8 +110,6 @@ func SlowScrollToHalf(page *rod.Page) error {
 	fmt.Println("Total height: ", totalHeight)
 	// Scroll loop
 	for currentScroll := 0; currentScroll < totalHeight/2; currentScroll += viewportHeight {
-		// screenshot into separate folder
-		// create folder if not exists
 
 		fmt.Println("Current scroll: ", currentScroll)
 		// Scroll to the new position
@@ -123,7 +120,7 @@ func SlowScrollToHalf(page *rod.Page) error {
 		}
 
 		time.Sleep(scrollDelay * time.Millisecond)
-		page.MustWaitRequestIdle()
+		page.MustWaitLoad().MustWaitIdle()
 
 		// Print progress
 		fmt.Printf("\rScrolling: %d/%d pixels", currentScroll, totalHeight)
@@ -145,6 +142,10 @@ func SlowScrollToHalf(page *rod.Page) error {
 			break
 		}
 	}
+
+	page.MustEval("() => window.scrollTo(0, 0)")
+
+	time.Sleep(1 * time.Second)
 
 	fmt.Println() // Print a newline after the progress indicator
 	return nil
@@ -169,8 +170,6 @@ func SlowScrollToBottom(page *rod.Page) error {
 	fmt.Println("Total height: ", totalHeight)
 	// Scroll loop
 	for currentScroll := 0; currentScroll < totalHeight; currentScroll += viewportHeight {
-		// screenshot into separate folder
-		// create folder if not exists
 
 		fmt.Println("Current scroll: ", currentScroll)
 		// Scroll to the new position
@@ -181,7 +180,7 @@ func SlowScrollToBottom(page *rod.Page) error {
 		}
 
 		time.Sleep(scrollDelay * time.Millisecond)
-		page.MustWaitRequestIdle()
+		page.MustWaitLoad().MustWaitIdle()
 
 		// Print progress
 		fmt.Printf("\rScrolling: %d/%d pixels", currentScroll, totalHeight)
@@ -203,6 +202,10 @@ func SlowScrollToBottom(page *rod.Page) error {
 			break
 		}
 	}
+
+	page.MustEval("() => window.scrollTo(0, 0)")
+
+	time.Sleep(1 * time.Second)
 
 	fmt.Println() // Print a newline after the progress indicator
 	return nil

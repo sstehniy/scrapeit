@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"fmt"
 	"scrapeit/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -54,6 +55,20 @@ func FindScrapeResultExists(ctx context.Context, client *mongo.Client, endpointI
 		"uniqueHash": potentialResultHash,
 	}
 
+	fieldIdsWithLinkType := []string{}
+	for _, field := range schema {
+		if field.Type == models.FieldTypeLink {
+			fieldIdsWithLinkType = append(fieldIdsWithLinkType, field.ID)
+		}
+	}
+
+	fieldIdsWithImageType := []string{}
+	for _, field := range schema {
+		if field.Type == models.FieldTypeImage {
+			fieldIdsWithImageType = append(fieldIdsWithImageType, field.ID)
+		}
+	}
+
 	collection := client.Database("scrapeit").Collection("scrape_results")
 
 	singleResult := collection.FindOne(ctx, query)
@@ -73,11 +88,38 @@ func FindScrapeResultExists(ctx context.Context, client *mongo.Client, endpointI
 	for _, field := range scrapeResult.Fields {
 
 		for _, potentialField := range resultFields {
+			isImageTypeValue := false
+			for _, fieldId := range fieldIdsWithImageType {
+				if fieldId == potentialField.FieldID {
+					isImageTypeValue = true
+					break
+				}
+			}
+			if isImageTypeValue && potentialField.Value.(string) == "" && field.Value != "" {
+				continue
+			}
+
+			isLinkTypeValue := false
+
+			for _, fieldId := range fieldIdsWithLinkType {
+				if fieldId == potentialField.FieldID {
+					isLinkTypeValue = true
+
+				}
+			}
 
 			if potentialField.FieldID != uniqueIdFieldId &&
 				field.FieldID == potentialField.FieldID &&
-				potentialField.Value != "" &&
-				field.Value != potentialField.Value {
+				field.Value != potentialField.Value && !isLinkTypeValue {
+				fieldName := ""
+				for _, schemaField := range schema {
+					if schemaField.ID == field.FieldID {
+						fieldName = schemaField.Name
+					}
+				}
+
+				fmt.Printf("Field %s is different: %s != %s\n", fieldName, field.Value, potentialField.Value)
+
 				areSame = false
 				break
 			}

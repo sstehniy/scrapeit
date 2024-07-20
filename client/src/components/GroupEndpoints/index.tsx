@@ -180,6 +180,11 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
                   ) as Endpoint;
                   endpointCopy.id = v4();
                   endpointCopy.active = false;
+                  endpointCopy.detailFieldSelectors.forEach((dfs) => {
+                    dfs.lockedForEdit = false;
+                    dfs.selectorStatus = SelectorStatus.NEW;
+                  });
+
                   endpointCopy.name = `${endpoint.name} - Copy`;
                   endpointCopy.detailFieldSelectors =
                     endpointCopy.detailFieldSelectors.map((dfs) => {

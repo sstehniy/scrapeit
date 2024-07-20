@@ -216,7 +216,7 @@ func getElementDetails(element *rod.Element, selectors []models.FieldSelector, f
 				}
 			}
 			if strings.TrimSpace(selector.Regex) != "" {
-				if extractedText, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+				if extractedText, _, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
 					text = extractedText
 				}
 			}
@@ -230,7 +230,7 @@ func getElementDetails(element *rod.Element, selectors []models.FieldSelector, f
 				}
 			}
 			if strings.TrimSpace(selector.Regex) != "" {
-				if extractedText, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+				if extractedText, _, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
 					text = extractedText
 				}
 			}
@@ -273,6 +273,7 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 
 	var allElements rod.Elements
 
+OUTER:
 	for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i++ {
 		urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
 		fmt.Println("Scraping URL: ", urlWithPagination)
@@ -292,7 +293,17 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 			return nil, nil, fmt.Errorf("error finding elements: %w", err)
 		}
 
-		allElements = append(allElements, elements...)
+		for _, element := range elements {
+			allElements = append(allElements, element)
+			if len(allElements) == 5 {
+				break OUTER
+			}
+		}
+
+		// allElements = append(allElements, elements...)
+		// if len(allElements) == 5 {
+		// 	break
+		// }
 	}
 
 	linkFieldId := findLinkFieldId(relevantGroup.Fields)
@@ -331,6 +342,7 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 
 	for _, selector := range selectors {
 		var text interface{} = ""
+		var extractMatches []string
 		fieldElement, err := element.Element(selector.Selector)
 
 		if err == nil {
@@ -341,8 +353,11 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 				}
 			}
 			if strings.TrimSpace(selector.Regex) != "" {
-				if extractedText, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+				fmt.Println("Original text: ", text, selector.Regex)
+				if extractedText, matches, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+					fmt.Println("Extracted text: ", extractedText)
 					text = extractedText
+					extractMatches = matches
 				}
 			}
 		}
@@ -355,8 +370,9 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 				}
 			}
 			if strings.TrimSpace(selector.Regex) != "" {
-				if extractedText, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
+				if extractedText, matches, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
 					text = extractedText
+					extractMatches = matches
 				}
 			}
 		}
@@ -378,10 +394,11 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 			}
 		}
 		detail := models.ScrapeResultDetailTest{
-			ID:      uuid.New().String(),
-			FieldID: selector.FieldID,
-			Value:   text,
-			RawData: rawData,
+			ID:           uuid.New().String(),
+			FieldID:      selector.FieldID,
+			Value:        text,
+			RawData:      rawData,
+			RegexMatches: extractMatches,
 		}
 
 		details = append(details, detail)

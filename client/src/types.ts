@@ -75,6 +75,7 @@ type FieldSelector = {
   regex: string;
   regexMatchIndexToUse: number;
   selectorStatus: SelectorStatus;
+  lockedForEdit: boolean;
 };
 
 type ScrapeResult = {
@@ -100,6 +101,7 @@ type ScrapeResultDetail = {
 
 type ScrapeResultDetailTest = ScrapeResultDetail & {
   rawData: string;
+  regexMatches: string[];
 };
 
 export { FieldType, SelectorStatus, ScrapeStatus, ExportType };

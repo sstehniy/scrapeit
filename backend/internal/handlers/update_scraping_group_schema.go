@@ -129,12 +129,14 @@ func UpdateScrapingGroupSchema(c echo.Context) error {
 						return echo.NewHTTPError(http.StatusNotFound, "Field not found")
 					}
 					endpoint.DetailFieldSelectors = append(endpoint.DetailFieldSelectors, models.FieldSelector{
-						ID:             uuid.New().String(),
-						FieldID:        addedField.ID,
-						Selector:       "",
-						Regex:          "",
-						AttributeToGet: "",
-						SelectorStatus: models.SelectorStatusNew,
+						ID:                   uuid.New().String(),
+						FieldID:              addedField.ID,
+						Selector:             "",
+						Regex:                "",
+						AttributeToGet:       "",
+						LockedForEdit:        false,
+						RegexMatchIndexToUse: 0,
+						SelectorStatus:       models.SelectorStatusNew,
 					})
 					group.Endpoints[idx] = endpoint
 					fmt.Println("Endpoint after adding field", endpoint)

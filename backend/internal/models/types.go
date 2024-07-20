@@ -144,6 +144,7 @@ type FieldSelector struct {
 	AttributeToGet       string              `json:"attributeToGet" bson:"attributeToGet"`
 	RegexMatchIndexToUse int                 `json:"regexMatchIndexToUse" bson:"regexMatchIndexToUse"`
 	SelectorStatus       SelectorStatusValue `json:"selectorStatus" bson:"selectorStatus"`
+	LockedForEdit        bool                `json:"lockedForEdit" bson:"lockedForEdit"`
 }
 
 // SearchConfig represents search configuration for an endpoint
@@ -234,10 +235,11 @@ type ExportScrapeResult struct {
 }
 
 type ScrapeResultDetailTest struct {
-	ID      string      `json:"id"`
-	FieldID string      `json:"fieldId"`
-	Value   interface{} `json:"value"`
-	RawData string      `json:"rawData"`
+	ID           string      `json:"id"`
+	FieldID      string      `json:"fieldId"`
+	Value        interface{} `json:"value"`
+	RegexMatches []string    `json:"regexMatches"`
+	RawData      string      `json:"rawData"`
 }
 
 type FieldChangeType string

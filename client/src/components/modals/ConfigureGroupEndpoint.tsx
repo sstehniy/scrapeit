@@ -171,9 +171,9 @@ const SecondStepContent: FC<{
     remark: string,
   ) => Promise<void>;
   fieldsWithLoadingSelectors: string[];
-  handleTestScrape: () => Promise<void>;
   validateSecondStep: (ep: Endpoint) => boolean;
   loadingSampleData: boolean;
+  handleTestScrape: (ep: Endpoint) => Promise<void>;
   sampleData: ScrapeResultTest[];
 }> = ({
   endpoint,
@@ -182,9 +182,9 @@ const SecondStepContent: FC<{
   handleExtractSelectorsForAllFields,
   handleExtractSelectorForField,
   fieldsWithLoadingSelectors,
-  handleTestScrape,
   loadingSampleData,
   sampleData,
+  handleTestScrape,
   validateSecondStep,
 }) => {
   const [remarks, setRemarks] = useState<Remark[]>(
@@ -461,6 +461,7 @@ const SecondStepContent: FC<{
           onClick={() => {
             handleExtractSelectorsForAllFields(remarks);
           }}
+          disabled={loadingSampleData}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -484,166 +485,48 @@ const SecondStepContent: FC<{
         {fields.map((field, idx) => (
           <div key={field.id}>
             <div className="flex gap-3">
-              <div className="w-36">
-                <TextInput
-                  labelClassName="label"
-                  className="input input-bordered flex items-center gap-2"
-                  wrapperClassName="form-control mb-4"
-                  label={idx > 0 ? "" : "Field Name"}
-                  readOnly
-                  disabled
-                  value={field.name}
-                />
-              </div>
-              <div className="w-36">
-                <TextInput
-                  labelClassName="label"
-                  className="input input-bordered flex items-center gap-2"
-                  wrapperClassName="form-control mb-4"
-                  label={idx > 0 ? "" : "Field Key"}
-                  readOnly
-                  disabled
-                  value={field.key}
-                />
-              </div>
-              <div className="flex-1 mb-4">
-                <TextInput
-                  labelClassName="label"
-                  className="input input-bordered flex items-center gap-2 w-fullmb-1"
-                  wrapperClassName="form-control "
-                  label={idx > 0 ? "" : "Selector"}
-                  value={
-                    endpoint.detailFieldSelectors.find(
-                      (selector) => selector.fieldId === field.id,
-                    )?.selector
-                  }
-                  onChange={(e) => {
-                    const newEndpoint = {
-                      ...endpoint,
-                      detailFieldSelectors: endpoint.detailFieldSelectors.map(
-                        (selector) =>
-                          selector.fieldId === field.id
-                            ? { ...selector, selector: e.target.value }
-                            : selector,
-                      ),
-                    };
-                    setEndpoint(newEndpoint);
-                    validateSecondStep(newEndpoint);
-                  }}
-                  required
-                />
-                {endpoint.detailFieldSelectors.find(
-                  (selector) =>
-                    selector.fieldId === field.id &&
-                    selector.selector === "" &&
-                    selector.selectorStatus === SelectorStatus.NEW,
-                ) && (
-                  <div className="text-yellow-500 text-xs italic">
-                    Selector not extracted
-                  </div>
-                )}
-                {endpoint.detailFieldSelectors.find(
-                  (selector) => selector.fieldId === field.id,
-                )?.selectorStatus === SelectorStatus.NEEDS_UPDATE && (
-                  <div className="text-yellow-500 text-xs italic">
-                    Selector may need to be updated
-                  </div>
-                )}
-              </div>
-              <div className="w-28">
-                <TextInput
-                  labelClassName="label"
-                  className="input input-bordered flex items-center gap-2"
-                  wrapperClassName="form-control mb-4"
-                  label={idx > 0 ? "" : "Attribute"}
-                  value={
-                    endpoint.detailFieldSelectors.find(
-                      (selector) => selector.fieldId === field.id,
-                    )?.attributeToGet
-                  }
-                  onChange={(e) => {
-                    const newEndpoint = {
-                      ...endpoint,
-                      detailFieldSelectors: endpoint.detailFieldSelectors.map(
-                        (selector) =>
-                          selector.fieldId === field.id
-                            ? { ...selector, attributeToGet: e.target.value }
-                            : selector,
-                      ),
-                    };
-                    setEndpoint(newEndpoint);
-                    validateSecondStep(newEndpoint);
-                  }}
-                />
-              </div>
-              <div className="w-36">
-                <TextInput
-                  labelClassName="label"
-                  className="input input-bordered flex items-center gap-2"
-                  wrapperClassName="form-control mb-4"
-                  label={idx > 0 ? "" : "Regex"}
-                  value={
-                    endpoint.detailFieldSelectors.find(
-                      (selector) => selector.fieldId === field.id,
-                    )?.regex
-                  }
-                  onChange={(e) => {
-                    const newEndpoint = {
-                      ...endpoint,
-                      detailFieldSelectors: endpoint.detailFieldSelectors.map(
-                        (selector) =>
-                          selector.fieldId === field.id
-                            ? { ...selector, regex: e.target.value }
-                            : selector,
-                      ),
-                    };
-                    setEndpoint(newEndpoint);
-                    validateSecondStep(newEndpoint);
-                  }}
-                />
-              </div>
-              <div className="flex-1">
-                <TextInput
-                  labelClassName="label"
-                  className="input input-bordered flex items-center gap-2"
-                  wrapperClassName="form-control mb-4"
-                  label={idx > 0 ? "" : "Remarks"}
-                  tooltip={
-                    "This data is not saved, only helpfull for smart extract)"
-                  }
-                  value={remarks.find((r) => r.fieldId === field.id)!.remark}
-                  onChange={(e) => {
-                    setRemarks((prev) =>
-                      prev.map((pr) =>
-                        pr.fieldId === field.id
-                          ? { ...pr, remark: e.target.value }
-                          : pr,
-                      ),
-                    );
-                  }}
-                />
-              </div>
-              <div
-                className="btn btn-square btn-sm mt-9 btn-outline"
+              <button
+                className="btn btn-square btn-sm btn-outline border-0"
                 onClick={() => {
-                  handleExtractSelectorForField(
-                    field,
-                    remarks.find((r) => r.fieldId === field.id)!.remark,
-                  );
+                  const newEndpoint = {
+                    ...endpoint,
+                    detailFieldSelectors: endpoint.detailFieldSelectors.map(
+                      (selector) =>
+                        selector.fieldId === field.id
+                          ? {
+                              ...selector,
+                              lockedForEdit: !selector.lockedForEdit,
+                            }
+                          : selector,
+                    ),
+                  };
+                  setEndpoint(newEndpoint);
                 }}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  userSelect: fieldsWithLoadingSelectors.includes(field.id)
-                    ? "none"
-                    : "auto",
-                  cursor: fieldsWithLoadingSelectors.includes(field.id)
-                    ? "not-allowed"
-                    : "pointer",
+                  marginTop: idx === 0 ? 43 : 25,
                 }}
               >
-                {!fieldsWithLoadingSelectors.includes(field.id) ? (
+                {endpoint.detailFieldSelectors.find(
+                  (selector) => selector.fieldId === field.id,
+                )?.lockedForEdit ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-5  text-error"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
+                    />
+                  </svg>
+                ) : (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
@@ -655,13 +538,243 @@ const SecondStepContent: FC<{
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
+                      d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
+                    />
+                  </svg>
+                )}
+              </button>
+              <div
+                className="flex gap-3"
+                style={{
+                  opacity: endpoint.detailFieldSelectors.find(
+                    (selector) => selector.fieldId === field.id,
+                  )?.lockedForEdit
+                    ? 0.5
+                    : 1,
+                  pointerEvents: endpoint.detailFieldSelectors.find(
+                    (selector) => selector.fieldId === field.id,
+                  )?.lockedForEdit
+                    ? "none"
+                    : "auto",
+                }}
+              >
+                <div className="w-36">
+                  <TextInput
+                    labelClassName="label"
+                    className="input input-bordered flex items-center gap-2"
+                    wrapperClassName="form-control mb-4"
+                    label={idx > 0 ? "" : "Field Name"}
+                    readOnly
+                    disabled
+                    value={field.name}
+                  />
+                </div>
+                <div className="w-36">
+                  <TextInput
+                    labelClassName="label"
+                    className="input input-bordered flex items-center gap-2"
+                    wrapperClassName="form-control mb-4"
+                    label={idx > 0 ? "" : "Field Key"}
+                    readOnly
+                    disabled
+                    value={field.key}
+                  />
+                </div>
+                <div className="flex-1">
+                  <TextInput
+                    labelClassName="label"
+                    className="input input-bordered flex items-center gap-2 w-fullmb-1"
+                    wrapperClassName="form-control "
+                    label={idx > 0 ? "" : "Selector"}
+                    value={
+                      endpoint.detailFieldSelectors.find(
+                        (selector) => selector.fieldId === field.id,
+                      )?.selector
+                    }
+                    onChange={(e) => {
+                      const newEndpoint = {
+                        ...endpoint,
+                        detailFieldSelectors: endpoint.detailFieldSelectors.map(
+                          (selector) =>
+                            selector.fieldId === field.id
+                              ? { ...selector, selector: e.target.value }
+                              : selector,
+                        ),
+                      };
+                      setEndpoint(newEndpoint);
+                      validateSecondStep(newEndpoint);
+                    }}
+                    required
+                  />
+                  {endpoint.detailFieldSelectors.find(
+                    (selector) =>
+                      selector.fieldId === field.id &&
+                      selector.selector === "" &&
+                      selector.selectorStatus === SelectorStatus.NEW,
+                  ) && (
+                    <div className="text-yellow-500 text-xs italic">
+                      Selector not extracted
+                    </div>
+                  )}
+                  {endpoint.detailFieldSelectors.find(
+                    (selector) => selector.fieldId === field.id,
+                  )?.selectorStatus === SelectorStatus.NEEDS_UPDATE && (
+                    <div className="text-yellow-500 text-xs italic">
+                      Selector may need to be updated
+                    </div>
+                  )}
+                </div>
+                <div className="w-28">
+                  <TextInput
+                    labelClassName="label"
+                    className="input input-bordered flex items-center gap-2"
+                    wrapperClassName="form-control mb-4"
+                    label={idx > 0 ? "" : "Attribute"}
+                    value={
+                      endpoint.detailFieldSelectors.find(
+                        (selector) => selector.fieldId === field.id,
+                      )?.attributeToGet
+                    }
+                    onChange={(e) => {
+                      const newEndpoint = {
+                        ...endpoint,
+                        detailFieldSelectors: endpoint.detailFieldSelectors.map(
+                          (selector) =>
+                            selector.fieldId === field.id
+                              ? { ...selector, attributeToGet: e.target.value }
+                              : selector,
+                        ),
+                      };
+                      setEndpoint(newEndpoint);
+                      validateSecondStep(newEndpoint);
+                    }}
+                  />
+                </div>
+                <div className="w-36">
+                  <TextInput
+                    labelClassName="label"
+                    className="input input-bordered flex items-center gap-2"
+                    wrapperClassName="form-control mb-4"
+                    label={idx > 0 ? "" : "Regex"}
+                    value={
+                      endpoint.detailFieldSelectors.find(
+                        (selector) => selector.fieldId === field.id,
+                      )?.regex
+                    }
+                    onChange={(e) => {
+                      const newEndpoint = {
+                        ...endpoint,
+                        detailFieldSelectors: endpoint.detailFieldSelectors.map(
+                          (selector) =>
+                            selector.fieldId === field.id
+                              ? { ...selector, regex: e.target.value }
+                              : selector,
+                        ),
+                      };
+                      setEndpoint(newEndpoint);
+                      validateSecondStep(newEndpoint);
+                    }}
+                  />
+                </div>
+                <div className="w-24">
+                  <TextInput
+                    type="number"
+                    min={0}
+                    step={1}
+                    labelClassName="label"
+                    className="input input-bordered flex items-center gap-2"
+                    wrapperClassName="form-control mb-4"
+                    label={idx > 0 ? "" : "Regex Match"}
+                    value={
+                      endpoint.detailFieldSelectors.find(
+                        (selector) => selector.fieldId === field.id,
+                      )?.regexMatchIndexToUse
+                    }
+                    onChange={(e) => {
+                      setEndpoint((prev) => ({
+                        ...prev,
+                        detailFieldSelectors: prev.detailFieldSelectors.map(
+                          (selector) =>
+                            selector.fieldId === field.id
+                              ? {
+                                  ...selector,
+                                  regexMatchIndexToUse: +e.target.value,
+                                }
+                              : selector,
+                        ),
+                      }));
+                    }}
+                  />
+                </div>
+                <div className="flex-1">
+                  <TextInput
+                    labelClassName="label"
+                    className="input input-bordered flex items-center gap-2"
+                    wrapperClassName="form-control mb-4"
+                    label={idx > 0 ? "" : "Remarks"}
+                    tooltip={
+                      "This data is not saved, only helpfull for smart extract)"
+                    }
+                    value={remarks.find((r) => r.fieldId === field.id)!.remark}
+                    onChange={(e) => {
+                      setRemarks((prev) =>
+                        prev.map((pr) =>
+                          pr.fieldId === field.id
+                            ? { ...pr, remark: e.target.value }
+                            : pr,
+                        ),
+                      );
+                    }}
+                  />
+                </div>
+              </div>
+              <button
+                className="btn btn-square btn-sm btn-outline border-0"
+                onClick={() => {
+                  handleExtractSelectorForField(
+                    field,
+                    remarks.find((r) => r.fieldId === field.id)!.remark,
+                  );
+                }}
+                disabled={
+                  !!fieldsWithLoadingSelectors.length ||
+                  endpoint.detailFieldSelectors.find(
+                    (selector) => selector.fieldId === field.id,
+                  )?.lockedForEdit ||
+                  loadingSampleData
+                }
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  userSelect: fieldsWithLoadingSelectors.includes(field.id)
+                    ? "none"
+                    : "auto",
+                  cursor: fieldsWithLoadingSelectors.includes(field.id)
+                    ? "not-allowed"
+                    : "pointer",
+                  marginTop: idx === 0 ? 43 : 25,
+                }}
+              >
+                {!fieldsWithLoadingSelectors.includes(field.id) ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
                     />
                   </svg>
                 ) : (
                   <span className="loading loading-spinner loading-md"></span>
                 )}
-              </div>
+              </button>
             </div>
           </div>
         ))}
@@ -669,8 +782,10 @@ const SecondStepContent: FC<{
       <div className="w-full flex justify-end">
         <Button
           className="btn btn-outline btn-primary btn-sm mb-2"
-          onClick={handleTestScrape}
-          disabled={loadingSampleData}
+          onClick={() => {
+            handleTestScrape(endpoint);
+          }}
+          disabled={loadingSampleData || !!fieldsWithLoadingSelectors.length}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -699,22 +814,7 @@ const SecondStepContent: FC<{
           <div
             className="w-full mb-5"
             style={{
-              maxHeight: 400,
-              overflow: "auto",
-            }}
-          >
-            <JsonView
-              data={sampleData}
-              clickToExpandNode
-              // eslint-disable-next-line unused-imports/no-unused-vars
-              shouldExpandNode={(level) => true}
-              style={darkStyles}
-            />
-          </div>
-          <div
-            className="w-full"
-            style={{
-              maxHeight: 400,
+              maxHeight: 500,
               overflow: "auto",
             }}
           >
@@ -760,6 +860,21 @@ const SecondStepContent: FC<{
               </tbody>
             </table>
           </div>
+          <div
+            className="w-full"
+            style={{
+              maxHeight: 400,
+              overflow: "auto",
+            }}
+          >
+            <JsonView
+              data={sampleData}
+              clickToExpandNode
+              // eslint-disable-next-line unused-imports/no-unused-vars
+              shouldExpandNode={(level) => true}
+              style={darkStyles}
+            />
+          </div>
         </>
       )}
     </div>
@@ -804,6 +919,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
           selector: "",
           regex: "",
           regexMatchIndexToUse: 0,
+          lockedForEdit: false,
           selectorStatus: SelectorStatus.NEW,
         }));
       setEndpoint({
@@ -831,6 +947,44 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
     }
   }, [endpoint.mainElementSelector, endpoint.url]);
 
+  const handleTestScrape = useCallback(
+    async (ep: Endpoint) => {
+      const endpointCopy: Endpoint = {
+        ...ep,
+        paginationConfig: {
+          ...ep.paginationConfig,
+          end: ep.paginationConfig.start,
+        },
+      };
+
+      const group: ScrapeGroup = {
+        id: "1",
+        name: "Test Group",
+        fields,
+        endpoints: [endpointCopy],
+        withThumbnail: false,
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        isArchived: false,
+        versionTag: "",
+      };
+      setSampleData([]);
+      setLoadingSampleData(true);
+      try {
+        const response = await axios.post("/api/scrape/endpoint-test", {
+          group,
+        });
+        setSampleData(response.data);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to test scrape");
+      } finally {
+        setLoadingSampleData(false);
+      }
+    },
+    [fields],
+  );
+
   const handleExtractSelectorForField = useCallback(
     async (field: Field, remark: string) => {
       if (fieldsWithLoadingSelectors.includes(field.id)) {
@@ -852,9 +1006,9 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
           ],
         });
         console.log("Extracted selectors", response.data);
-        setEndpoint((prev) => ({
-          ...prev,
-          detailFieldSelectors: prev.detailFieldSelectors.map((selector) =>
+        const newEndpoint: Endpoint = {
+          ...endpoint,
+          detailFieldSelectors: endpoint.detailFieldSelectors.map((selector) =>
             selector.fieldId === field.id
               ? {
                   ...selector,
@@ -866,26 +1020,37 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
                 }
               : selector,
           ),
-        }));
+        };
+        setEndpoint(newEndpoint);
         setFieldsWithLoadingSelectors((prev) =>
           prev.filter((id) => id !== field.id),
         );
+        handleTestScrape(newEndpoint);
       } catch (error) {
         setFieldsWithLoadingSelectors([]);
         console.error(error);
         toast.error("Failed to extract selector for field");
       }
     },
-    [endpoint.mainElementSelector, endpoint.url, fieldsWithLoadingSelectors],
+    [endpoint, fieldsWithLoadingSelectors, handleTestScrape],
   );
 
   const handleExtractSelectorsForAllFields = useCallback(
     async (remarks: Remark[]) => {
-      setFieldsWithLoadingSelectors(fields.map((field) => field.id));
+      const toExtract = fields.filter(
+        (f) =>
+          !endpoint.detailFieldSelectors.find((df) => df.fieldId === f.id)
+            ?.lockedForEdit,
+      );
+
+      if (toExtract.length === 0) {
+        return;
+      }
+      setFieldsWithLoadingSelectors(toExtract.map((f) => f.id));
       const response = await axios.post("/api/selectors/extract", {
         url: endpoint.url,
         mainElementSelector: endpoint.mainElementSelector,
-        fieldsToExtractSelectorsFor: fields.map((field) => ({
+        fieldsToExtractSelectorsFor: toExtract.map((field) => ({
           key: field.key,
           name: field.name,
           type: field.type,
@@ -893,9 +1058,9 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
         })),
       });
       console.log("Extracted selectors", response.data);
-      setEndpoint((prev) => ({
-        ...prev,
-        detailFieldSelectors: prev.detailFieldSelectors.map((selector) => {
+      const newEndpoint: Endpoint = {
+        ...endpoint,
+        detailFieldSelectors: endpoint.detailFieldSelectors.map((selector) => {
           const field = fields.find((f) => f.id === selector.fieldId);
           console.log("Field", field, selector);
           const extractedField = response.data.fields.find(
@@ -912,46 +1077,14 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
             regexMatchIndexToUse: extractedField.regexMatchIndexToUse,
           };
         }),
-      }));
+      };
+      setEndpoint(newEndpoint);
+
       setFieldsWithLoadingSelectors([]);
+      handleTestScrape(newEndpoint);
     },
-    [endpoint.mainElementSelector, endpoint.url, fields],
+    [fields, endpoint, handleTestScrape],
   );
-
-  const handleTestScrape = useCallback(async () => {
-    const endpointCopy: Endpoint = {
-      ...endpoint,
-      paginationConfig: {
-        ...endpoint.paginationConfig,
-        end: endpoint.paginationConfig.start,
-      },
-    };
-
-    const group: ScrapeGroup = {
-      id: "1",
-      name: "Test Group",
-      fields,
-      endpoints: [endpointCopy],
-      withThumbnail: false,
-      created: new Date().toISOString(),
-      updated: new Date().toISOString(),
-      isArchived: false,
-      versionTag: "",
-    };
-    setSampleData([]);
-    setLoadingSampleData(true);
-    try {
-      const response = await axios.post("/api/scrape/endpoint-test", {
-        group,
-      });
-      setSampleData(response.data);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to test scrape");
-    } finally {
-      setLoadingSampleData(false);
-    }
-  }, [endpoint, fields]);
 
   const validateFirstStep = useCallback((ep: Endpoint) => {
     setFirstStepErrors({});
@@ -1166,10 +1299,10 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
             handleExtractSelectorsForAllFields={
               handleExtractSelectorsForAllFields
             }
+            handleTestScrape={handleTestScrape}
             validateSecondStep={validateSecondStep}
             handleExtractSelectorForField={handleExtractSelectorForField}
             fieldsWithLoadingSelectors={fieldsWithLoadingSelectors}
-            handleTestScrape={handleTestScrape}
             loadingSampleData={loadingSampleData}
             sampleData={sampleData}
           />

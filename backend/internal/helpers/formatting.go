@@ -8,32 +8,34 @@ import (
 	"strings"
 )
 
-func ExtractStringWithRegex(input, pattern string, regexMatchIndexToUse int) (string, error) {
+func ExtractStringWithRegex(input, pattern string, regexMatchIndexToUse int) (string, []string, error) {
+	input = strings.ReplaceAll(input, "\u00A0", " ")
+
 	// Compile the regex pattern
 	re, err := regexp.Compile(pattern)
 	if err != nil {
-		return "", fmt.Errorf("invalid regex pattern: %w", err)
+		return "", []string{}, fmt.Errorf("invalid regex pattern: %w", err)
 	}
 
 	// Find the first match
 	match := re.FindStringSubmatch(input)
 
-	// fmt.Printf("Matches: ")
-	// for _, m := range match {
-	// 	fmt.Printf("%s ", m)
-	// }
-	// fmt.Println("regexMatchIndexToUse: ", regexMatchIndexToUse)
+	fmt.Printf("Matches: ")
+	for _, m := range match {
+		fmt.Printf("%s ", m)
+	}
+	fmt.Println("regexMatchIndexToUse: ", regexMatchIndexToUse)
 
 	// If a match is found, return the first captured group (or the entire match if no group)
 	if len(match) > 0 {
 		if len(match) < regexMatchIndexToUse {
-			return match[0], nil
+			return match[0], match, nil
 		}
-		return match[regexMatchIndexToUse], nil
+		return match[regexMatchIndexToUse], match, nil
 	}
 
 	// Return an empty string and an error if no match is found
-	return "", fmt.Errorf("no match found")
+	return "", match, fmt.Errorf("no match found")
 }
 
 func CastPriceStringToFloat(priceStr string) float64 {

@@ -38,7 +38,10 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 
 		defer page.Close()
 
+		time.Sleep(1 * time.Second)
+
 		SlowScrollToBottom(page)
+		page.MustWaitStable()
 
 		elements, err := page.Elements(endpointToScrape.MainElementSelector)
 
@@ -284,8 +287,10 @@ OUTER:
 		}
 
 		defer page.Close()
+		time.Sleep(1 * time.Second)
 
 		SlowScrollToBottom(page)
+		page.MustWaitStable()
 
 		elements, err := page.Elements(endpointToScrape.MainElementSelector)
 

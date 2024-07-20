@@ -37,7 +37,7 @@ func GetMainElementHTMLContent(url, elementSelector string, maxElements int) (st
 
 	// scroll to the bottom of the page
 	SlowScrollToHalf(page)
-	page.MustWaitLoad()
+	page.MustWaitLoad().MustWaitStable()
 
 	fmt.Printf("Element selector: %v\n", elementSelector)
 

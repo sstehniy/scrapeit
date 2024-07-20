@@ -206,7 +206,6 @@ type ScrapeResultTest struct {
 type ExportType string
 
 const (
-	ExportTypePDF   ExportType = "pdf"
 	ExportTypeEXCEL ExportType = "xlsx"
 	ExportTypeCSV   ExportType = "csv"
 	ExportTypeXML   ExportType = "xml"

@@ -12,7 +12,6 @@ const exportTypeOptions = [
   { label: ".json", value: ExportType.JSON },
   { label: ".csv", value: ExportType.CSV },
   { label: ".xlsx", value: ExportType.EXCEL },
-  { label: ".pdf", value: ExportType.PDF },
 ] as const;
 
 export const ConfigureExportModal: FC<ConfigureExportModalProps> = ({

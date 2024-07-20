@@ -15,8 +15,6 @@ func GetFileExtension(exportType models.ExportType) (string, error) {
 		return ".xlsx", nil
 	case models.ExportTypeJSON:
 		return ".json", nil
-	case models.ExportTypePDF:
-		return ".pdf", nil
 	default:
 		return "", fmt.Errorf("no matched format found for input %s", exportType)
 	}

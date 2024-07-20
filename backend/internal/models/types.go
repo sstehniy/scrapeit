@@ -207,7 +207,7 @@ type ExportType string
 
 const (
 	ExportTypePDF   ExportType = "pdf"
-	ExportTypeEXCEL ExportType = "excel"
+	ExportTypeEXCEL ExportType = "xlsx"
 	ExportTypeCSV   ExportType = "csv"
 	ExportTypeXML   ExportType = "xml"
 	ExportTypeJSON  ExportType = "json"

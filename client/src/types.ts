@@ -61,7 +61,7 @@ enum SelectorStatus {
 
 enum ExportType {
   PDF = "pdf",
-  EXCEL = "excel",
+  EXCEL = "xlsx",
   CSV = "csv",
   XML = "xml",
   JSON = "json",

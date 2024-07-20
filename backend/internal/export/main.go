@@ -6,7 +6,7 @@ import (
 )
 
 func CreateResultsExportFile(inputResults []models.ScrapeResult, group models.ScrapeGroup, fileType models.ExportType) ([]byte, error) {
-	fmt.Printf("first input %v", inputResults[0])
+
 	transformed := transformResultsForExport(inputResults, group)
 	fmt.Printf("first val %v", transformed[0])
 	switch fileType {
@@ -16,6 +16,8 @@ func CreateResultsExportFile(inputResults []models.ScrapeResult, group models.Sc
 		return getJsonBytes(transformed)
 	case models.ExportTypeCSV:
 		return getCsvBytes(transformed)
+	case models.ExportTypeEXCEL:
+		return getExcelBytes(transformed)
 	}
 
 	return nil, nil

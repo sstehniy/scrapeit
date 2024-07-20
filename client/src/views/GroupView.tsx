@@ -363,7 +363,7 @@ export const GroupView: FC = () => {
           loadMore={() => {
             fetchNextPage();
           }}
-          height={windowHeight - size.height - 80}
+          height={windowHeight - size.height - 95}
           loading={isLoading || isFetchingNextPage}
           results={scrapeResults.pages
             .flatMap((page) => page.results)

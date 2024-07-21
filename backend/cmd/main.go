@@ -66,7 +66,7 @@ func main() {
 
 	cronManager := cron.NewCronManager(&SimpleLogger{
 		logger: log.New(logFile, "", log.LstdFlags),
-	})
+	}, 3, 3)
 
 	e := echo.New()
 

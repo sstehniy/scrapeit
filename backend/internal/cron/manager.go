@@ -2,6 +2,7 @@ package cron
 
 import (
 	"fmt"
+	taskqueue "scrapeit/internal/task-queue"
 	"sync"
 	"time"
 
@@ -33,58 +34,27 @@ type CronManagerJob struct {
 }
 
 type CronManager struct {
-	Jobs   []*CronManagerJob
-	cron   *cron.Cron
-	mu     sync.RWMutex
-	logger Logger
+	Jobs      []*CronManagerJob
+	TaskQueue *taskqueue.TaskQueue
+	cron      *cron.Cron
+	mu        sync.RWMutex
+	logger    Logger
 }
 
-func NewCronManager(logger Logger) *CronManager {
+func NewCronManager(logger Logger, maxConcurrentTasks, numWorkers int) *CronManager {
 	cm := &CronManager{
-		Jobs:   []*CronManagerJob{},
-		cron:   cron.New(),
-		logger: logger,
+		Jobs:      []*CronManagerJob{},
+		TaskQueue: taskqueue.NewTaskQueue(maxConcurrentTasks, numWorkers),
+		cron:      cron.New(),
+		logger:    logger,
 	}
 	cm.cron.Start() // Start the cron scheduler
 	return cm
 }
 
-func (cm *CronManager) DestroyJob(groupId string, endpointId string) {
-	cm.mu.Lock()
-
-	job := cm.getJob(groupId, endpointId)
-	if job != nil {
-		// Stop the cron job
-		cm.cron.Remove(job.ID)
-
-		// If the job is currently running, wait for it to finish
-		if job.Status == CronJobStatusRunning {
-			cm.logger.Info("Waiting for job to finish before destroying", "groupId", groupId, "endpointId", endpointId)
-			for job.Status == CronJobStatusRunning {
-				cm.mu.Unlock()
-				time.Sleep(100 * time.Millisecond)
-				cm.mu.Lock()
-			}
-		}
-
-		// Remove the job from the Jobs slice
-		for i, j := range cm.Jobs {
-			if j.GroupID == groupId && j.EndpointID == endpointId {
-				cm.Jobs = append(cm.Jobs[:i], cm.Jobs[i+1:]...)
-				break
-			}
-		}
-
-		cm.logger.Info("Job destroyed", "groupId", groupId, "endpointId", endpointId)
-	} else {
-		cm.logger.Info("Job not found for destruction", "groupId", groupId, "endpointId", endpointId)
-	}
-	cm.mu.Unlock()
-	cm.formatAllJobs()
-}
-
 func (cm *CronManager) AddJob(job CronManagerJob) {
 	cm.mu.Lock()
+	defer cm.mu.Unlock()
 
 	cm.Jobs = append(cm.Jobs, &job)
 	addedJob := cm.getJob(job.GroupID, job.EndpointID)
@@ -100,43 +70,69 @@ func (cm *CronManager) AddJob(job CronManagerJob) {
 			return
 		}
 		addedJob.Status = CronJobStatusRunning
-		cm.logger.Info("Starting job execution", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID)
-		err := addedJob.Job()
-		if err != nil {
-			cm.logger.Error("Error running job", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID, "error", err)
-		} else {
-			cm.logger.Info("Job ran successfully", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID)
-			cm.mu.Lock()
-			job := cm.getJob(addedJob.GroupID, addedJob.EndpointID)
-			if job != nil {
+		cm.logger.Info("Queueing job execution", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID)
+
+		cm.TaskQueue.AddTask(func() error {
+			defer func() {
+				cm.mu.Lock()
+				addedJob.Status = CronJobStatusIdle
 				addedJob.LastRun = time.Now().Format(time.RFC3339)
+				cm.mu.Unlock()
+			}()
+
+			err := addedJob.Job()
+			if err != nil {
+				cm.logger.Error("Error running job", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID, "error", err)
+			} else {
+				cm.logger.Info("Job ran successfully", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID)
 			}
-			addedJob.Status = CronJobStatusIdle
-			cm.mu.Unlock()
-		}
+			return err
+		})
 	})
 
 	if err != nil {
 		cm.logger.Error("Error adding job", "groupId", job.GroupID, "endpointId", job.EndpointID, "error", err)
 	} else {
-		newJob := cm.getJob(job.GroupID, job.EndpointID)
-		if newJob != nil {
-			newJob.ID = entryId
-			cm.logger.Info("Job added successfully", "groupId", job.GroupID, "endpointId", job.EndpointID, "entryId", entryId)
-		} else {
-			cm.logger.Error("Failed to retrieve newly added job", "groupId", job.GroupID, "endpointId", job.EndpointID)
-		}
+		addedJob.ID = entryId
+		cm.logger.Info("Job added successfully", "groupId", job.GroupID, "endpointId", job.EndpointID, "entryId", entryId)
 	}
-	cm.mu.Unlock()
+
 	cm.formatAllJobs()
 }
 
 func (cm *CronManager) Stop() {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+
 	for _, job := range cm.Jobs {
-		cm.DestroyJob(job.GroupID, job.EndpointID)
+		cm.cron.Remove(job.ID)
 	}
 	cm.cron.Stop()
-	cm.logger.Info("Cron manager stopped")
+	cm.TaskQueue.Stop()
+	cm.logger.Info("Cron manager and task queue stopped")
+}
+
+func (cm *CronManager) DestroyJob(groupId string, endpointId string) {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+
+	job := cm.getJob(groupId, endpointId)
+	if job != nil {
+		cm.cron.Remove(job.ID)
+
+		// Remove the job from the Jobs slice
+		for i, j := range cm.Jobs {
+			if j.GroupID == groupId && j.EndpointID == endpointId {
+				cm.Jobs = append(cm.Jobs[:i], cm.Jobs[i+1:]...)
+				break
+			}
+		}
+
+		cm.logger.Info("Job destroyed", "groupId", groupId, "endpointId", endpointId)
+	} else {
+		cm.logger.Info("Job not found for destruction", "groupId", groupId, "endpointId", endpointId)
+	}
+	cm.formatAllJobs()
 }
 
 func (cm *CronManager) UpdateJob(job CronManagerJob) {

@@ -134,8 +134,60 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
   );
 
   return (
-    <div className="mb-5">
-      <h3 className="text-lg font-semibold mb-2">Endpoints</h3>
+    <div>
+      <div className="flex items-end  mb-5 gap-5">
+        <Button
+          className="btn btn-primary btn-sm"
+          onClick={() => {
+            setShowCreateEndpointModal(true);
+          }}
+          disabled={group.fields.length === 0}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2.5}
+            stroke="currentColor"
+            className="size-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4.5v15m7.5-7.5h-15"
+            />
+          </svg>
+          New Endpoint
+        </Button>
+        {!!group.endpoints.length && (
+          <WithTooltip
+            tooltip={!allowScrapeAllEndpoints ? disabledTooltip : ""}
+          >
+            <Button
+              className="btn btn-primary btn-sm"
+              onClick={onScrapeAllEndpoints}
+              disabled={!allowScrapeAllEndpoints}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                className="size-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+                />
+              </svg>
+              Scrape All Endpoints
+            </Button>
+          </WithTooltip>
+        )}
+      </div>
+
       {endpoints.length === 0 && (
         <p className="text-base-content">No endpoints configured yet</p>
       )}
@@ -143,7 +195,7 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
         {endpoints.map((endpoint) => (
           <div
             key={endpoint.id}
-            className="mr-2 mb-2 px-3 py-2 border-2 rounded-lg border-base-content bg-base-100 text-base-content flex items-center"
+            className="mr-2 mb-2 p-2 border-2 rounded-lg border-base-content border-opacity-25 bg-base-100 text-base-content flex items-center"
           >
             <div className="flex">
               <div className="mr-3">
@@ -278,58 +330,7 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
           </div>
         ))}
       </div>
-      <div className="flex gap-4 mt-2">
-        <Button
-          className="btn btn-primary btn-sm"
-          onClick={() => {
-            setShowCreateEndpointModal(true);
-          }}
-          disabled={group.fields.length === 0}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2.5}
-            stroke="currentColor"
-            className="size-4"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 4.5v15m7.5-7.5h-15"
-            />
-          </svg>
-          New Endpoint
-        </Button>
-        {!!group.endpoints.length && (
-          <WithTooltip
-            tooltip={!allowScrapeAllEndpoints ? disabledTooltip : ""}
-          >
-            <Button
-              className="btn btn-primary btn-sm"
-              onClick={onScrapeAllEndpoints}
-              disabled={!allowScrapeAllEndpoints}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                stroke="currentColor"
-                className="size-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
-                />
-              </svg>
-              Scrape All Endpoints
-            </Button>
-          </WithTooltip>
-        )}
-      </div>
+
       {showCreateEndpointModal && (
         <ConfigureGroupEndpoint
           fields={group.fields}

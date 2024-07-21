@@ -150,7 +150,7 @@ export const ResultsTable: FC<ResultsTableProps> = ({
       </div>
       <div
         className="overflow-x-auto w-100 flex flex-col  overflow-y-auto align-center no-scrollbar"
-        style={{ height: `${height}px` }}
+        style={{ height: `${height}px`, minHeight: "475px" }}
       >
         <table className="w-full border-collapse bg-gray-800 shadow-md rounded-lg">
           <thead className="bg-gray-700 sticky top-0">

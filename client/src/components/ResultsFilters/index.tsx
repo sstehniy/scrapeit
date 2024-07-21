@@ -36,6 +36,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
     isOpen: false,
     onConfirm: null,
   });
+  const [hoveredFilter, setHoveredFilter] = useState<number | null>(null);
 
   useEffect(() => {
     const endpoints = group.endpoints.filter((e) =>
@@ -124,7 +125,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
 
   return (
     <div>
-      <div className="flex items-end gap-4 mb-4 flex-wrap">
+      <div className="flex items-end gap-4 flex-wrap mb-2">
         <TextInput
           labelClassName="label"
           className="input input-sm input-bordered flex items-center gap-2 w-56"
@@ -155,36 +156,41 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
           }}
           required
         />
-        <select
-          className="select select-bordered select-sm w-32"
-          value={params.sort.fieldId + ":" + params.sort.order}
-          onChange={(e) => {
-            const [fieldId, order] = e.target.value.split(":");
-            console.log({ fieldId, order });
-            setParams({
-              ...params,
-              sort: {
-                fieldId,
-                order: parseInt(order) as SearchSort["order"],
-              },
-            });
-          }}
-        >
-          <option value=":1">Sort By</option>
-          {sortOptions.map((sort) => (
-            <option
-              key={sort.fieldId + sort.order}
-              value={`${sort.fieldId}:${sort.order}`}
-              selected={
-                sort.fieldId === params.sort.fieldId &&
-                sort.order === params.sort.order
-              }
-            >
-              {group.fields.find((f) => f.id === sort.fieldId)?.name}:{" "}
-              {sort.order === 1 ? "ascending" : "descending"}
-            </option>
-          ))}
-        </select>
+        <div className="form-control w-40">
+          <label className="label">
+            <span className="label-text">Sorting</span>
+          </label>
+          <select
+            className="select select-bordered select-sm w-full"
+            value={params.sort.fieldId + ":" + params.sort.order}
+            onChange={(e) => {
+              const [fieldId, order] = e.target.value.split(":");
+              console.log({ fieldId, order });
+              setParams({
+                ...params,
+                sort: {
+                  fieldId,
+                  order: parseInt(order) as SearchSort["order"],
+                },
+              });
+            }}
+          >
+            <option value=":1">Sort By</option>
+            {sortOptions.map((sort) => (
+              <option
+                key={sort.fieldId + sort.order}
+                value={`${sort.fieldId}:${sort.order}`}
+                selected={
+                  sort.fieldId === params.sort.fieldId &&
+                  sort.order === params.sort.order
+                }
+              >
+                {group.fields.find((f) => f.id === sort.fieldId)?.name}:{" "}
+                {sort.order === 1 ? "ascending" : "descending"}
+              </option>
+            ))}
+          </select>
+        </div>
         <button
           className="btn btn-primary btn-outline btn-sm"
           onClick={() => {
@@ -224,116 +230,143 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
           + Filter
         </button>
       </div>
-      <div className="flex flex-wrap gap-3 mb-4">
-        {filters.map((filter, index) => {
-          const fieldType = group.fields.find(
-            (f) => f.id === filter.fieldId,
-          )?.type;
-          return (
-            <div
-              key={index}
-              className="flex items-center gap-3 flex-wrap p-3 border border-gray-200 border-opacity-30 rounded-md shadow-sm"
-            >
-              <select
-                className="select select-bordered select-sm w-32"
-                value={filter.fieldId}
-                onChange={(e) => {
-                  const fieldId = e.target.value;
-                  setFilters((prev) =>
-                    prev.map((f, i) =>
-                      index === i
-                        ? ({
-                            value: null,
-                            operator: "=",
-                            fieldId,
-                          } as SearchFilter)
-                        : f,
-                    ),
-                  );
-                }}
+      {!!filters.length && (
+        <div className="flex flex-wrap gap-3 pb-4 pt-2">
+          {filters.map((filter, index) => {
+            const fieldType = group.fields.find(
+              (f) => f.id === filter.fieldId,
+            )?.type;
+            return (
+              <div
+                key={index}
+                onMouseEnter={() => setHoveredFilter(index)}
+                onMouseLeave={() => setHoveredFilter(null)}
+                className="flex items-center flex-wrap border-2 rounded-lg border-base-content border-opacity-25 shadow-sm shrink-0 relative"
               >
-                <option value="">Select Field</option>
-                {[...filterableNumberFields, ...filterableStringFields].map(
-                  (field) => (
-                    <option key={field.id} value={field.id}>
-                      {field.name}
-                    </option>
-                  ),
+                {hoveredFilter === index && (
+                  <button
+                    className="absolute btn-circle btn btn-xs btn-error"
+                    onClick={() => {
+                      setFilters((prev) => prev.filter((_, i) => i !== index));
+                    }}
+                    style={{
+                      top: "-0.5rem",
+                      right: "-0.5rem",
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="size-3"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18 18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
                 )}
-              </select>
-              <select
-                className="select select-bordered select-sm w-16"
-                value={filter.operator}
-                onChange={(e) => {
-                  const operator = e.target.value as SearchFilter["operator"];
-                  setFilters((prev) =>
-                    prev.map((f, i) => (i === index ? { ...f, operator } : f)),
-                  );
-                }}
-              >
-                {fieldType === FieldType.NUMBER ? (
-                  <>
-                    {numberOperators.map((op) => (
-                      <option key={op} value={op}>
-                        {op}
-                      </option>
-                    ))}
-                  </>
-                ) : (
-                  <>
-                    {stringOperators.map((op) => (
-                      <option key={op} value={op}>
-                        {op}
-                      </option>
-                    ))}
-                  </>
-                )}
-              </select>
-              <TextInput
-                labelClassName=""
-                className="input input-sm input-bordered w-32"
-                wrapperClassName="form-control"
-                label=""
-                name="value"
-                id="value"
-                type={fieldType === FieldType.NUMBER ? "number" : "text"}
-                value={filter.value ?? ""}
-                onChange={(e) => {
-                  let value: string | number = e.target.value;
-                  if (fieldType === FieldType.NUMBER) {
-                    console.log("here");
-                    value = parseFloat(value);
-                  }
-                  setFilters((prev) =>
-                    prev.map((f, i) => (i === index ? { ...f, value } : f)),
-                  );
-                }}
-                required
-              />
-              <button
-                onClick={() => {
-                  setFilters((prev) => prev.filter((_, i) => i !== index));
-                }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="size-5"
+                <select
+                  className="select select-sm  h-10 rounded-lg border-0 focus:ring-0 focus:outline-none focus:ring-offset-0 border-r-2 border-base-content border-opacity-25 rounded-r-none"
+                  value={filter.fieldId}
+                  onChange={(e) => {
+                    const fieldId = e.target.value;
+                    setFilters((prev) =>
+                      prev.map((f, i) =>
+                        index === i
+                          ? ({
+                              value: null,
+                              operator: "=",
+                              fieldId,
+                            } as SearchFilter)
+                          : f,
+                      ),
+                    );
+                  }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18 18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-          );
-        })}
-      </div>
+                  <option value="">Select Field</option>
+                  {[...filterableNumberFields, ...filterableStringFields].map(
+                    (field) => (
+                      <option key={field.id} value={field.id}>
+                        {field.name}
+                      </option>
+                    ),
+                  )}
+                </select>
+                <select
+                  className="select select-sm w-16 h-10 rounded-lg border-0 focus:ring-0 focus:outline-none focus:ring-offset-0 border-r-2 border-base-content border-opacity-25 rounded-r-none"
+                  value={filter.operator}
+                  onChange={(e) => {
+                    const operator = e.target.value as SearchFilter["operator"];
+                    setFilters((prev) =>
+                      prev.map((f, i) =>
+                        i === index ? { ...f, operator } : f,
+                      ),
+                    );
+                  }}
+                >
+                  {fieldType === FieldType.NUMBER ? (
+                    <>
+                      {numberOperators.map((op) => (
+                        <option key={op} value={op}>
+                          {op}
+                        </option>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      {stringOperators.map((op) => (
+                        <option key={op} value={op}>
+                          {op}
+                        </option>
+                      ))}
+                    </>
+                  )}
+                </select>
+                <input
+                  className="input input-sm h-10 rounded-lg border-0 focus:ring-0 focus:outline-none focus:ring-offset-0"
+                  type={fieldType === FieldType.NUMBER ? "number" : "text"}
+                  value={filter.value ?? ""}
+                  onChange={(e) => {
+                    let value: string | number = e.target.value;
+                    if (fieldType === FieldType.NUMBER) {
+                      console.log("here");
+                      value = parseFloat(value);
+                    }
+                    setFilters((prev) =>
+                      prev.map((f, i) => (i === index ? { ...f, value } : f)),
+                    );
+                  }}
+                />
+                {/* <button
+                  onClick={() => {
+                    setFilters((prev) => prev.filter((_, i) => i !== index));
+                  }}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18 18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button> */}
+              </div>
+            );
+          })}
+        </div>
+      )}
       {showExportOptionsModal.isOpen && (
         <ConfigureExportModal
           defaultName={group.name + "-" + new Date().toLocaleDateString()}

@@ -176,11 +176,6 @@ func getScrapeResults(
 
 	endpointResults := []models.ScrapeResult{}
 	for cursor.Next(ctx) {
-		var resultAny bson.M
-		if err := cursor.Decode(&resultAny); err != nil {
-			return nil, false, err
-		}
-		fmt.Println("resultAny", resultAny)
 		var result models.ScrapeResult
 		if err := cursor.Decode(&result); err != nil {
 			return nil, false, err

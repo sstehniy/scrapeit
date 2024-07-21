@@ -127,9 +127,9 @@ func main() {
 	ai := api.Group("/ai")
 	ai.POST("/completion", handlers.CompletionHandler)
 	fmt.Println("Starting server on port 8080")
-	// fmt.Println("Setting up cron jobs")
-	// setupCronJobs(e, cronManager, DbClient)
-	// fmt.Println("Cron jobs set up")
+	fmt.Println("Setting up cron jobs")
+	setupCronJobs(e, cronManager, DbClient)
+	fmt.Println("Cron jobs set up")
 
 	go func() {
 		quit := make(chan os.Signal, 1)

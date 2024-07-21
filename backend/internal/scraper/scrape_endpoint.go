@@ -172,7 +172,7 @@ func filterElements(fields []models.Field, results []models.ScrapeResult, endpoi
 	var toReplace []models.ScrapeResult
 	for _, element := range results {
 		uniqueId := getFieldValueByFieldKey(fields, "unique_identifier", element.Fields)
-		fmt.Println("Unique ID: ", uniqueId)
+		// fmt.Println("Unique ID: ", uniqueId)
 		if uniqueId == "" {
 			fmt.Println("Unique ID is empty, skipping")
 			continue
@@ -319,7 +319,7 @@ OUTER:
 	for _, element := range allElements {
 		details, err := getElementDetailsTest(element, endpointToScrape.DetailFieldSelectors, relevantGroup.Fields)
 		uniqueId := getFieldValueByFieldKeyTest(relevantGroup.Fields, "unique_identifier", details).(string)
-		fmt.Println("Unique ID: ", uniqueId)
+		// fmt.Println("Unique ID: ", uniqueId)
 		if uniqueId == "" {
 			fmt.Println("Unique ID is empty, skipping")
 			continue

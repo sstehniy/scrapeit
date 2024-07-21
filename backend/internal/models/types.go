@@ -256,3 +256,37 @@ type FieldChange struct {
 	FieldIsNewSinceLastSave bool            `json:"fieldIsNewSinceLastSave"`
 	ChangeType              FieldChangeType `json:"type"`
 }
+
+type NotificationConfig struct {
+	ID               primitive.ObjectID      `json:"_id" bson:"_id,omitempty"`
+	GroupId          primitive.ObjectID      `json:"groupId" bson:"groupId"`
+	FieldIdsToNotify []string                `json:"fieldIdsToNotify" bson:"fieldIdsToNotify"`
+	Conditions       []NotificationCondition `json:"conditions" bson:"conditions"`
+}
+
+type NotificationCondition struct {
+	FieldId   string  `json:"fieldId" bson:"fieldId"`
+	FieldName string  `json:"fieldName,omitempty" bson:"fieldName,omitempty"`
+	Operator  string  `json:"operator" bson:"operator"`
+	Value     float64 `json:"value" bson:"value"`
+}
+
+type NotificationResultField struct {
+	FieldName string      `json:"fieldName"`
+	Value     interface{} `json:"value"`
+}
+
+type NotificationResult struct {
+	ImageUrl     string                    `json:"imageUrl"`
+	EndpointName string                    `json:"endpointName"`
+	UniqueHash   string                    `json:"uniqueHash"`
+	URL          string                    `json:"url"`
+	Fields       []NotificationResultField `json:"fields"`
+	Status       string                    `json:"status"` // "new" or "updated"
+}
+
+type NotificationSearchResultRequestBody struct {
+	Results   []NotificationResult    `json:"results"`
+	Filters   []NotificationCondition `json:"filters"`
+	GroupName string                  `json:"groupName"`
+}

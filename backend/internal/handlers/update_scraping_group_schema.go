@@ -119,6 +119,19 @@ func UpdateScrapingGroupSchema(c echo.Context) error {
 
 	group.Fields = req.Schema
 
+	var foundNotificationConfig *models.NotificationConfig
+	notificationConfigResult := dbClient.Database("scrapeit").Collection("notification_configs").FindOne(c.Request().Context(), bson.M{"groupId": groupId})
+	if notificationConfigResult.Err() == nil {
+		err = notificationConfigResult.Decode(foundNotificationConfig)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get notification config")
+		}
+	} else {
+		fmt.Println("No notification config found")
+
+		foundNotificationConfig = nil
+	}
+
 	if len(group.Endpoints) > 0 {
 		for _, change := range req.Changes {
 			switch change.ChangeType {
@@ -142,6 +155,20 @@ func UpdateScrapingGroupSchema(c echo.Context) error {
 					fmt.Println("Endpoint after adding field", endpoint)
 				}
 			case models.DeleteField:
+				// check if field is in fieldIdsToNotify or conditions, if so, remove it
+				if foundNotificationConfig != nil {
+					for i, fieldId := range foundNotificationConfig.FieldIdsToNotify {
+						if fieldId == change.FieldID {
+							foundNotificationConfig.FieldIdsToNotify = append(foundNotificationConfig.FieldIdsToNotify[:i], foundNotificationConfig.FieldIdsToNotify[i+1:]...)
+						}
+					}
+					for i, condition := range foundNotificationConfig.Conditions {
+						if condition.FieldId == change.FieldID {
+							foundNotificationConfig.Conditions = append(foundNotificationConfig.Conditions[:i], foundNotificationConfig.Conditions[i+1:]...)
+						}
+					}
+				}
+
 				for idx, endpoint := range group.Endpoints {
 					for i, fieldSelector := range endpoint.DetailFieldSelectors {
 						if fieldSelector.FieldID == change.FieldID {
@@ -152,6 +179,21 @@ func UpdateScrapingGroupSchema(c echo.Context) error {
 				}
 
 			case models.ChangeFieldKey, models.ChangeFieldName, models.ChangeFieldType:
+				// check if field is in fieldIdsToNotify or conditions, if so,
+				// check if changed field is FieldTypeNumber, otherwise remove it from conditions
+				if foundNotificationConfig != nil {
+					for i, condition := range foundNotificationConfig.Conditions {
+						if condition.FieldId == change.FieldID && !change.FieldIsNewSinceLastSave {
+							foundField := group.GetFieldById(change.FieldID)
+							if foundField == nil {
+								continue
+							}
+							if foundField.Type != models.FieldTypeNumber {
+								foundNotificationConfig.Conditions = append(foundNotificationConfig.Conditions[:i], foundNotificationConfig.Conditions[i+1:]...)
+							}
+						}
+					}
+				}
 				if !change.FieldIsNewSinceLastSave {
 					fmt.Printf("Field is not new since last save: %+v\n", change)
 					for idx, endpoint := range group.Endpoints {
@@ -170,6 +212,16 @@ func UpdateScrapingGroupSchema(c echo.Context) error {
 	}
 
 	fmt.Printf("Group after changes: %+v\n", group)
+
+	// update notification config
+	if foundNotificationConfig != nil {
+		notificationConfigCollection := dbClient.Database("scrapeit").Collection("notification_configs")
+		_, err = notificationConfigCollection.UpdateOne(c.Request().Context(), bson.M{"groupId": groupId}, bson.M{"$set": foundNotificationConfig})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to update notification config")
+		}
+		fmt.Println("Notification config updated")
+	}
 
 	result, err := dbClient.Database("scrapeit").Collection("scrape_groups").UpdateOne(
 		c.Request().Context(),

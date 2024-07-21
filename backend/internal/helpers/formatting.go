@@ -3,6 +3,7 @@ package helpers
 import (
 	"fmt"
 	"math"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,11 +21,11 @@ func ExtractStringWithRegex(input, pattern string, regexMatchIndexToUse int) (st
 	// Find the first match
 	match := re.FindStringSubmatch(input)
 
-	fmt.Printf("Matches: ")
-	for _, m := range match {
-		fmt.Printf("%s ", m)
-	}
-	fmt.Println("regexMatchIndexToUse: ", regexMatchIndexToUse)
+	// fmt.Printf("Matches: ")
+	// for _, m := range match {
+	// 	fmt.Printf("%s ", m)
+	// }
+	// fmt.Println("regexMatchIndexToUse: ", regexMatchIndexToUse)
 
 	// If a match is found, return the first captured group (or the entire match if no group)
 	if len(match) > 0 {
@@ -39,6 +40,9 @@ func ExtractStringWithRegex(input, pattern string, regexMatchIndexToUse int) (st
 }
 
 func CastPriceStringToFloat(priceStr string) float64 {
+	if strings.TrimSpace(priceStr) == "" {
+		return 0
+	}
 	// Remove currency symbols and spaces
 	currencySymbols := regexp.MustCompile(`[^\d.,-]`)
 	cleanedStr := currencySymbols.ReplaceAllString(priceStr, "")
@@ -81,4 +85,22 @@ func CastPriceStringToFloat(priceStr string) float64 {
 	// fmt.Printf("Original value: %v, Float value: %f \n", priceStr, math.Round(floatVal*100)/100)
 
 	return math.Round(floatVal*100) / 100
+}
+
+func GetFullUrl(endpointUrl, urlToDetails string) string {
+	fmt.Printf("Endpoint URL: %s, URL to details: %s\n", endpointUrl, urlToDetails)
+	if strings.HasPrefix(urlToDetails, "http") {
+		return endpointUrl
+	}
+
+	parsedUrl, err := url.Parse(endpointUrl)
+	if err != nil {
+		return ""
+	}
+	host := parsedUrl.Scheme + "://" + parsedUrl.Host
+	if strings.HasPrefix(urlToDetails, "/") {
+		return host + urlToDetails
+	}
+	return host + "/" + urlToDetails
+
 }

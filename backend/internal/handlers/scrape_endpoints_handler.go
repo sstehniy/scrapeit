@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"scrapeit/internal/cron"
+	"scrapeit/internal/helpers"
 	"scrapeit/internal/models"
 	"scrapeit/internal/scraper"
 
@@ -163,6 +164,13 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 			fmt.Println("Error updating group:", err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
+	}
+
+	result := dbClient.Database("scrapeit").Collection("notification_configs").FindOne(c.Request().Context(), bson.M{"groupId": relevantGroup.ID.Hex()})
+	fmt.Println("Here is the result", result)
+	if result.Err() != mongo.ErrNoDocuments {
+		go helpers.HandleNotifyResults(result, *relevantGroup, results,
+			toReplaceResults)
 	}
 
 	return c.JSON(http.StatusOK, ScraperEndpointsHandlerResponse{

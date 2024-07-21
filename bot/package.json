@@ -1,0 +1,16 @@
+{
+  "name": "bot",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts"
+  },
+  "type": "module",
+  "dependencies": {
+    "hono": "^4.5.1",
+    "redis": "^4.6.15",
+    "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.8.3",
+    "@types/bun": "1.1.6"
+  }
+}

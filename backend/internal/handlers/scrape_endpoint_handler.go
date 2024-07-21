@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"scrapeit/internal/helpers"
 	"scrapeit/internal/models"
 	"scrapeit/internal/scraper"
 
@@ -16,6 +17,11 @@ type ScraperEndpointHandlerRequest struct {
 	EndpointId string `json:"endpointId"`
 	GroupId    string `json:"groupId"`
 	Internal   bool   `json:"internal"`
+}
+
+type ScraperEndpointHandlerResponse struct {
+	NewResults      []models.ScrapeResult `json:"newResults"`
+	ReplacedResults []models.ScrapeResult `json:"replacedResults"`
 }
 
 func ScrapeEndpointHandler(c echo.Context) error {
@@ -102,5 +108,14 @@ func ScrapeEndpointHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, results)
+	result := dbClient.Database("scrapeit").Collection("notification_configs").FindOne(c.Request().Context(), bson.M{"groupId": relevantGroup.ID.Hex()})
+	fmt.Println("Here is the result", result)
+	if result.Err() != mongo.ErrNoDocuments {
+		go helpers.HandleNotifyResults(result, *relevantGroup, results, toReplace)
+	}
+
+	return c.JSON(http.StatusOK, ScraperEndpointHandlerResponse{
+		NewResults:      results,
+		ReplacedResults: toReplace,
+	})
 }

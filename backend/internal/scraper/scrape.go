@@ -39,27 +39,31 @@ func GetStealthPage(browser *rod.Browser, url string, elementToWaitFor string) (
 		return page, fmt.Errorf("error navigating: %w", err)
 	}
 
-	// Wait for load and element to be visible (max 5 seconds)
+	// Wait for load and stability (max 1 minute)
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	err := page.Context(ctx).MustWaitLoad().MustWaitIdle().WaitElementsMoreThan(elementToWaitFor, 0)
-
-	fmt.Println("Waited for load and element")
-
+	err := page.Context(ctx).WaitLoad()
 	if err != nil {
-		if err == context.DeadlineExceeded {
-			fmt.Println("Load and element wait timeout exceeded")
-		} else {
-			fmt.Println("Error waiting for load and element:", err)
-		}
+		return page, fmt.Errorf("error waiting for load: %w", err)
+	}
 
-		// If timeout, try to wait for navigation (max 5 seconds)
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	err = page.Context(ctx).WaitStable(2 * time.Second)
+	if err != nil {
+		return page, fmt.Errorf("error waiting for stability: %w", err)
+	}
 
-		page.Context(ctx).WaitNavigation(proto.PageLifecycleEventNameNetworkAlmostIdle)
-		fmt.Println("Waited for navigation")
+	// Wait for the specific element (max 10 seconds)
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	_, err = page.Context(ctx).Element(elementToWaitFor)
+	if err != nil {
+		// Capture a screenshot for debugging
+		screenshot, _ := page.Screenshot(false, &proto.PageCaptureScreenshot{})
+		os.WriteFile("error_screenshot.png", screenshot, 0644)
+
+		return page, fmt.Errorf("error finding element %s: %w", elementToWaitFor, err)
 	}
 
 	page.MustSetViewport(1920, 1080, 2.0, false)
@@ -167,11 +171,11 @@ func SlowScrollToBottom(page *rod.Page) error {
 		return fmt.Errorf("failed to parse result: %w", err)
 	}
 
-	fmt.Println("Total height: ", totalHeight)
+	// fmt.Println("Total height: ", totalHeight)
 	// Scroll loop
 	for currentScroll := 0; currentScroll < totalHeight; currentScroll += viewportHeight {
 
-		fmt.Println("Current scroll: ", currentScroll)
+		// fmt.Println("Current scroll: ", currentScroll)
 		// Scroll to the new position
 		_, err = page.Eval(fmt.Sprintf("() => window.scrollTo(0, %d)", currentScroll))
 		if err != nil {
@@ -183,7 +187,7 @@ func SlowScrollToBottom(page *rod.Page) error {
 		page.MustWaitLoad().MustWaitIdle()
 
 		// Print progress
-		fmt.Printf("\rScrolling: %d/%d pixels", currentScroll, totalHeight)
+		// fmt.Printf("\rScrolling: %d/%d pixels", currentScroll, totalHeight)
 
 		// Check if the document height has changed (in case of dynamically loaded content)
 		var newHeight int

@@ -112,6 +112,9 @@ func main() {
 	groups.GET("/:id", handlers.GetScrapingGroup)
 	groups.PUT("/:groupId/schema", handlers.UpdateScrapingGroupSchema)
 	groups.GET("/version-tag-exists/:versionTag", handlers.VersionTagExists)
+	groups.GET("/:id/notification-config", handlers.GetScrapingGroupNotificationConfig)
+	groups.PUT("/:id/notification-config", handlers.ChangeScrapingGroupNotificationConfig)
+	groups.DELETE("/:id/notification-config", handlers.DeleteScrapingGroupNotificationConfig)
 
 	// Endpoints within scrape groups
 	groups.POST("/:groupId/endpoints", handlers.CreateScrapingGroupEndpoint)

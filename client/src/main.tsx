@@ -11,36 +11,37 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 const queryClient = new QueryClient();
 
 const App = () => {
-  return (
-    <div className="mx-auto lg:w-5/6 w-[95%] pt-10">
-      <Routes>
-        <Route path="/" element={<GroupsOverview />} />
-        <Route path="/group/:groupId" element={<GroupView />} />
-        <Route path="*" element={<div>Not Found</div>} />
-      </Routes>
-    </div>
-  );
+	return (
+		<div className="mx-auto lg:w-5/6 w-[95%] pt-10">
+			<Routes>
+				<Route path="/" element={<GroupsOverview />} />
+				<Route path="/group/:groupId" element={<GroupView />} />
+				<Route path="*" element={<div>Not Found</div>} />
+			</Routes>
+		</div>
+	);
 };
 
+// biome-ignore lint/style/noNonNullAssertion: <explanation>
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
+	<React.StrictMode>
+		<BrowserRouter>
+			<QueryClientProvider client={queryClient}>
+				<App />
+			</QueryClientProvider>
 
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        pauseOnHover
-        theme="dark"
-        transition={Slide}
-      />
-    </BrowserRouter>
-  </React.StrictMode>,
+			<ToastContainer
+				position="top-right"
+				autoClose={3000}
+				hideProgressBar={false}
+				newestOnTop
+				closeOnClick
+				rtl={false}
+				pauseOnFocusLoss
+				pauseOnHover
+				theme="dark"
+				transition={Slide}
+			/>
+		</BrowserRouter>
+	</React.StrictMode>,
 );

@@ -6,7 +6,7 @@ Your task is to analyze a given HTML snippet and extract unique, universal CSS s
 ## Guidelines:
 
 1. **Shared Selectors**: If multiple fields can use the same selector, use that selector for all of them and provide a regex to extract the specific part for each field.
-2. **General Regexes**: Keep regexes as general as possible. For example, a regex for currency symbols should match both "$" and "€". However, avoid using regex if a simple CSS selector can be used to extract a field's textContent. Be careful with regexes for numbers, as they can be tricky.
+2. **General Regexes**: Keep regexes as general as possible. For example, a regex for currency symbols should match both "$" and "€". However, avoid using regex if a simple CSS selector can be used to extract a field's text content. Be careful with regexes for numbers, as they can be tricky.
 3. **Unique Selectors**: If a unique selector can't be found for a field, return an empty string as the selector.
 4. **Attribute Values**: If the target value is in an attribute rather than text content, include an "attributeToGet" field specifying the attribute name.
 5. **AttributeToGet**: Only include "attributeToGet" when the value is in an attribute, not for text content.

@@ -12,7 +12,7 @@ const queryClient = new QueryClient();
 
 const App = () => {
   return (
-    <div className="container mx-auto pt-10">
+    <div className="mx-auto lg:w-5/6 w-[95%] pt-10">
       <Routes>
         <Route path="/" element={<GroupsOverview />} />
         <Route path="/group/:groupId" element={<GroupView />} />

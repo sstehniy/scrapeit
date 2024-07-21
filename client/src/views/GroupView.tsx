@@ -26,6 +26,19 @@ export type SearchConfig = {
   endpointIds: string[];
   q: string;
   isArchive: boolean;
+  filters: SearchFilter[];
+  sort: SearchSort;
+};
+
+export type SearchSort = {
+  fieldId: string;
+  order: 1 | -1;
+};
+
+export type SearchFilter = {
+  fieldId: string;
+  value: number | string | null;
+  operator: "=" | "!=" | ">" | "<";
 };
 
 const defaultSearchConfig: SearchConfig = {
@@ -34,6 +47,11 @@ const defaultSearchConfig: SearchConfig = {
   endpointIds: [] as string[],
   q: "",
   isArchive: false,
+  filters: [],
+  sort: {
+    fieldId: "",
+    order: 1,
+  },
 };
 
 export type FieldChange = {
@@ -87,7 +105,7 @@ export const GroupView: FC = () => {
     },
   });
 
-  const { data: scrapeResultsExist, refetch: refetchScrapeResultsAxist } =
+  const { data: scrapeResultsExist, refetch: refetchScrapeResultsExist } =
     useQuery<boolean>({
       queryKey: ["scrapeResultsExist", groupId],
       queryFn: () =>
@@ -110,14 +128,10 @@ export const GroupView: FC = () => {
     queryKey: ["groupResults", groupId, searchConfig],
     queryFn: ({ pageParam }) => {
       return axios
-        .get(`/api/scrape/results/${groupId}`, {
-          params: {
-            offset: pageParam,
-            limit: searchConfig.limit,
-            endpointIds: searchConfig.endpointIds.join(","),
-            q: searchConfig.q,
-            isArchive: searchConfig.isArchive,
-          },
+        .post(`/api/scrape/results`, {
+          ...searchConfig,
+          offset: pageParam,
+          groupId,
         })
         .then((res) => res.data);
     },
@@ -134,6 +148,7 @@ export const GroupView: FC = () => {
     if (!group) return;
     setSearchConfig((prev) => ({
       ...prev,
+      filters: [],
       endpointIds: group.endpoints.map((e) => e.id),
     }));
   }, [group]);
@@ -211,7 +226,7 @@ export const GroupView: FC = () => {
     async (fields: Field[], changes: FieldChange[]) => {
       if (!group) return;
 
-      const exist = await refetchScrapeResultsAxist();
+      const exist = await refetchScrapeResultsExist();
       if (
         group.fields.length &&
         changes.some((c) => c.type === "add_field") &&
@@ -234,7 +249,7 @@ export const GroupView: FC = () => {
         setShowGroupSchemaSettings(false);
       }
     },
-    [group, refetchScrapeResultsAxist, updateGroupSchemaMutation],
+    [group, refetchScrapeResultsExist, updateGroupSchemaMutation],
   );
 
   const handleScrapeAllEndpoints = useCallback(() => {

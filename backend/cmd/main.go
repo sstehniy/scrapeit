@@ -24,9 +24,6 @@ type SimpleLogger struct {
 	logger *log.Logger
 }
 
-
-
-
 func (l *SimpleLogger) Info(msg string, keysAndValues ...interface{}) {
 	l.logger.Printf("INFO: %s %v", msg, keysAndValues)
 }
@@ -39,10 +36,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	
 	DbClient, err := models.GetDbClient()
-
-
 
 	fmt.Println("Connected to MongoDB")
 	if err != nil {
@@ -105,7 +99,7 @@ func main() {
 	// Scrape routes
 	scrape := api.Group("/scrape")
 	scrape.GET("/test", handlers.Scrape)
-	scrape.GET("/results/:groupId", handlers.GetScrapingResults)
+	scrape.POST("/results", handlers.GetScrapingResults)
 	scrape.GET("/results/not-empty/:groupId", handlers.GetScrapingResultsNotEmpty)
 	scrape.POST("/results/export/:groupId", handlers.ExportGroupResultsHandler)
 	scrape.POST("/endpoints", handlers.ScrapeEndpointsHandler)

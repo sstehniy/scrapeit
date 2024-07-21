@@ -1,5 +1,5 @@
 .select-control {
-  @apply input input-bordered w-[450px] !important;
+  @apply input input-bordered w-[400px] !important;
 }
 
 .select-value-container {

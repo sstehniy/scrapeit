@@ -40,6 +40,9 @@ func ExtractSelectors(html string, fieldsToExtract []models.FieldToExtractSelect
 
 	client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
 
+	fmt.Printf(fmt.Sprintf(`{HTML: %v, FieldsToExtractSelectorsFor:
+	%v}`, html, fieldsToExtractString))
+
 	dialogue := []openai.ChatCompletionMessage{
 		{
 			Role:    openai.ChatMessageRoleSystem,

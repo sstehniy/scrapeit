@@ -27,7 +27,7 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 
 	var allElements rod.Elements
 
-	for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i++ {
+	for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i += endpointToScrape.PaginationConfig.Step {
 		urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
 		fmt.Println("Scraping URL: ", urlWithPagination)
 
@@ -102,24 +102,20 @@ func buildURLParameterPagination(baseURL, parameter string, page int) string {
 	return fmt.Sprintf("%s?%s=%d", baseURL, parameter, page)
 }
 
-func buildURLPathPagination(baseURL, parameter string, page int, urlRegexToInsert string) string {
+func buildURLPathPagination(baseURL string, parameter string, page int, urlRegexToInsert string) string {
 	if urlRegexToInsert == "" {
 		// Default regex if not provided
-		urlRegexToInsert = fmt.Sprintf(`(%s:\d+)`, parameter)
+		urlRegexToInsert = `\d+`
 	}
 	re := regexp.MustCompile(urlRegexToInsert)
-	replacement := fmt.Sprintf("%s:%d", parameter, page)
+	replacement := fmt.Sprintf("%s%d", parameter, page)
 
 	if re.MatchString(baseURL) {
 		return re.ReplaceAllString(baseURL, replacement)
 	}
 
-	// If the pattern is not found, insert it before the last path segment
-	parts := strings.Split(baseURL, "/")
-	if len(parts) > 1 {
-		parts[len(parts)-1] = replacement + "/" + parts[len(parts)-1]
-	}
-	return strings.Join(parts, "/")
+	// If the pattern is not found, return the base URL unchanged
+	return baseURL
 }
 
 func findLinkFieldId(fields []models.Field) string {
@@ -279,7 +275,7 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 	var allElements rod.Elements
 
 OUTER:
-	for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i++ {
+	for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i += endpointToScrape.PaginationConfig.Step {
 		urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
 		fmt.Println("Scraping URL: ", urlWithPagination)
 

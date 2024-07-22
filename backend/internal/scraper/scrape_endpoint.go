@@ -248,6 +248,8 @@ func getElementDetails(element *rod.Element, selectors []models.FieldSelector, f
 		if relevantFieldType == "number" {
 			if text != "" {
 				text = helpers.CastPriceStringToFloat(text.(string))
+			} else {
+				text = 0.0
 			}
 		}
 
@@ -396,6 +398,8 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 		if relevantFieldType == "number" {
 			if text != "" {
 				text = helpers.CastPriceStringToFloat(text.(string))
+			} else {
+				text = 0.0
 			}
 		}
 		detail := models.ScrapeResultDetailTest{

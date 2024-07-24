@@ -6,7 +6,6 @@ import { trimTrailingSlash } from "hono/trailing-slash";
 import { createClient } from "redis";
 
 import { Telegraf } from "telegraf";
-import type { InputMediaPhoto } from "telegraf/types";
 
 if (!process.env.REDIS_URL) {
 	throw new Error("REDIS_URL is required");
@@ -81,10 +80,10 @@ type RequestBody = {
 
 app.post("/send-notification", async (c) => {
 	const body = await c.req.json<RequestBody>();
-	await Bun.write("./test.json", JSON.stringify(body, null, 2));
+	// await Bun.write("./test.json", JSON.stringify(body, null, 2));
 
 	const activeUsers = await redis.keys("user:*");
-	console.log(activeUsers);
+
 	const formattedResultChunks = formatResults(body);
 	const mainMessage = formatMainMessage(body.groupName, body.filters);
 
@@ -109,8 +108,6 @@ const formatMainMessage = (groupName: string, filters: SearchFilter[]) => {
 	});
 	return `New results in GROUP ${groupName} with filters: ${filterText.join(", ")}`;
 };
-
-const MAX_MESSAGE_LENGTH = 4096;
 
 async function sendResultsAsMediaGroup(
 	userId: string,

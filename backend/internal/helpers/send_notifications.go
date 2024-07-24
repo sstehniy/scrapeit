@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"scrapeit/internal/models"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -175,7 +174,7 @@ func sendNotification(
 		fmt.Println("Error marshaling notification request body:", err)
 		return
 	}
-	os.WriteFile("notification_request.json", marschaledBody, 0644)
+	// os.WriteFile("notification_request.json", marschaledBody, 0644)
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", "http://bot:5005/send-notification", bytes.NewBuffer(marschaledBody))
 	if err != nil {

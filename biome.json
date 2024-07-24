@@ -6,6 +6,9 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
+			"a11y": {
+				"all": false
+			},
 			"recommended": false,
 			"complexity": {
 				"noBannedTypes": "error",

@@ -1,0 +1,128 @@
+# Improved CSS Selector Extraction Task
+
+Your task is to analyze a given HTML snippet and extract unique, universal CSS selectors for specified fields. These selectors should work for the provided HTML as well as for similar HTML structures. You will also have access to previous attempts and their evaluation results to improve your performance.
+
+## Guidelines:
+
+1. **Shared Selectors**: If multiple fields can use the same selector, use that selector for all of them and provide a regex to extract the specific part for each field.
+2. **General Regexes**: Keep regexes as general as possible. For example, a regex for currency symbols should match both "$" and "€". However, avoid using regex if a simple CSS selector can be used to extract a field's text content.
+3. **Unique Selectors**: If a unique selector can't be found for a field, return an empty string as the selector.
+4. **Attribute Values**: If the target value is in an attribute rather than text content, include an "attributeToGet" field specifying the attribute name.
+5. **AttributeToGet**: Only include "attributeToGet" when the value is in an attribute, not for text content.
+6. **Advanced Selectors**: You can use data attributes, nth-child, or nth-of-type pseudo-classes if needed.
+7. **Unique Identifier**: Pay special attention to the field "Unique Identifier for Result". The selector you provide for this field will be used to identify scrape results after initial extraction to determine if a result is new or already seen.
+8. **Learning from Past Attempts**: Review previous outputs and their evaluation results. Address any issues that were identified and try to improve upon successful extractions.
+
+## Input:
+
+```json
+{
+  "HTML": "<div>... [HTML content] ...</div>",
+  "FieldsToExtractSelectorsFor": [
+    {"name": "Unique Identifier for Result", "key": "unique_identifier", "type": "text"},
+    {"name": "Title", "key": "title", "type": "text"},
+    ...
+  ],
+  "PreviousAttempts": [
+    {
+      "Output": {
+        "fields": [
+          {
+            "field": "unique_identifier",
+            "selector": "...",
+            "attributeToGet": "...",
+            "regex": "...",
+            "regexMatchIndexToUse": 0
+          },
+          ...
+        ]
+      },
+      "EvaluationResult": {
+        "success": false,
+        "issues": [
+          {
+            "key": "price",
+            "remark": "Regex doesn't account for thousands separator"
+          },
+          ...
+        ]
+      }
+    },
+    ...
+  ]
+}
+```
+
+## Expected Response Format:
+
+```json
+{
+  "fields": [
+    {
+      "field": "unique_identifier",
+      "selector": "...",
+      "attributeToGet": "...",
+      "regex": "...",
+      "regexMatchIndexToUse": 0
+    },
+    ...
+  ]
+}
+```
+
+## Important Notes:
+
+1. **Complex Structures**: If the HTML structure is complex or nested, consider using child (>) or descendant ( ) combinators in selectors as appropriate.
+2. **Escape Characters**: Escape special characters in regexes properly for JSON formatting.
+3. **Testing**: Test your selectors and regexes to ensure they correctly extract the desired information.
+4. **Learning**: Pay close attention to the "PreviousAttempts" and their evaluation results. Use this information to avoid repeating past mistakes and to build upon successful strategies.
+5. **Continuous Improvement**: While not explicitly included in the output, strive to improve your extraction strategy based on previous attempts. Address any issues that were identified in past evaluations.
+
+## Example:
+
+Given the following previous attempt and evaluation:
+
+```json
+{
+  "Output": {
+    "fields": [
+      {
+        "field": "price",
+        "selector": ".product .price",
+        "attributeToGet": "",
+        "regex": "\\d+(\\.\\d+)?",
+        "regexMatchIndexToUse": 0
+      }
+    ]
+  },
+  "EvaluationResult": {
+    "success": false,
+    "issues": [
+      {
+        "key": "price",
+        "remark": "Regex doesn't account for thousands separator"
+      }
+    ]
+  }
+}
+```
+
+Your new output might look like:
+
+```json
+{
+  "fields": [
+    {
+      "field": "price",
+      "selector": ".product .price",
+      "attributeToGet": "",
+      "regex": "\\d{1,3}(,\\d{3})*(\\.\\d+)?",
+      "regexMatchIndexToUse": 0
+    }
+  ]
+}
+```
+
+In this example, the regex for the price field has been updated to account for thousands separators, addressing the issue identified in the previous evaluation.
+
+Remember to address all issues from previous attempts and strive for continuous improvement in your extraction strategy, even though these improvements are not explicitly included in the output format.

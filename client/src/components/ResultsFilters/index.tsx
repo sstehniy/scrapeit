@@ -103,17 +103,17 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
 	const stringOperators = ["=", "!="];
 
 	useEffect(() => {
-		const appliableFilters = filters.filter(
+		const applicableFilters = filters.filter(
 			(f) => f.value !== null && f.value !== "" && f.fieldId !== "",
 		);
 
 		const equal =
-			JSON.stringify(params.filters) === JSON.stringify(appliableFilters);
+			JSON.stringify(params.filters) === JSON.stringify(applicableFilters);
 		if (equal) {
 			return;
 		}
-		console.log("setting filters", appliableFilters);
-		setParams({ ...params, filters: appliableFilters });
+		console.log("setting filters", applicableFilters);
+		setParams({ ...params, filters: applicableFilters });
 	}, [filters, params, setParams]);
 
 	const sortOptions: SearchSort[] = filterableNumberFields.reduce(

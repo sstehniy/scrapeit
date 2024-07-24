@@ -1,0 +1,155 @@
+# Evaluation Prompt for CSS Selector Extraction
+
+Your task is to evaluate the output of a CSS selector extraction process based on the given HTML and the extracted selectors. You will determine if the extraction was successful and return a JSON response indicating the result, including specific feedback on any issues encountered.
+
+## Input:
+
+You will receive three inputs:
+1. The original HTML snippet
+2. The list of fields to extract selectors for
+3. The extracted selectors and regexes
+
+## Evaluation Criteria:
+
+1. **Completeness**: All requested fields should have a corresponding entry in the extracted selectors, even if the selector is empty.
+2. **Correctness**: Each non-empty selector should correctly identify the target element in the HTML.
+3. **Uniqueness**: The "Unique Identifier for Result" selector, if provided, should be unique and suitable for identifying distinct results.
+4. **Regex Validity**: If a regex is provided, it should correctly extract the desired information from the selected element.
+5. **Attribute Handling**: If a value is in an attribute, the "attributeToGet" field should be correctly specified.
+6. **Generality**: Non-empty selectors and regexes should be as general as possible while still being accurate for the given HTML.
+
+## Important Note:
+Fields with empty selectors should be ignored during evaluation. An empty selector indicates that no suitable selector was found for that field, which is acceptable. The success of the extraction should not be affected by fields with empty selectors.
+
+## Evaluation Steps:
+
+1. Verify that all requested fields have a corresponding entry in the extracted selectors (even if some are empty).
+2. For each field with a non-empty selector:
+   a. Apply the selector to the HTML and confirm it selects the correct element.
+   b. If a regex is provided, apply it to the selected element's text or specified attribute and verify it extracts the correct information.
+   c. If "attributeToGet" is specified, confirm the attribute exists and contains the target value.
+3. If a "Unique Identifier for Result" field is provided with a non-empty selector, ensure its selector is indeed unique and suitable for identifying distinct results.
+4. Check that non-empty selectors and regexes are as general as possible while remaining accurate.
+5. Ignore fields with empty selectors in your evaluation of success.
+
+## Output:
+
+Return a JSON object with the following structure:
+
+```json
+{
+  "success": boolean,
+  "issues": [
+    {
+      "key": string,
+      "remark": string
+    }
+  ]
+}
+```
+
+- Set "success" to true if all evaluation criteria are met for all fields with non-empty selectors. Fields with empty selectors should not affect the success status.
+- If any issues are found for fields with non-empty selectors, include them in the "issues" array. Each issue should be an object with a "key" field (matching the field key from the input) and a "remark" field explaining the problem.
+- If no issues are found for fields with non-empty selectors, the "issues" array should be empty.
+
+## Example:
+
+Input HTML:
+```html
+<div data-id="12345" class="product">
+  <h2 class="title">Cool Gadget</h2>
+  <span class="price">$99.99</span>
+  <img src="cool-gadget.jpg" alt="Cool Gadget Image">
+</div>
+```
+
+Fields to extract:
+```json
+[
+  {"name": "Unique Identifier", "key": "id", "type": "text"},
+  {"name": "Title", "key": "title", "type": "text"},
+  {"name": "Price", "key": "price", "type": "number"},
+  {"name": "Currency", "key": "currency", "type": "text"},
+  {"name": "Image", "key": "image", "type": "image"},
+  {"name": "Description", "key": "description", "type": "text"}
+]
+```
+
+Extracted selectors:
+```json
+{
+  "fields": [
+    {
+      "field": "id",
+      "selector": ".product",
+      "attributeToGet": "data-id",
+      "regex": "",
+      "regexMatchIndexToUse": 0
+    },
+    {
+      "field": "title",
+      "selector": ".product .title",
+      "attributeToGet": "",
+      "regex": "",
+      "regexMatchIndexToUse": 0
+    },
+    {
+      "field": "price",
+      "selector": ".product .price",
+      "attributeToGet": "",
+      "regex": "\\d+(\\.\\d+)?",
+      "regexMatchIndexToUse": 0
+    },
+    {
+      "field": "currency",
+      "selector": ".product .price",
+      "attributeToGet": "",
+      "regex": "[$€£]",
+      "regexMatchIndexToUse": 0
+    },
+    {
+      "field": "image",
+      "selector": ".product img",
+      "attributeToGet": "src",
+      "regex": "",
+      "regexMatchIndexToUse": 0
+    },
+    {
+      "field": "description",
+      "selector": "",
+      "attributeToGet": "",
+      "regex": "",
+      "regexMatchIndexToUse": 0
+    }
+  ]
+}
+```
+
+Example output (assuming no issues with non-empty selectors):
+```json
+{
+  "success": true,
+  "issues": []
+}
+```
+
+Note that in this example, the "description" field has an empty selector, but it doesn't affect the success status because we're ignoring fields with empty selectors.
+
+Example output (with issues):
+```json
+{
+  "success": false,
+  "issues": [
+    {
+      "key": "price",
+      "remark": "Regex doesn't account for thousands separator"
+    },
+    {
+      "key": "currency",
+      "remark": "Regex is too specific, doesn't account for all possible currency symbols"
+    }
+  ]
+}
+```
+
+Remember to thoroughly evaluate all aspects of the extraction for fields with non-empty selectors and provide specific, actionable feedback for any issues encountered. Fields with empty selectors should be ignored in the evaluation process.

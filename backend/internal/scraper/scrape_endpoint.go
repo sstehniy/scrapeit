@@ -86,6 +86,15 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 		if err != nil {
 			return nil, nil, fmt.Errorf("error getting element details: %w", err)
 		}
+
+		if element.ActualLink != "" {
+			for i, detail := range details {
+				if detail.FieldID == linkFieldId {
+					details[i].Value = element.ActualLink
+				}
+			}
+		}
+
 		result := models.ScrapeResult{
 			ID:                  primitive.NewObjectID(),
 			UniqueHash:          helpers.GenerateScrapeResultHash(endpointToScrape.ID + getFieldValueByFieldKey(relevantGroup.Fields, "unique_identifier", details).(string)),
@@ -143,7 +152,7 @@ func buildURLPathPagination(baseURL string, parameter string, page int, urlRegex
 
 func findLinkFieldId(fields []models.Field) string {
 	for _, field := range fields {
-		if field.Type == models.FieldTypeLink {
+		if field.Type == models.FieldTypeLink && field.Name == "Link" {
 			return field.ID
 		}
 	}
@@ -295,7 +304,7 @@ func (e ScrapeEndpointTestError) Error() string {
 func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, client *mongo.Client, browser *rod.Browser) ([]models.ScrapeResultTest, []models.ScrapeResultTest, error) {
 	fmt.Println(("Scraping endpoint test"))
 
-	var allElements rod.Elements
+	allElements := []PageData{}
 
 	fmt.Println("Scraping URL: ", endpointToScrape.URL)
 
@@ -325,7 +334,7 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 	}
 
 	for _, element := range elements {
-		allElements = append(allElements, element.Element)
+		allElements = append(allElements, element)
 		if len(allElements) == 5 {
 			break
 		}
@@ -337,12 +346,20 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 
 	results := make([]models.ScrapeResultTest, 0, len(allElements))
 	for _, element := range allElements {
-		details, err := getElementDetailsTest(element, endpointToScrape.DetailFieldSelectors, relevantGroup.Fields)
+		details, err := getElementDetailsTest(element.Element, endpointToScrape.DetailFieldSelectors, relevantGroup.Fields)
 		uniqueId := getFieldValueByFieldKeyTest(relevantGroup.Fields, "unique_identifier", details).(string)
 		// fmt.Println("Unique ID: ", uniqueId)
 		if uniqueId == "" {
 			fmt.Println("Unique ID is empty, skipping")
 			continue
+		}
+
+		if element.ActualLink != "" {
+			for i, detail := range details {
+				if detail.FieldID == linkFieldId {
+					details[i].Value = element.ActualLink
+				}
+			}
 		}
 
 		if err != nil {

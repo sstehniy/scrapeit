@@ -1,3 +1,6 @@
 .vscode/
 .env
 mongo-data
+
+# every image
+*.png

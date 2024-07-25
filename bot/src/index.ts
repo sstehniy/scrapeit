@@ -189,8 +189,15 @@ function formatResults(body: RequestBody) {
 }
 
 function formatSingleResult(result: SearchResult): string {
+	const MAX_FIELD_VALUE_LENGTH = 100;
+	const cutValue = (value: string) => {
+		if (value.length > MAX_FIELD_VALUE_LENGTH) {
+			return value.slice(0, MAX_FIELD_VALUE_LENGTH) + "...";
+		}
+		return value;
+	};
 	const fields = result.fields
-		.map((field) => `<b>${field.fieldName}</b>: ${field.value}`)
+		.map((field) => `<b>${field.fieldName}</b>: ${cutValue(field.value)}`)
 		.join("\n");
 	return `<b><a href="${result.url}">URL</a></b>\n${fields}\n\n`;
 }

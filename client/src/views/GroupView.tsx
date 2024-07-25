@@ -85,7 +85,9 @@ export const GroupView: FC = () => {
 		onConfirm: ((versionTag: string) => void) | null;
 	}>({
 		isOpen: false,
-		onConfirm: () => {},
+		onConfirm: () => {
+			return;
+		},
 	});
 	const queryClient = useQueryClient();
 	const noSchemaMessageShown = useRef(false);
@@ -102,7 +104,7 @@ export const GroupView: FC = () => {
 		return () => window.removeEventListener("resize", handleResize);
 	}, []);
 
-	const { data: group, isLoading: groupLoading } = useQuery<ScrapeGroup>({
+	const { data: group } = useQuery<ScrapeGroup>({
 		queryKey: ["group", groupId],
 		queryFn: () =>
 			axios.get(`/api/scrape-groups/${groupId}`).then((res) => res.data),
@@ -114,15 +116,14 @@ export const GroupView: FC = () => {
 		},
 	});
 
-	const { data: scrapeResultsExist, refetch: refetchScrapeResultsExist } =
-		useQuery<boolean>({
-			queryKey: ["scrapeResultsExist", groupId],
-			queryFn: () =>
-				axios
-					.get(`/api/scrape/results/not-empty/${groupId}`)
-					.then((res) => res.data.resultsNotEmpty),
-			enabled: !!groupId,
-		});
+	const { refetch: refetchScrapeResultsExist } = useQuery<boolean>({
+		queryKey: ["scrapeResultsExist", groupId],
+		queryFn: () =>
+			axios
+				.get(`/api/scrape/results/not-empty/${groupId}`)
+				.then((res) => res.data.resultsNotEmpty),
+		enabled: !!groupId,
+	});
 
 	const {
 		data: scrapingGroupNotificationConfig,
@@ -161,7 +162,7 @@ export const GroupView: FC = () => {
 				})
 				.then((res) => res.data);
 		},
-		// refetchInterval: 30000,
+		refetchInterval: 30000,
 		getNextPageParam: (lastPage, pages) => {
 			return lastPage.hasMore ? pages.length * searchConfig.limit : undefined;
 		},
@@ -249,7 +250,7 @@ export const GroupView: FC = () => {
 	const updateGroupNotificationConfigMutation = useMutation({
 		mutationFn: (config: NotificationConfig) =>
 			axios.put(`/api/scrape-groups/${groupId}/notification-config`, config),
-		onMutate: (config) => {
+		onMutate: () => {
 			setShowGroupNotificationConfig(false);
 			toast.info("Updating group notification config...");
 		},
@@ -444,7 +445,12 @@ export const GroupView: FC = () => {
 							onConfirm: null,
 						})
 					}
-					onConfirm={showConfirmGroupArchive.onConfirm || (() => {})}
+					onConfirm={
+						showConfirmGroupArchive.onConfirm ||
+						(() => {
+							return;
+						})
+					}
 				/>
 			)}
 

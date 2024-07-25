@@ -108,8 +108,10 @@ func main() {
 	// Scrape groups routes
 	groups := api.Group("/scrape-groups")
 	groups.GET("", handlers.GetScrapingGroups)
+	groups.GET("/archived", handlers.GetArchivedScrapingGroups)
 	groups.POST("", handlers.CreateScrapingGroup)
 	groups.GET("/:id", handlers.GetScrapingGroup)
+	groups.DELETE("/:id", handlers.DeleteScrapingGroup)
 	groups.PUT("/:groupId/schema", handlers.UpdateScrapingGroupSchema)
 	groups.GET("/version-tag-exists/:versionTag", handlers.VersionTagExists)
 	groups.GET("/:id/notification-config", handlers.GetScrapingGroupNotificationConfig)

@@ -1,5 +1,19 @@
 type ScrapeGroup = {
 	id: string;
+	originalId?: string;
+	name: string;
+	fields: Field[];
+	endpoints: Endpoint[];
+	withThumbnail: boolean;
+	versionTag: string;
+	created: string;
+	updated: string;
+	isArchived: boolean;
+};
+
+type ArchivedScrapeGroup = {
+	id: string;
+	originalId: string;
 	name: string;
 	fields: Field[];
 	endpoints: Endpoint[];
@@ -130,6 +144,7 @@ export type {
 	NotificationConfig,
 	NotificationCondition,
 	ScrapeGroup,
+	ArchivedScrapeGroup,
 	Field,
 	Endpoint,
 	PaginationConfig,

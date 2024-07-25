@@ -10,8 +10,9 @@ import (
 
 // PageData stores the page and its main element
 type PageData struct {
-	Page    *rod.Page
-	Element *rod.Element
+	Page       *rod.Page
+	Element    *rod.Element
+	ActualLink string
 }
 
 func getMainElements(page *rod.Page, endpoint models.Endpoint, scrapeType ScrapeType, limit int) ([]PageData, error) {
@@ -36,12 +37,14 @@ func getMainElements(page *rod.Page, endpoint models.Endpoint, scrapeType Scrape
 		for _, elem := range elems {
 			linkElem, err := elem.Element(endpoint.DetailedViewTriggerSelector)
 			if err != nil {
-				return nil, fmt.Errorf("error getting link element: %w", err)
+				fmt.Printf("error getting link element: %v", err)
+				continue
 			}
 
 			attr, err := linkElem.Attribute("href")
 			if err != nil {
-				return nil, fmt.Errorf("error getting href attribute: %w", err)
+				fmt.Printf("error getting href attribute: %v", err)
+				continue
 			}
 
 			fullUrl := helpers.GetFullUrl(endpoint.URL, *attr)
@@ -49,7 +52,9 @@ func getMainElements(page *rod.Page, endpoint models.Endpoint, scrapeType Scrape
 
 			newPage, err := GetStealthPage(page.Browser(), fullUrl, endpoint.DetailedViewMainElementSelector)
 			if err != nil {
-				return nil, fmt.Errorf("error getting detailed view page: %w", err)
+				fmt.Printf("error getting detailed view page: %v", err)
+				newPage.MustClose()
+				continue
 			}
 
 			// SlowScrollToBottom(newPage)
@@ -59,7 +64,7 @@ func getMainElements(page *rod.Page, endpoint models.Endpoint, scrapeType Scrape
 			// newPage.MustScreenshot("screenshot.png")
 
 			detailElem := newPage.MustElement(endpoint.DetailedViewMainElementSelector)
-			detailPages = append(detailPages, PageData{Page: newPage, Element: detailElem})
+			detailPages = append(detailPages, PageData{Page: newPage, Element: detailElem, ActualLink: fullUrl})
 			// check if not null
 			if detailElem != nil {
 				fmt.Println("Found detailed view element")
@@ -75,7 +80,7 @@ func getMainElements(page *rod.Page, endpoint models.Endpoint, scrapeType Scrape
 
 	case PureDetails:
 		element := page.MustElement(endpoint.DetailedViewMainElementSelector)
-		return []PageData{{Page: nil, Element: element}}, nil
+		return []PageData{{Page: nil, Element: element, ActualLink: page.MustInfo().URL}}, nil
 
 	default:
 		return nil, fmt.Errorf("unknown scrape type: %v", scrapeType)

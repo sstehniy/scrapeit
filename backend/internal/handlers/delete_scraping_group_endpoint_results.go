@@ -53,15 +53,14 @@ func DeleteScrapingGroupEndpointResults(c echo.Context) error {
 		})
 	}
 
+	cronManager.DestroyJob(groupId, endpointId)
+
 	err := deleteScrapingGroupEndpointResults(dbClient, groupId, endpointId)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"error": err.Error(),
 		})
 	}
-
-	// stop the cron job for this endpoint
-	cronManager.DestroyJob(groupId, endpointId)
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Endpoint Results deleted successfully"})
 }

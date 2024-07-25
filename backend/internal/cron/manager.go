@@ -73,6 +73,11 @@ func (cm *CronManager) AddJob(job CronManagerJob) {
 		cm.logger.Info("Queueing job execution", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID)
 
 		cm.TaskQueue.AddTask(func() error {
+			foundJob := cm.getJob(addedJob.GroupID, addedJob.EndpointID)
+			if foundJob == nil {
+				cm.logger.Info("Job not found", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID)
+				return nil
+			}
 			defer func() {
 				cm.mu.Lock()
 				addedJob.Status = CronJobStatusIdle
@@ -116,22 +121,7 @@ func (cm *CronManager) DestroyJob(groupId string, endpointId string) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	job := cm.getJob(groupId, endpointId)
-	if job != nil {
-		cm.cron.Remove(job.ID)
-
-		// Remove the job from the Jobs slice
-		for i, j := range cm.Jobs {
-			if j.GroupID == groupId && j.EndpointID == endpointId {
-				cm.Jobs = append(cm.Jobs[:i], cm.Jobs[i+1:]...)
-				break
-			}
-		}
-
-		cm.logger.Info("Job destroyed", "groupId", groupId, "endpointId", endpointId)
-	} else {
-		cm.logger.Info("Job not found for destruction", "groupId", groupId, "endpointId", endpointId)
-	}
+	cm.destroyJob(groupId, endpointId)
 	cm.formatAllJobs()
 }
 

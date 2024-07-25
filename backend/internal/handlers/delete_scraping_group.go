@@ -65,6 +65,21 @@ func DeleteScrapingGroup(c echo.Context) error {
 		})
 	}
 
+	allEndpointsIds := []string{}
+	for _, endpoint := range group.Endpoints {
+		allEndpointsIds = append(allEndpointsIds, endpoint.ID)
+	}
+
+	endpointsFilter := bson.M{"endpointId": bson.M{"$in": allEndpointsIds, "groupId": groupIdObj}}
+
+	_, err = dbClient.Database("scrapeit").Collection("scrape_results").DeleteMany(c.Request().Context(), endpointsFilter)
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
+
 	archivedFilter := bson.M{"originalId": groupIdObj}
 	cursor, err := dbClient.Database("scrapeit").Collection("scrape_groups").Find(c.Request().Context(), archivedFilter)
 	if err != nil {

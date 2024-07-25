@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/devices"
-	"github.com/go-rod/rod/lib/proto"
 	"github.com/go-rod/stealth"
 )
 
@@ -33,7 +32,7 @@ func GetBrowser() *rod.Browser {
 
 func GetStealthPage(browser *rod.Browser, url string, elementToWaitFor string) (*rod.Page, error) {
 	page := stealth.MustPage(browser)
-
+	page.MustSetViewport(1920, 1080, 2.0, false)
 	// Navigate to the URL
 	if err := page.Navigate(url); err != nil {
 		return page, fmt.Errorf("error navigating: %w", err)
@@ -59,14 +58,13 @@ func GetStealthPage(browser *rod.Browser, url string, elementToWaitFor string) (
 
 	_, err = page.Context(ctx).Element(elementToWaitFor)
 	if err != nil {
+		fmt.Println("Error finding element: ", err)
+		fmt.Println("Element to wait for: ", elementToWaitFor)
 		// Capture a screenshot for debugging
-		screenshot, _ := page.Screenshot(false, &proto.PageCaptureScreenshot{})
-		os.WriteFile("error_screenshot.png", screenshot, 0644)
+		page.MustScreenshot("error_screenshot.png")
 
 		return page, fmt.Errorf("error finding element %s: %w", elementToWaitFor, err)
 	}
-
-	page.MustSetViewport(1920, 1080, 2.0, false)
 
 	return page, nil
 }

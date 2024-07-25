@@ -25,32 +25,55 @@ func (e ScrapeEndpointError) Error() string {
 
 func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, client *mongo.Client, browser *rod.Browser) ([]models.ScrapeResult, []models.ScrapeResult, error) {
 
-	var allElements rod.Elements
-
-	for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i += endpointToScrape.PaginationConfig.Step {
-		urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
-		fmt.Println("Scraping URL: ", urlWithPagination)
-
-		page, err := GetStealthPage(browser, urlWithPagination, endpointToScrape.MainElementSelector)
-		if err != nil {
-			return nil, nil, fmt.Errorf("error getting page: %w", err)
+	allElements := []PageData{}
+	defer func() {
+		for _, element := range allElements {
+			if element.Page != nil {
+				element.Page.Close()
+			}
 		}
+	}()
+	scrapeType := GetScrapeType(endpointToScrape)
 
+	if scrapeType == PureDetails {
+		page, err := GetStealthPage(browser, endpointToScrape.URL, endpointToScrape.DetailedViewMainElementSelector)
 		defer page.Close()
-
-		time.Sleep(1 * time.Second)
-
 		SlowScrollToBottom(page)
+		fmt.Println("Before wait stable")
 		page.MustWaitStable()
+		fmt.Println("After wait stable")
 
-		elements, err := page.Elements(endpointToScrape.MainElementSelector)
-
+		elements, err := getMainElements(page, endpointToScrape, scrapeType, 1)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error finding elements: %w", err)
 		}
+		allElements = elements
 
-		allElements = append(allElements, elements...)
+	} else {
+		for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i += endpointToScrape.PaginationConfig.Step {
+			urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
+			fmt.Println("Scraping URL: ", urlWithPagination)
+
+			page, err := GetStealthPage(browser, urlWithPagination, endpointToScrape.MainElementSelector)
+			if err != nil {
+				return nil, nil, fmt.Errorf("error getting page: %w", err)
+			}
+
+			defer page.Close()
+
+			SlowScrollToBottom(page)
+			page.MustWaitStable()
+
+			elements, err := getMainElements(page, endpointToScrape, GetScrapeType(endpointToScrape), -1)
+			fmt.Println("Found elements: ", len(elements))
+			if err != nil {
+				return nil, nil, fmt.Errorf("error finding elements: %w", err)
+			}
+			allElements = append(allElements, elements...)
+		}
 	}
+
+	fmt.Println("All elements: ", len(allElements))
 
 	linkFieldId := findLinkFieldId(relevantGroup.Fields)
 	endpointLinkSelector := findLinkSelector(endpointToScrape.DetailFieldSelectors, linkFieldId)
@@ -58,7 +81,7 @@ func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.Scrap
 
 	results := make([]models.ScrapeResult, 0, len(allElements))
 	for _, element := range allElements {
-		details, err := getElementDetails(element, endpointToScrape.DetailFieldSelectors, relevantGroup.Fields)
+		details, err := getElementDetails(element.Element, endpointToScrape.DetailFieldSelectors, relevantGroup.Fields)
 
 		if err != nil {
 			return nil, nil, fmt.Errorf("error getting element details: %w", err)
@@ -274,39 +297,38 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 
 	var allElements rod.Elements
 
-OUTER:
-	for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i += endpointToScrape.PaginationConfig.Step {
-		urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
-		fmt.Println("Scraping URL: ", urlWithPagination)
+	fmt.Println("Scraping URL: ", endpointToScrape.URL)
 
-		page, err := GetStealthPage(browser, urlWithPagination, endpointToScrape.MainElementSelector)
-		if err != nil {
-			return nil, nil, fmt.Errorf("error getting page: %w", err)
-		}
+	page, err := GetStealthPage(browser, endpointToScrape.URL, endpointToScrape.MainElementSelector)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error getting page: %w", err)
+	}
 
-		defer page.Close()
-		time.Sleep(1 * time.Second)
+	defer page.Close()
 
-		SlowScrollToBottom(page)
-		page.MustWaitStable()
+	SlowScrollToBottom(page)
+	page.MustWaitStable()
 
-		elements, err := page.Elements(endpointToScrape.MainElementSelector)
+	elements, err := getMainElements(page, endpointToScrape, GetScrapeType(endpointToScrape), 5)
 
-		if err != nil {
-			return nil, nil, fmt.Errorf("error finding elements: %w", err)
-		}
-
+	defer func() {
 		for _, element := range elements {
-			allElements = append(allElements, element)
-			if len(allElements) == 5 {
-				break OUTER
+			if element.Page != nil {
+				element.Page.Close()
 			}
 		}
 
-		// allElements = append(allElements, elements...)
-		// if len(allElements) == 5 {
-		// 	break
-		// }
+	}()
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("error finding elements: %w", err)
+	}
+
+	for _, element := range elements {
+		allElements = append(allElements, element.Element)
+		if len(allElements) == 5 {
+			break
+		}
 	}
 
 	linkFieldId := findLinkFieldId(relevantGroup.Fields)

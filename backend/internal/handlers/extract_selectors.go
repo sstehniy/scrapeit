@@ -20,7 +20,12 @@ func ExtractSelectorsHandler(c echo.Context) error {
 	if err := c.Bind(&requestData); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
-	html, err := scraper.GetMainElementHTMLContent(requestData.URL, requestData.MainElementSelector, 3)
+	scrapeType := scraper.GetScrapeType(requestData.Endpoint)
+	maxElements := 4
+	if scrapeType != scraper.Previews {
+		maxElements = 1
+	}
+	html, err := scraper.GetMainElementHTMLContent(requestData.Endpoint, maxElements)
 	// write html to a file for debugging
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})

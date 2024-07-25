@@ -13,6 +13,7 @@ import {
 	type ScrapeGroup,
 	type ScrapeResultTest,
 	ScrapeStatus,
+	ScrapeType,
 	SelectorStatus,
 } from "../../types";
 import { FloatingAIChat } from "../FloatingAIChat";
@@ -31,6 +32,9 @@ const defaultEndpoint: Endpoint = {
 	url: "",
 	detailFieldSelectors: [],
 	mainElementSelector: "",
+	withDetailedView: false,
+	detailedViewTriggerSelector: "",
+	detailedViewMainElementSelector: "",
 	interval: "*/5 * * * *",
 	active: false,
 	status: ScrapeStatus.IDLE,
@@ -42,6 +46,52 @@ const defaultEndpoint: Endpoint = {
 		step: 0,
 	},
 };
+
+const getScrapeType = (ep: Endpoint) => {
+	const mainElementsSelector = ep.mainElementSelector.trim();
+	const withDetailedView = ep.withDetailedView;
+	const detailedViewTriggerSelector = ep.detailedViewTriggerSelector.trim();
+	const detailedViewMainElementSelector =
+		ep.detailedViewMainElementSelector.trim();
+
+	if (!withDetailedView && mainElementsSelector) {
+		return ScrapeType.PREVIEWS;
+	}
+
+	if (
+		withDetailedView &&
+		detailedViewTriggerSelector === "" &&
+		detailedViewMainElementSelector !== ""
+	) {
+		return ScrapeType.PURE_DETAILS;
+	}
+
+	if (
+		withDetailedView &&
+		mainElementsSelector &&
+		detailedViewTriggerSelector &&
+		detailedViewMainElementSelector
+	) {
+		return ScrapeType.PREVIEWS_WITH_DETAILS;
+	}
+
+	return ScrapeType.PREVIEWS;
+};
+
+const scrapeTypes = [
+	{
+		label: "Previews",
+		value: ScrapeType.PREVIEWS,
+	},
+	{
+		label: "Previews with Details",
+		value: ScrapeType.PREVIEWS_WITH_DETAILS,
+	},
+	{
+		label: "Pure Details",
+		value: ScrapeType.PURE_DETAILS,
+	},
+] as const;
 
 const FirstStepContent: FC<{
 	endpoint: Endpoint;
@@ -55,6 +105,7 @@ const FirstStepContent: FC<{
 	testElementError: string | null;
 	testElementResult: string | null;
 	validateFirstStep: (ep: Endpoint) => boolean;
+	defaultScrapeType: ScrapeType;
 }> = ({
 	endpoint,
 	setEndpoint,
@@ -64,7 +115,14 @@ const FirstStepContent: FC<{
 	testElementError,
 	testElementResult,
 	validateFirstStep,
+	defaultScrapeType,
 }) => {
+	const [scrapeType, setScrapeType] = useState<ScrapeType>(ScrapeType.PREVIEWS);
+
+	useEffect(() => {
+		setScrapeType(defaultScrapeType);
+	}, [defaultScrapeType]);
+
 	return (
 		<div className="w-[450px]">
 			<TextInput
@@ -101,30 +159,143 @@ const FirstStepContent: FC<{
 				error={firstStepErrors.url}
 			/>
 
-			<TextInput
-				labelClassName="label"
-				className="input input-bordered flex items-center gap-2"
-				wrapperClassName="form-control mb-4"
-				label="Main Element Selector"
-				name="main_element_selector"
-				id="main_element_selector"
-				value={endpoint.mainElementSelector}
-				onChange={(e) => {
-					const newEndpoint = {
-						...endpoint,
-						mainElementSelector: e.target.value,
-					};
-					validateFirstStep(newEndpoint);
-					setEndpoint(newEndpoint);
-				}}
-				required
-				error={firstStepErrors.mainElementSelector}
-			/>
+			<div role="tablist" className="tabs tabs-boxed">
+				{/* <a role="tab" className="tab">
+					Tab 1
+				</a>
+				<a role="tab" className="tab tab-active">
+					Tab 2
+				</a>
+				<a role="tab" className="tab">
+					Tab 3
+				</a> */}
+				{scrapeTypes.map((type) => (
+					<button
+						key={type.value}
+						className={`tab ${scrapeType === type.value ? "tab-active" : ""}`}
+						onClick={() => {
+							setScrapeType(type.value);
+							let newEndpoint = { ...endpoint };
+
+							switch (type.value) {
+								case ScrapeType.PREVIEWS:
+									newEndpoint = {
+										...endpoint,
+										withDetailedView: false,
+									};
+									break;
+								case ScrapeType.PREVIEWS_WITH_DETAILS:
+									newEndpoint = {
+										...endpoint,
+										withDetailedView: true,
+									};
+									break;
+								case ScrapeType.PURE_DETAILS:
+									newEndpoint = {
+										...endpoint,
+										withDetailedView: true,
+									};
+									break;
+							}
+							setScrapeType(type.value);
+							validateFirstStep(newEndpoint);
+							setEndpoint(newEndpoint);
+						}}
+					>
+						{type.label}
+					</button>
+				))}
+			</div>
+
+			{scrapeType !== ScrapeType.PURE_DETAILS && (
+				<TextInput
+					labelClassName="label"
+					className="input input-bordered flex items-center gap-2"
+					wrapperClassName="form-control mb-4"
+					label="Main Element Selector"
+					name="main_element_selector"
+					id="main_element_selector"
+					value={endpoint.mainElementSelector}
+					onChange={(e) => {
+						const newEndpoint = {
+							...endpoint,
+							mainElementSelector: e.target.value,
+						};
+						validateFirstStep(newEndpoint);
+						setEndpoint(newEndpoint);
+					}}
+					required
+					error={firstStepErrors.mainElementSelector}
+				/>
+			)}
+			{/* <div className="form-control">
+				<label className="label cursor-pointer">
+					<span className="label-text">Detailed View Scrape</span>
+					<input
+						type="checkbox"
+						className="toggle"
+						checked={endpoint.withDetailedView}
+						onChange={() => {
+							const newEndpoint = {
+								...endpoint,
+								withDetailedView: !endpoint.withDetailedView,
+							};
+							validateFirstStep(newEndpoint);
+							setEndpoint(newEndpoint);
+						}}
+					/>
+				</label>
+			</div> */}
+
+			{scrapeType === ScrapeType.PREVIEWS_WITH_DETAILS && (
+				<TextInput
+					labelClassName="label"
+					className="input input-bordered flex items-center gap-2"
+					wrapperClassName="form-control mb-4"
+					label="Detailed View Trigger Selector"
+					name="detailed_view_trigger_selector"
+					id="detailed_view_trigger_selector"
+					value={endpoint.detailedViewTriggerSelector}
+					onChange={(e) => {
+						const newEndpoint = {
+							...endpoint,
+							detailedViewTriggerSelector: e.target.value,
+						};
+						validateFirstStep(newEndpoint);
+						setEndpoint(newEndpoint);
+					}}
+					required
+					error={firstStepErrors.detailedViewTriggerSelector}
+				/>
+			)}
+			{scrapeType !== ScrapeType.PREVIEWS && (
+				<TextInput
+					labelClassName="label"
+					className="input input-bordered flex items-center gap-2"
+					wrapperClassName="form-control mb-4"
+					label="Detailed View Main Element Selector"
+					name="detailed_view_main_element_selector"
+					id="detailed_view_main_element_selector"
+					value={endpoint.detailedViewMainElementSelector}
+					onChange={(e) => {
+						const newEndpoint = {
+							...endpoint,
+							detailedViewMainElementSelector: e.target.value,
+						};
+						validateFirstStep(newEndpoint);
+						setEndpoint(newEndpoint);
+					}}
+					required
+					error={firstStepErrors.detailedViewMainElementSelector}
+				/>
+			)}
 
 			<Button
 				className="btn btn-primary btn-sm"
 				onClick={handleTestGettingElement}
-				disabled={testElementLoading}
+				disabled={
+					testElementLoading || Object.values(firstStepErrors).length > 0
+				}
 			>
 				Test Getting Element
 			</Button>
@@ -249,7 +420,7 @@ const SecondStepContent: FC<{
 					<button
 						onClick={() => {
 							navigator.clipboard.writeText(endpoint.url).then(() => {
-								toast.success("Endpoit URL successfully copied to clipboard", {
+								toast.success("Endpoint URL successfully copied to clipboard", {
 									autoClose: 1000,
 								});
 							});
@@ -321,63 +492,44 @@ const SecondStepContent: FC<{
 					</select>
 				</>
 			)}
-			<label className="label">Pagination Config</label>
-			<select
-				className="select select-bordered w-full mb-4 "
-				value={endpoint.paginationConfig.type}
-				onChange={(e) => {
-					const newEndpoint = {
-						...endpoint,
-						paginationConfig: {
-							...endpoint.paginationConfig,
-							type: e.target.value as "url_parameter",
-						},
-					};
-					validateSecondStep(newEndpoint);
-					setEndpoint(newEndpoint);
-				}}
-			>
-				<option value="url_parameter" selected>
-					URL Parameter
-				</option>
-				<option value="url_path">URL Path</option>
-			</select>
-			<label className="label">Parameter</label>
-			<input
-				type="text"
-				name="name"
-				id="name"
-				className="input input-bordered flex items-center gap-2 w-fullmb-4"
-				value={endpoint.paginationConfig.parameter}
-				onChange={(e) => {
-					const newEndpoint = {
-						...endpoint,
-						paginationConfig: {
-							...endpoint.paginationConfig,
-							parameter: e.target.value,
-						},
-					};
-					validateSecondStep(newEndpoint);
-					setEndpoint(newEndpoint);
-				}}
-				required
-			/>
-			<div className="flex gap-5 mb-10 w-full">
-				<div className="flex-1">
-					<label className="label">Start</label>
-					<input
-						type="number"
-						name="name"
-						id="name"
-						min={0}
-						className="input input-bordered flex items-center gap-2 w-full"
-						value={endpoint.paginationConfig.start}
+			{!(
+				endpoint.withDetailedView && !endpoint.detailedViewTriggerSelector
+			) && (
+				<>
+					<label className="label">Pagination Config</label>
+					<select
+						className="select select-bordered w-full mb-4 "
+						value={endpoint.paginationConfig.type}
 						onChange={(e) => {
 							const newEndpoint = {
 								...endpoint,
 								paginationConfig: {
 									...endpoint.paginationConfig,
-									start: Number.parseInt(e.target.value),
+									type: e.target.value as "url_parameter",
+								},
+							};
+							validateSecondStep(newEndpoint);
+							setEndpoint(newEndpoint);
+						}}
+					>
+						<option value="url_parameter" selected>
+							URL Parameter
+						</option>
+						<option value="url_path">URL Path</option>
+					</select>
+					<label className="label">Parameter</label>
+					<input
+						type="text"
+						name="name"
+						id="name"
+						className="input input-bordered flex items-center gap-2 w-full mb-4"
+						value={endpoint.paginationConfig.parameter}
+						onChange={(e) => {
+							const newEndpoint = {
+								...endpoint,
+								paginationConfig: {
+									...endpoint.paginationConfig,
+									parameter: e.target.value,
 								},
 							};
 							validateSecondStep(newEndpoint);
@@ -385,78 +537,104 @@ const SecondStepContent: FC<{
 						}}
 						required
 					/>
-				</div>
-				<div className="flex-1">
-					<label className="label">End</label>
-					<input
-						type="number"
-						name="name"
-						id="name"
-						min={0}
-						className="input input-bordered flex items-center gap-2 w-full"
-						value={endpoint.paginationConfig.end}
-						onChange={(e) => {
-							const newEndpoint = {
-								...endpoint,
-								paginationConfig: {
-									...endpoint.paginationConfig,
-									end: Number.parseInt(e.target.value),
-								},
-							};
-							validateSecondStep(newEndpoint);
-							setEndpoint(newEndpoint);
-						}}
-						required
-					/>
-				</div>
-				<div className="flex-1">
-					<label className="label">Step</label>
-					<input
-						type="number"
-						name="name"
-						id="name"
-						min={1}
-						step={1}
-						className="input input-bordered flex items-center gap-2 w-full"
-						value={endpoint.paginationConfig.step}
-						onChange={(e) => {
-							const newEndpoint = {
-								...endpoint,
-								paginationConfig: {
-									...endpoint.paginationConfig,
-									step: Number.parseInt(e.target.value),
-								},
-							};
-							validateSecondStep(newEndpoint);
-							setEndpoint(newEndpoint);
-						}}
-						required
-					/>
-				</div>
-				{endpoint.paginationConfig.type === "url_path" && (
-					<div className="flex-1">
-						<TextInput
-							name="urlRegexToInsert"
-							id="urlRegexToInsert"
-							label="URL Regex To Insert"
-							labelClassName="label label"
-							className="input input-bordered flex items-center gap-2"
-							value={endpoint.paginationConfig.urlRegexToInsert}
-							onChange={(e) => {
-								const newEndpoint = {
-									...endpoint,
-									paginationConfig: {
-										...endpoint.paginationConfig,
-										urlRegexToInsert: e.target.value,
-									},
-								};
-								validateSecondStep(newEndpoint);
-								setEndpoint(newEndpoint);
-							}}
-						/>
+
+					<div className="flex gap-5 mb-10 w-full">
+						<div className="flex-1">
+							<label className="label">Start</label>
+							<input
+								type="number"
+								name="name"
+								id="name"
+								min={0}
+								className="input input-bordered flex items-center gap-2 w-full"
+								value={endpoint.paginationConfig.start}
+								onChange={(e) => {
+									const newEndpoint = {
+										...endpoint,
+										paginationConfig: {
+											...endpoint.paginationConfig,
+											start: Number.parseInt(e.target.value),
+										},
+									};
+									validateSecondStep(newEndpoint);
+									setEndpoint(newEndpoint);
+								}}
+								required
+							/>
+						</div>
+						<div className="flex-1">
+							<label className="label">End</label>
+							<input
+								type="number"
+								name="name"
+								id="name"
+								min={0}
+								className="input input-bordered flex items-center gap-2 w-full"
+								value={endpoint.paginationConfig.end}
+								onChange={(e) => {
+									const newEndpoint = {
+										...endpoint,
+										paginationConfig: {
+											...endpoint.paginationConfig,
+											end: Number.parseInt(e.target.value),
+										},
+									};
+									validateSecondStep(newEndpoint);
+									setEndpoint(newEndpoint);
+								}}
+								required
+							/>
+						</div>
+						<div className="flex-1">
+							<label className="label">Step</label>
+							<input
+								type="number"
+								name="name"
+								id="name"
+								min={1}
+								step={1}
+								className="input input-bordered flex items-center gap-2 w-full"
+								value={endpoint.paginationConfig.step}
+								onChange={(e) => {
+									const newEndpoint = {
+										...endpoint,
+										paginationConfig: {
+											...endpoint.paginationConfig,
+											step: Number.parseInt(e.target.value),
+										},
+									};
+									validateSecondStep(newEndpoint);
+									setEndpoint(newEndpoint);
+								}}
+								required
+							/>
+						</div>
+						{endpoint.paginationConfig.type === "url_path" && (
+							<div className="flex-1">
+								<TextInput
+									name="urlRegexToInsert"
+									id="urlRegexToInsert"
+									label="URL Regex To Insert"
+									labelClassName="label label"
+									className="input input-bordered flex items-center gap-2"
+									value={endpoint.paginationConfig.urlRegexToInsert}
+									onChange={(e) => {
+										const newEndpoint = {
+											...endpoint,
+											paginationConfig: {
+												...endpoint.paginationConfig,
+												urlRegexToInsert: e.target.value,
+											},
+										};
+										validateSecondStep(newEndpoint);
+										setEndpoint(newEndpoint);
+									}}
+								/>
+							</div>
+						)}
 					</div>
-				)}
-			</div>
+				</>
+			)}
 
 			<div className="w-full flex justify-end">
 				<div className="flex flex-col items-end mb-2">
@@ -591,7 +769,7 @@ const SecondStepContent: FC<{
 								<div className="flex-1">
 									<TextInput
 										labelClassName="label"
-										className="input input-bordered flex items-center gap-2 w-fullmb-1"
+										className="input input-bordered flex items-center gap-2 w-full mb-1"
 										wrapperClassName="form-control "
 										label={idx > 0 ? "" : "Selector"}
 										value={
@@ -721,7 +899,7 @@ const SecondStepContent: FC<{
 										wrapperClassName="form-control mb-4"
 										label={idx > 0 ? "" : "Remarks"}
 										tooltip={
-											"This data is not saved, only helpfull for smart extract)"
+											"This data is not saved, only helpful for smart extract)"
 										}
 										value={remarks.find((r) => r.fieldId === field.id)!.remark}
 										onChange={(e) => {
@@ -945,8 +1123,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
 			setTestElementResult(null);
 			setTestElementLoading(true);
 			const response = await axios.post("/api/selectors/test", {
-				url: endpoint.url,
-				mainElementSelector: endpoint.mainElementSelector,
+				endpoint,
 			});
 			setTestElementResult(response.data.html);
 		} catch (error) {
@@ -955,7 +1132,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
 		} finally {
 			setTestElementLoading(false);
 		}
-	}, [endpoint.mainElementSelector, endpoint.url]);
+	}, [endpoint]);
 
 	const handleTestScrape = useCallback(
 		async (ep: Endpoint) => {
@@ -1004,8 +1181,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
 			console.log("Extracting selector for field", field);
 			try {
 				const response = await axios.post("/api/selectors/extract", {
-					url: endpoint.url,
-					mainElementSelector: endpoint.mainElementSelector,
+					endpoint,
 					fieldsToExtractSelectorsFor: [
 						{
 							key: field.key,
@@ -1059,8 +1235,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
 			}
 			setFieldsWithLoadingSelectors(toExtract.map((f) => f.id));
 			const response = await axios.post("/api/selectors/extract", {
-				url: endpoint.url,
-				mainElementSelector: endpoint.mainElementSelector,
+				endpoint,
 				fieldsToExtractSelectorsFor: toExtract.map((field) => ({
 					key: field.key,
 					name: field.name,
@@ -1108,12 +1283,49 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
 		if (ep.url === "") {
 			errors.url = "URL is required";
 		}
-		if (ep.mainElementSelector.trim() === "") {
-			errors.mainElementSelector = "Main Element Selector is required";
-		}
+		// if (ep.mainElementSelector.trim() === "") {
+		// 	errors.mainElementSelector = "Main Element Selector is required";
+		// }
 		const urlRegex = /^(http|https):\/\/[^\s\/$.?#].[^\s]*$/g;
 		if (!urlRegex.test(ep.url)) {
 			errors.url = "URL is not valid";
+		}
+
+		// Validate based on scrape type logic
+		const mainElementSelector = ep.mainElementSelector.trim();
+		const withDetailedView = ep.withDetailedView;
+		const detailedViewTriggerSelector = ep.detailedViewTriggerSelector.trim();
+		const detailedViewMainElementSelector =
+			ep.detailedViewMainElementSelector.trim();
+
+		// PureDetails case
+		if (!withDetailedView) {
+			if (mainElementSelector === "") {
+				errors.mainElementSelector =
+					"Main Element Selector is required for Previews";
+			}
+		}
+		// Configs with Detailed View
+		else {
+			// Config 2: With Detailed View and Trigger
+			if (detailedViewTriggerSelector !== "") {
+				if (mainElementSelector === "") {
+					errors.mainElementSelector =
+						"Main Element Selector is required when Detailed View Trigger is present";
+				}
+				if (detailedViewMainElementSelector === "") {
+					errors.detailedViewMainElementSelector =
+						"Detailed View Main Element Selector is required when Detailed View Trigger is present";
+				}
+			}
+			// Config 3: With Detailed View, no Trigger
+			else {
+				if (detailedViewMainElementSelector === "") {
+					errors.detailedViewMainElementSelector =
+						"Detailed View Main Element Selector is required when there's no Detailed View Trigger";
+				}
+				// Note: mainElementSelector is ignored in this case, so we don't validate it
+			}
 		}
 		setFirstStepErrors(errors);
 		return Object.entries(errors).length === 0;
@@ -1242,6 +1454,7 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
 				>
 					<FirstStepContent
 						endpoint={endpoint}
+						defaultScrapeType={getScrapeType(endpoint)}
 						setEndpoint={setEndpoint}
 						firstStepErrors={firstStepErrors}
 						setFirstStepErrors={setFirstStepErrors}

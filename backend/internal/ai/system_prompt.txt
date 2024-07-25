@@ -12,7 +12,7 @@ Your task is to analyze a given HTML snippet and extract unique, universal CSS s
 5. **AttributeToGet**: Only include "attributeToGet" when the value is in an attribute, not for text content.
 6. **Advanced Selectors**: You can use data attributes, nth-child, or nth-of-type pseudo-classes if needed.
 7. **Unique Identifier**: Pay special attention to the field "Unique Identifier for Result". The selector you provide for this field will be used to identify scrape results after initial extraction to determine if a result is new or already seen. This could be a data attribute or a link href (choose href if no other options found).
-
+8. **Do not use :contains()**: Avoid using the :contains() pseudo-class in selectors, as it can be unreliable and slow.
 ## Example Input:
 ```json
 {

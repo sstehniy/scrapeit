@@ -3,6 +3,7 @@ package scraper
 import (
 	"fmt"
 	"regexp"
+	"scrapeit/internal/models"
 	"strings"
 )
 
@@ -24,11 +25,19 @@ func cleanHTML(input string) string {
 	return withoutSVGs
 }
 
-func GetMainElementHTMLContent(url, elementSelector string, maxElements int) (string, error) {
+func GetMainElementHTMLContent(endpoint models.Endpoint, maxElements int) (string, error) {
 	browser := GetBrowser()
 	defer browser.Close()
+	scrapeType := GetScrapeType(endpoint)
+	elementToWaitFor := endpoint.MainElementSelector
+	if scrapeType == PureDetails {
+		elementToWaitFor = endpoint.DetailedViewMainElementSelector
+	}
 
-	page, err := GetStealthPage(browser, url, elementSelector)
+	fmt.Printf("Element selector: %v\n", elementToWaitFor)
+
+	fmt.Println("Scrape type: ", GetScrapeType(endpoint))
+	page, err := GetStealthPage(browser, endpoint.URL, elementToWaitFor)
 	if err != nil {
 		return "", err
 	}
@@ -39,18 +48,21 @@ func GetMainElementHTMLContent(url, elementSelector string, maxElements int) (st
 	SlowScrollToHalf(page)
 	page.MustWaitLoad().MustWaitStable()
 
-	fmt.Printf("Element selector: %v\n", elementSelector)
-
+	elems, err := getMainElements(page, endpoint, GetScrapeType(endpoint), maxElements)
+	fmt.Printf("Found %v elements\n", len(elems))
+	if err != nil {
+		return "", err
+	}
 	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered from panic:", r)
+		for _, elem := range elems {
+			if elem.Page != nil {
+				elem.Page.Close()
+			}
 		}
 	}()
-
-	elems := page.MustElements(elementSelector)
 	html := ""
 	for idx, elem := range elems {
-		html += elem.MustHTML()
+		html += elem.Element.MustHTML()
 		if idx >= maxElements {
 			break
 		}

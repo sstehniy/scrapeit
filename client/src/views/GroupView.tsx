@@ -161,7 +161,7 @@ export const GroupView: FC = () => {
 				})
 				.then((res) => res.data);
 		},
-		refetchInterval: 30000,
+		// refetchInterval: 30000,
 		getNextPageParam: (lastPage, pages) => {
 			return lastPage.hasMore ? pages.length * searchConfig.limit : undefined;
 		},
@@ -215,10 +215,15 @@ export const GroupView: FC = () => {
 
 	const scrapeAllEndpointsMutation = useMutation({
 		mutationFn: () =>
-			axios.post("/api/scrape/endpoints", {
-				groupId: group?.id,
-				endpointIds: group?.endpoints.map((e) => e.id),
-			}),
+			axios.post(
+				"/api/scrape/endpoints",
+				{
+					groupId: group?.id,
+					endpointIds: group?.endpoints.map((e) => e.id),
+				},
+				// 10 Minutes
+				{ timeout: 600000 },
+			),
 		onMutate: () => {
 			toast.info("Scraping all endpoints...");
 		},

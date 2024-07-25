@@ -89,16 +89,19 @@ const (
 
 // Endpoint represents an endpoint with its configuration
 type Endpoint struct {
-	ID                   string           `json:"id" bson:"id"`
-	Name                 string           `json:"name" bson:"name"`
-	URL                  string           `json:"url" bson:"url"`
-	PaginationConfig     PaginationConfig `json:"paginationConfig" bson:"paginationConfig"`
-	MainElementSelector  string           `json:"mainElementSelector" bson:"mainElementSelector"`
-	DetailFieldSelectors []FieldSelector  `json:"detailFieldSelectors" bson:"detailFieldSelectors"`
-	Interval             string           `json:"interval,omitempty" bson:"interval,omitempty"`
-	Active               bool             `json:"active,omitempty" bson:"active,omitempty"`
-	LastScraped          time.Time        `json:"lastScraped,omitempty" bson:"lastScraped,omitempty"`
-	Status               ScrapeStatus     `json:"status,omitempty" bson:"status,omitempty"`
+	ID                              string           `json:"id" bson:"id"`
+	Name                            string           `json:"name" bson:"name"`
+	URL                             string           `json:"url" bson:"url"`
+	PaginationConfig                PaginationConfig `json:"paginationConfig" bson:"paginationConfig"`
+	MainElementSelector             string           `json:"mainElementSelector" bson:"mainElementSelector"`
+	WithDetailedView                bool             `json:"withDetailedView" bson:"withDetailedView"`
+	DetailedViewTriggerSelector     string           `json:"detailedViewTriggerSelector" bson:"detailedViewTriggerSelector"`
+	DetailedViewMainElementSelector string           `json:"detailedViewMainElementSelector" bson:"detailedViewMainElementSelector"`
+	DetailFieldSelectors            []FieldSelector  `json:"detailFieldSelectors" bson:"detailFieldSelectors"`
+	Interval                        string           `json:"interval,omitempty" bson:"interval,omitempty"`
+	Active                          bool             `json:"active,omitempty" bson:"active,omitempty"`
+	LastScraped                     time.Time        `json:"lastScraped,omitempty" bson:"lastScraped,omitempty"`
+	Status                          ScrapeStatus     `json:"status,omitempty" bson:"status,omitempty"`
 }
 
 type PaginationConfigType string
@@ -171,8 +174,9 @@ type FieldToExtractSelectorsFor struct {
 }
 
 type FieldSelectorsRequest struct {
-	URL                         string                       `json:"url" bson:"url"`
-	MainElementSelector         string                       `json:"mainElementSelector" bson:"mainElementSelector"`
+	// URL                         string                       `json:"url" bson:"url"`
+	// MainElementSelector         string                       `json:"mainElementSelector" bson:"mainElementSelector"`
+	Endpoint                    Endpoint                     `json:"endpoint" bson:"endpoint"`
 	FieldsToExtractSelectorsFor []FieldToExtractSelectorsFor `json:"fieldsToExtractSelectorsFor" bson:"fieldsToExtractSelectorsFor"`
 }
 

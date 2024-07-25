@@ -33,6 +33,9 @@ type Endpoint = {
 	paginationConfig: PaginationConfig;
 	mainElementSelector: string;
 	detailFieldSelectors: FieldSelector[];
+	withDetailedView: boolean;
+	detailedViewTriggerSelector: string;
+	detailedViewMainElementSelector: string;
 	interval?: string;
 	active?: boolean;
 	lastScraped?: Date;
@@ -115,7 +118,13 @@ type NotificationCondition = {
 	value: number;
 };
 
-export { FieldType, SelectorStatus, ScrapeStatus, ExportType };
+enum ScrapeType {
+	PREVIEWS = "previews",
+	PREVIEWS_WITH_DETAILS = "previews_with_details",
+	PURE_DETAILS = "pure_details",
+}
+
+export { FieldType, SelectorStatus, ScrapeStatus, ExportType, ScrapeType };
 
 export type {
 	NotificationConfig,

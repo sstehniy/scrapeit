@@ -70,7 +70,7 @@ func DeleteScrapingGroup(c echo.Context) error {
 		allEndpointsIds = append(allEndpointsIds, endpoint.ID)
 	}
 
-	endpointsFilter := bson.M{"endpointId": bson.M{"$in": allEndpointsIds, "groupId": groupIdObj}}
+	endpointsFilter := bson.M{"endpointId": bson.M{"$in": allEndpointsIds}, "groupId": groupIdObj}
 
 	_, err = dbClient.Database("scrapeit").Collection("scrape_results").DeleteMany(c.Request().Context(), endpointsFilter)
 

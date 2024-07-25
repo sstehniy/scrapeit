@@ -6,14 +6,15 @@ import { WithTooltip } from "../ui/WithTooltip";
 
 export const GroupCard: FC<{
 	group: ScrapeGroup;
+	archived?: boolean;
 	onArchive?: () => void;
 	onDelete?: () => void;
 	onExport?: () => void;
-}> = ({ group, onArchive, onDelete, onExport }) => {
+}> = ({ group, onArchive, onDelete, onExport, archived = false }) => {
 	return (
 		<div className="card bg-base-300 shadow-xl hover:shadow-2xl transition-shadow duration-300">
 			<NavLink
-				to={`/group/${group.id}`}
+				to={`/group/${archived ? "archived/" : ""}${group.id}`}
 				className="card-body p-5 px-7 flex flex-col"
 			>
 				<h2 className="card-title text-2xl">

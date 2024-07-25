@@ -10,6 +10,7 @@ import { v4 } from "uuid";
 import {
 	type Endpoint,
 	type Field,
+	PaginationConfig,
 	type ScrapeGroup,
 	type ScrapeResultTest,
 	ScrapeStatus,
@@ -24,6 +25,41 @@ type ConfigureGroupEndpointProps = Pick<ModalProps, "isOpen" | "onClose"> & {
 	onConfirm: (endpoint: Endpoint) => void | Promise<void>;
 	editEndpoint?: Endpoint;
 	fields: Field[];
+};
+
+const isEndpointPaginationConfig = (
+	config: unknown,
+): config is PaginationConfig => {
+	console.log(config);
+	const configCandidate = config as Partial<PaginationConfig>;
+	return (
+		typeof configCandidate.type === "string" &&
+		typeof configCandidate.parameter === "string" &&
+		(typeof configCandidate.step === "number" ||
+			typeof configCandidate.step === "undefined") &&
+		(typeof configCandidate.start === "number" ||
+			typeof configCandidate.start === "undefined") &&
+		(typeof configCandidate.end === "number" ||
+			typeof configCandidate.end === "undefined") &&
+		(typeof configCandidate.urlRegexToInsert === "string" ||
+			typeof configCandidate.urlRegexToInsert === "undefined")
+	);
+};
+
+const isEndpoint = (ep: unknown): ep is Endpoint => {
+	const epCandidate = ep as Partial<Endpoint>;
+	console.log(epCandidate);
+	console.log(isEndpointPaginationConfig(epCandidate.paginationConfig));
+	return (
+		typeof epCandidate.name === "string" &&
+		typeof epCandidate.url === "string" &&
+		typeof epCandidate.mainElementSelector === "string" &&
+		typeof epCandidate.withDetailedView === "boolean" &&
+		typeof epCandidate.detailedViewTriggerSelector === "string" &&
+		typeof epCandidate.detailedViewMainElementSelector === "string" &&
+		typeof epCandidate.interval === "string" &&
+		isEndpointPaginationConfig(epCandidate.paginationConfig)
+	);
 };
 
 const defaultEndpoint: Endpoint = {
@@ -125,6 +161,51 @@ const FirstStepContent: FC<{
 
 	return (
 		<div className="w-[450px]">
+			<label className="form-control w-full">
+				<div className="label">
+					<span className="label-text">Import Endpoint</span>
+				</div>
+				<input
+					type="file"
+					className="file-input file-input-bordered "
+					accept=".json"
+					onChange={(e) => {
+						const file = e.target.files?.[0];
+						if (!file) return;
+						const reader = new FileReader();
+						reader.onload = (e) => {
+							const content = e.target?.result;
+							if (typeof content !== "string") return;
+							try {
+								const endpoint = JSON.parse(content);
+								console.log(endpoint);
+								if (isEndpoint(endpoint)) {
+									const newEndpoint = {
+										...endpoint,
+										name: endpoint.name + " (imported)",
+										url: endpoint.url,
+										mainElementSelector: endpoint.mainElementSelector,
+										detailFieldSelectors: endpoint.detailFieldSelectors,
+										withDetailedView: endpoint.withDetailedView,
+										detailedViewTriggerSelector:
+											endpoint.detailedViewTriggerSelector,
+										detailedViewMainElementSelector:
+											endpoint.detailedViewMainElementSelector,
+									};
+									setEndpoint(newEndpoint);
+									validateFirstStep(newEndpoint);
+								} else {
+									toast.error("Failed to parse endpoint config");
+								}
+							} catch (error) {
+								console.error(error);
+								toast.error("Failed to parse endpoint config");
+							}
+						};
+						reader.readAsText(file);
+					}}
+				/>
+			</label>
 			<TextInput
 				labelClassName="label"
 				className="input input-bordered flex items-center gap-2"
@@ -159,7 +240,7 @@ const FirstStepContent: FC<{
 				error={firstStepErrors.url}
 			/>
 
-			<div role="tablist" className="tabs tabs-boxed">
+			<div role="tablist" className="tabs tabs-boxed px-0">
 				{/* <a role="tab" className="tab">
 					Tab 1
 				</a>
@@ -311,7 +392,7 @@ const FirstStepContent: FC<{
 			)}
 
 			{testElementResult && (
-				<div className="bg-gray-800 p-2 rounded mt-2">
+				<div className="bg-gray-800 px-2 rounded mt-2">
 					<pre
 						className="text-xs text-gray-300 rounded"
 						style={{
@@ -1118,6 +1199,10 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
 	}, [editEndpoint, fields]);
 
 	const handleTestGettingElement = useCallback(async () => {
+		if (!endpoint.url.trim() || !endpoint.mainElementSelector.trim()) {
+			setTestElementError("Please enter a URL");
+			return;
+		}
 		try {
 			setTestElementError(null);
 			setTestElementResult(null);

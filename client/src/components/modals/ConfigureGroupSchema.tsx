@@ -262,11 +262,11 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
 				},
 			]}
 		>
-			<label className="block font-medium text-xl text-gray-500 px-1 mb-2">
+			<label className="block font-medium text-xl text-gray-500 mb-2">
 				Fields
 			</label>
 			<div
-				className="space-y-2 w-[500px] max-h-[325px] overflow-y-auto px-1 mb-2"
+				className="space-y-2 w-[500px] max-h-[400px] overflow-y-auto px-1 mb-2"
 				ref={listRef}
 			>
 				{fields.map((field) => (

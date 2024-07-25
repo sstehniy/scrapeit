@@ -1,5 +1,6 @@
 import { type FC, useEffect, useState } from "react";
 import { Modal, type ModalProps } from "../ui/Modal";
+import { TextInput } from "../ui/TextInput";
 
 type CreateGroupModalProps = Pick<ModalProps, "isOpen" | "onClose"> & {
 	onConfirm: (name: string) => void;
@@ -41,14 +42,27 @@ export const CreateGroupModal: FC<CreateGroupModalProps> = ({
 			]}
 		>
 			<div className="space-y-2 w-[450px]">
-				<label className="label">Name</label>
+				{/* <label className="label">Name</label>
 				<input
 					type="text"
 					name="name"
 					id="name"
-					className="p-2 border border-gray-300 rounded w-full "
+					className="input input-bordered flex items-center gap-2 w-full"
 					value={name}
 					onChange={(e) => setName(e.target.value)}
+					required
+				/> */}
+				<TextInput
+					labelClassName="label"
+					className="input input-bordered flex items-center gap-2"
+					wrapperClassName="form-control mb-4"
+					label="Name"
+					name="name"
+					id="name"
+					value={name}
+					onChange={(e) => {
+						setName(e.target.value);
+					}}
 					required
 				/>
 			</div>

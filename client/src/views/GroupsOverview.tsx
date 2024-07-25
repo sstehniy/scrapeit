@@ -75,7 +75,7 @@ const ArchivedGroups = () => {
 								</h2>
 								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 									{groups.map((group) => (
-										<GroupCard key={group.id} group={group} />
+										<GroupCard key={group.id} group={group} archived />
 									))}
 								</div>
 							</div>
@@ -145,7 +145,7 @@ const ActiveGroups = () => {
 					</div>
 					<input
 						type="file"
-						className="file-input file-input-sm file-input-bordered w-full max-w-xs"
+						className="file-input file-input-sm file-input-bordered w-64"
 						accept=".json"
 						placeholder="Import group config"
 						onChange={(e) => {

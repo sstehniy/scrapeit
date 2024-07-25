@@ -15,6 +15,10 @@ const App = () => {
 		<div className="mx-auto lg:w-5/6 w-[95%] pt-10">
 			<Routes>
 				<Route path="/" element={<GroupsOverview />} />
+				<Route
+					path="/group/archived/:groupId"
+					element={<GroupView archived />}
+				/>
 				<Route path="/group/:groupId" element={<GroupView />} />
 				<Route path="*" element={<div>Not Found</div>} />
 			</Routes>

@@ -220,7 +220,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
 							d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15m0-3-3-3m0 0-3 3m3-3V15"
 						/>
 					</svg>
-					Export
+					Export Results
 				</button>
 				<button
 					className="btn btn-success btn-sm btn-outline"
@@ -275,7 +275,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
 									</button>
 								)}
 								<select
-									className="select select-sm  h-10 rounded-lg border-0 focus:ring-0 focus:outline-none focus:ring-offset-0 border-r-2 border-base-content border-opacity-25 rounded-r-none"
+									className="select select-sm  h-9 rounded-lg border-0 focus:ring-0 focus:outline-none focus:ring-offset-0 border-r-2 border-base-content border-opacity-25 rounded-r-none"
 									value={filter.fieldId}
 									onChange={(e) => {
 										const fieldId = e.target.value;
@@ -302,7 +302,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
 									)}
 								</select>
 								<select
-									className="select select-sm w-16 h-10 rounded-lg border-0 focus:ring-0 focus:outline-none focus:ring-offset-0 border-r-2 border-base-content border-opacity-25 rounded-r-none"
+									className="select select-sm w-16 h-9 rounded-lg border-0 focus:ring-0 focus:outline-none focus:ring-offset-0 border-r-2 border-base-content border-opacity-25 rounded-r-none"
 									value={filter.operator}
 									onChange={(e) => {
 										const operator = e.target.value as SearchFilter["operator"];
@@ -332,7 +332,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
 									)}
 								</select>
 								<input
-									className="input input-sm h-10 rounded-lg border-0 focus:ring-0 focus:outline-none focus:ring-offset-0"
+									className="input input-sm h-9 rounded-lg border-0 focus:ring-0 focus:outline-none focus:ring-offset-0"
 									type={fieldType === FieldType.NUMBER ? "number" : "text"}
 									value={filter.value ?? ""}
 									onChange={(e) => {

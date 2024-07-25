@@ -1,4 +1,4 @@
-import { type FC, useEffect, useState } from "react";
+import { type FC, useState } from "react";
 import { Modal, type ModalProps } from "../ui/Modal";
 import {
 	FieldType,
@@ -33,10 +33,10 @@ export const ConfigureGroupNotificationModal: FC<
 	});
 
 	const operatorOptions = [
-		{ label: "More than", value: ">" },
-		{ label: "Less than", value: "<" },
-		{ label: "Equal to", value: "=" },
-		{ label: "Not equal to", value: "!=" },
+		{ label: ">", value: ">" },
+		{ label: "<", value: "<" },
+		{ label: "=", value: "=" },
+		{ label: "!=", value: "!=" },
 	];
 
 	const validateConfig = (config: NotificationConfig) => {
@@ -120,7 +120,7 @@ export const ConfigureGroupNotificationModal: FC<
 							};
 							newConfig.conditions.push({
 								fieldId: "",
-								operator: "",
+								operator: "=",
 								value: 0,
 							});
 							setConfig(newConfig);

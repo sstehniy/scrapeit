@@ -108,6 +108,7 @@ func main() {
 	// Scrape groups routes
 	groups := api.Group("/scrape-groups")
 	groups.GET("", handlers.GetScrapingGroups)
+	groups.POST("/import", handlers.ImportScrapingGroup)
 	groups.GET("/archived", handlers.GetArchivedScrapingGroups)
 	groups.POST("", handlers.CreateScrapingGroup)
 	groups.GET("/:id", handlers.GetScrapingGroup)

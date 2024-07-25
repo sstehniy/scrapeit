@@ -5,13 +5,14 @@ import { toast } from "react-toastify";
 import { GroupCard } from "../components/GroupCard";
 import { CreateGroupModal } from "../components/modals/CreateGroup";
 import { useNavigate } from "react-router-dom";
+import { ConfirmDeleteGroup } from "../components/modals/ConfirmDeleteGroup";
 
 export const GroupsOverview: FC = () => {
 	const [showArchivedGroups, setShowArchivedGroups] = useState(false);
 
 	return (
 		<div className="container mx-auto px-4 py-8">
-			<div role="tablist" className="tabs tabs-bordered  tabs-md w-96 mb-8">
+			<div role="tablist" className="tabs tabs-bordered  tabs-md w-96 mb-5">
 				<div
 					role="tab"
 					className={`tab ${!showArchivedGroups ? "tab-active" : ""}`}
@@ -90,12 +91,27 @@ const ActiveGroups = () => {
 	const [scrapeGroups, setScrapeGroups] = useState<ScrapeGroup[] | null>(null);
 	const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
 	const navigate = useNavigate();
-
+	const [showConfirmDeleteGroupModal, setShowConfirmDeleteGroupModal] =
+		useState<{
+			isOpen: boolean;
+			onConfirm: () => void;
+		} | null>(null);
 	useEffect(() => {
 		axios.get(`/api/scrape-groups`).then((data) => {
 			setScrapeGroups(data.data);
 		});
 	}, []);
+
+	const handleExportGroupConfig = (group: ScrapeGroup) => {
+		const json = JSON.stringify(group, null, 2);
+		const blob = new Blob([json], { type: "application/json" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = `${group.name}_config.json`;
+		a.click();
+		URL.revokeObjectURL(url);
+	};
 
 	const handleCreateGroup = (name: string) => {
 		axios
@@ -116,13 +132,52 @@ const ActiveGroups = () => {
 
 	return (
 		<>
-			<div className="flex justify-between items-center mb-6">
+			<div className="flex items-end mb-6 gap-4">
 				<button
 					className="btn btn-primary btn-sm"
 					onClick={() => setShowCreateGroupModal(true)}
 				>
 					+ Create new Group
 				</button>
+				<label className="form-control w-full max-w-xs">
+					<div className="label">
+						<span className="label-text">Import Group</span>
+					</div>
+					<input
+						type="file"
+						className="file-input file-input-sm file-input-bordered w-full max-w-xs"
+						accept=".json"
+						placeholder="Import group config"
+						onChange={(e) => {
+							const file = e.target.files?.[0];
+							if (!file) return;
+							const reader = new FileReader();
+							reader.onload = (e) => {
+								const content = e.target?.result;
+								if (typeof content !== "string") return;
+								try {
+									const group = JSON.parse(content);
+									axios
+										.post(`/api/scrape-groups`, group)
+										.then((response) => {
+											toast.success("Group imported");
+											setScrapeGroups((prev) =>
+												prev ? [...prev, response.data] : [response.data],
+											);
+										})
+										.catch((error) => {
+											console.error(error);
+											toast.error("Failed to import group");
+										});
+								} catch (error) {
+									console.error(error);
+									toast.error("Failed to parse group config");
+								}
+							};
+							reader.readAsText(file);
+						}}
+					/>
+				</label>
 			</div>
 			{scrapeGroups === null ? (
 				<div className="flex justify-center items-center h-64">
@@ -140,19 +195,29 @@ const ActiveGroups = () => {
 						<GroupCard
 							key={group.id}
 							group={group}
+							onExport={() => handleExportGroupConfig(group)}
 							onDelete={() => {
-								axios
-									.delete(`/api/scrape-groups/${group.id}`)
-									.then(() => {
-										setScrapeGroups(
-											(prev) => prev?.filter((g) => g.id !== group.id) || null,
-										);
-										toast.success("Group deleted");
-									})
-									.catch((error) => {
-										console.error(error);
-										toast.error("Failed to delete group");
-									});
+								setShowConfirmDeleteGroupModal({
+									isOpen: true,
+									onConfirm: () => {
+										axios
+											.delete(`/api/scrape-groups/${group.id}`)
+											.then(() => {
+												setScrapeGroups(
+													(prev) =>
+														prev?.filter((g) => g.id !== group.id) || null,
+												);
+												toast.success("Group deleted");
+											})
+											.catch((error) => {
+												console.error(error);
+												toast.error("Failed to delete group");
+											})
+											.finally(() => {
+												setShowConfirmDeleteGroupModal(null);
+											});
+									},
+								});
 							}}
 						/>
 					))}
@@ -163,6 +228,13 @@ const ActiveGroups = () => {
 					isOpen={showCreateGroupModal}
 					onClose={() => setShowCreateGroupModal(false)}
 					onConfirm={handleCreateGroup}
+				/>
+			)}
+			{showConfirmDeleteGroupModal && (
+				<ConfirmDeleteGroup
+					isOpen={showConfirmDeleteGroupModal.isOpen}
+					onClose={() => setShowConfirmDeleteGroupModal(null)}
+					onConfirm={showConfirmDeleteGroupModal.onConfirm}
 				/>
 			)}
 		</>

@@ -12,7 +12,7 @@ export const GroupsOverview: FC = () => {
 
 	return (
 		<div className="container mx-auto px-4 py-8">
-			<div role="tablist" className="tabs tabs-bordered  tabs-md w-96 mb-5">
+			<div role="tablist" className="tabs tabs-boxed  w-72 mb-4 bg-transparent">
 				<div
 					role="tab"
 					className={`tab ${!showArchivedGroups ? "tab-active" : ""}`}

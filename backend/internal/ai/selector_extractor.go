@@ -202,7 +202,7 @@ func ExtractSelectors(html string, fieldsToExtract []models.FieldToExtractSelect
 
 	if !evalResponse.Success {
 		totalAttempts := 1
-		const MAX_ATTEMPTS = 3
+		const MAX_ATTEMPTS = 2
 
 		advancedInput := ExtractRequestWithEvaluation{
 			HTML:                       html,

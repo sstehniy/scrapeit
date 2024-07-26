@@ -77,10 +77,10 @@ export const ConfigureGroupSchema: FC<ConfigureGroupSchemaProps> = ({
 					});
 				},
 			});
-			return () => {
-				sortableRef.current?.destroy();
-			};
 		}
+		return () => {
+			sortableRef.current?.destroy();
+		};
 	}, [fields, isOpen]);
 
 	const listRef = useRef<HTMLDivElement>(null);

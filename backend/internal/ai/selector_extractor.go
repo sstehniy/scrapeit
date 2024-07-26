@@ -79,7 +79,7 @@ func makeOpenAICall(dialogue []openai.ChatCompletionMessage, output interface{},
 
 	client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
 
-	tokenCount, err := countTokens(dialogue, "gpt-4o-mini")
+	tokenCount, err := countTokens(dialogue, "gpt-4o")
 
 	if err != nil {
 		fmt.Printf("Error counting tokens: %v\n", err)
@@ -94,7 +94,7 @@ func makeOpenAICall(dialogue []openai.ChatCompletionMessage, output interface{},
 	// }
 
 	resp, err := client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model:    "gpt-4o-mini",
+		Model:    "gpt-4o",
 		Messages: dialogue,
 		ResponseFormat: &openai.ChatCompletionResponseFormat{
 			Type: openai.ChatCompletionResponseFormatTypeJSONObject,
@@ -112,7 +112,7 @@ func makeOpenAICall(dialogue []openai.ChatCompletionMessage, output interface{},
 	// 	fmt.Printf("Error logging response: %v\n", err)
 	// }
 
-	outputTokens, err := countTokens([]openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content}}, "gpt-4o-mini")
+	outputTokens, err := countTokens([]openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content}}, "gpt-4o")
 
 	if err != nil {
 		fmt.Printf("Error counting response tokens: %v\n", err)

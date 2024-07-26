@@ -134,7 +134,7 @@ const ActiveGroups = () => {
 		<>
 			<div className="flex items-end mb-6 gap-4">
 				<button
-					className="btn btn-primary btn-sm"
+					className="btn btn-success btn-sm"
 					onClick={() => setShowCreateGroupModal(true)}
 				>
 					+ Create new Group

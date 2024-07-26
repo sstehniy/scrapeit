@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"scrapeit/internal/helpers"
@@ -11,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type ScraperEndpointHandlerRequest struct {
@@ -65,15 +67,23 @@ func ScrapeEndpointHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-	allResultsCollection := dbClient.Database("scrapeit").Collection("scrape_results")
-	var interfaceResults []interface{}
-	for _, r := range results {
-		r.ID = primitive.NewObjectID()
-		interfaceResults = append(interfaceResults, r)
-	}
-	_, err = allResultsCollection.InsertMany(c.Request().Context(), interfaceResults)
 
+	seenUniqueHashes := make(map[string]bool)
+	allResultsCollection := dbClient.Database("scrapeit").Collection("scrape_results")
+
+	toInsert := []interface{}{}
+	for _, r := range results {
+		if seenUniqueHashes[r.UniqueHash] {
+			continue
+		}
+		seenUniqueHashes[r.UniqueHash] = true
+		r.ID = primitive.NewObjectID()
+		toInsert = append(toInsert, r)
+	}
+
+	result, err := allResultsCollection.InsertMany(context.TODO(), toInsert, &options.InsertManyOptions{})
 	if err != nil {
+		fmt.Println("Error inserting new results:", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
@@ -108,10 +118,10 @@ func ScrapeEndpointHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	result := dbClient.Database("scrapeit").Collection("notification_configs").FindOne(c.Request().Context(), bson.M{"groupId": relevantGroup.ID.Hex()})
+	notificationConfigResult := dbClient.Database("scrapeit").Collection("notification_configs").FindOne(c.Request().Context(), bson.M{"groupId": relevantGroup.ID.Hex()})
 	fmt.Println("Here is the result", result)
-	if result.Err() != mongo.ErrNoDocuments {
-		go helpers.HandleNotifyResults(result, *relevantGroup, results, toReplace)
+	if notificationConfigResult.Err() != mongo.ErrNoDocuments {
+		helpers.HandleNotifyResults(notificationConfigResult, *relevantGroup, results, toReplace)
 	}
 
 	return c.JSON(http.StatusOK, ScraperEndpointHandlerResponse{

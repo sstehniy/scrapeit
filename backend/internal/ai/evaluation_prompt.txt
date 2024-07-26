@@ -17,7 +17,6 @@ You will receive three inputs:
 4. **Regex Validity**: If a regex is provided, it should correctly extract the desired information from the selected element.
 5. **Attribute Handling**: If a value is in an attribute, the "attributeToGet" field should be correctly specified.
 6. **Generality**: Non-empty selectors and regexes should be as general as possible while still being accurate for the given HTML.
-7  **Do not use :contains()**: Avoid using the :contains() pseudo-class in selectors, as it can be unreliable and slow.
 
 ## Important Note:
 Fields with empty selectors should be ignored during evaluation. An empty selector indicates that no suitable selector was found for that field, which is acceptable. The success of the extraction should not be affected by fields with empty selectors.

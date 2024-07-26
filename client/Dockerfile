@@ -16,7 +16,7 @@ RUN npm install --legacy-peer-deps
 COPY . .
 
 # Expose the port the app runs on
-EXPOSE 5173
+EXPOSE 3456
 
 # Set the command to start the application in development mode
 CMD ["npm", "run", "dev"]

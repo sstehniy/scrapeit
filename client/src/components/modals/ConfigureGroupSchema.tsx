@@ -20,7 +20,7 @@ const defaultFields: Field[] = [
 		id: v4(),
 		isFullyEditable: false,
 		key: "unique_identifier",
-		name: "Unique Identifier for Result",
+		name: "ID",
 		type: FieldType.TEXT,
 		order: 0,
 	},

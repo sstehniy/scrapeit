@@ -24,91 +24,146 @@ func (e ScrapeEndpointError) Error() string {
 }
 
 func ScrapeEndpoint(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, client *mongo.Client, browser *rod.Browser) ([]models.ScrapeResult, []models.ScrapeResult, error) {
-
-	allElements := []PageData{}
-	defer func() {
-		for _, element := range allElements {
-			if element.Page != nil {
-				element.Page.Close()
-			}
-		}
-	}()
+	var results []models.ScrapeResult
 	scrapeType := GetScrapeType(endpointToScrape)
 
-	if scrapeType == PureDetails {
+	switch scrapeType {
+	case PureDetails:
 		page, err := GetStealthPage(browser, endpointToScrape.URL, endpointToScrape.DetailedViewMainElementSelector)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error getting page: %w", err)
+		}
 		defer page.Close()
+
 		SlowScrollToBottom(page)
-		fmt.Println("Before wait stable")
 		page.MustWaitStable()
-		fmt.Println("After wait stable")
 
 		elements, err := getMainElements(page, endpointToScrape, scrapeType, 1)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error finding elements: %w", err)
 		}
-		allElements = elements
 
-	} else {
-		for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i += endpointToScrape.PaginationConfig.Step {
-			urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
-			fmt.Println("Scraping URL: ", urlWithPagination)
-
-			page, err := GetStealthPage(browser, urlWithPagination, endpointToScrape.MainElementSelector)
-			if err != nil {
-				return nil, nil, fmt.Errorf("error getting page: %w", err)
-			}
-
-			defer page.Close()
-
-			SlowScrollToBottom(page)
-			page.MustWaitStable()
-
-			elements, err := getMainElements(page, endpointToScrape, GetScrapeType(endpointToScrape), -1)
-			fmt.Println("Found elements: ", len(elements))
-			if err != nil {
-				return nil, nil, fmt.Errorf("error finding elements: %w", err)
-			}
-			allElements = append(allElements, elements...)
-		}
-	}
-
-	fmt.Println("All elements: ", len(allElements))
-
-	linkFieldId := findLinkFieldId(relevantGroup.Fields)
-	endpointLinkSelector := findLinkSelector(endpointToScrape.DetailFieldSelectors, linkFieldId)
-	fmt.Println("Link selector: ", endpointLinkSelector)
-
-	results := make([]models.ScrapeResult, 0, len(allElements))
-	for _, element := range allElements {
-		details, err := getElementDetails(element.Element, endpointToScrape.DetailFieldSelectors, relevantGroup.Fields)
-
+		scraped, err := processElements(elements, endpointToScrape, relevantGroup)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error getting element details: %w", err)
+			return nil, nil, fmt.Errorf("error processing elements: %w", err)
 		}
+		results = scraped
+	case Previews:
+		scraped, err := scrapePreviewsPages(endpointToScrape, relevantGroup, browser)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error scraping previews pages: %w", err)
+		}
+		results = scraped
 
-		if element.ActualLink != "" {
-			for i, detail := range details {
-				if detail.FieldID == linkFieldId {
-					details[i].Value = element.ActualLink
-				}
-			}
+	case PreviewsWithDetails:
+		scraped, err := scrapePreviewsWithDetails(endpointToScrape, relevantGroup, browser)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error scraping previews with details: %w", err)
 		}
+		results = scraped
 
-		result := models.ScrapeResult{
-			ID:                  primitive.NewObjectID(),
-			UniqueHash:          helpers.GenerateScrapeResultHash(endpointToScrape.ID + getFieldValueByFieldKey(relevantGroup.Fields, "unique_identifier", details).(string)),
-			EndpointID:          endpointToScrape.ID,
-			GroupId:             relevantGroup.ID,
-			Fields:              details,
-			TimestampInitial:    time.Now().Format(time.RFC3339),
-			TimestampLastUpdate: time.Now().Format(time.RFC3339),
-		}
-		results = append(results, result)
+	default:
+		return nil, nil, fmt.Errorf("unknown scrape type: %v", scrapeType)
 	}
 
 	return filterElements(relevantGroup.Fields, results, endpointToScrape.ID, relevantGroup.ID, client)
+}
 
+func scrapePreviewsPages(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, browser *rod.Browser) ([]models.ScrapeResult, error) {
+	var allElements []PageData
+
+	for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i += endpointToScrape.PaginationConfig.Step {
+		urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
+		fmt.Println("Scraping URL: ", urlWithPagination)
+
+		page, err := GetStealthPage(browser, urlWithPagination, endpointToScrape.MainElementSelector)
+		if err != nil {
+			return nil, fmt.Errorf("error getting page: %w", err)
+		}
+
+		defer page.Close()
+
+		SlowScrollToBottom(page)
+		page.MustWaitStable()
+
+		elements, err := getMainElements(page, endpointToScrape, Previews, -1)
+		if err != nil {
+			return nil, fmt.Errorf("error finding elements: %w", err)
+		}
+
+		allElements = append(allElements, elements...)
+	}
+
+	return processElements(allElements, endpointToScrape, relevantGroup)
+}
+
+func scrapePreviewsWithDetails(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, browser *rod.Browser) ([]models.ScrapeResult, error) {
+	var results []models.ScrapeResult
+
+	for i := endpointToScrape.PaginationConfig.Start; i <= endpointToScrape.PaginationConfig.End; i += endpointToScrape.PaginationConfig.Step {
+		urlWithPagination := buildPaginationURL(endpointToScrape.URL, endpointToScrape.PaginationConfig, i)
+		fmt.Println("Scraping URL: ", urlWithPagination)
+
+		page, err := GetStealthPage(browser, urlWithPagination, endpointToScrape.MainElementSelector)
+		if err != nil {
+			return nil, fmt.Errorf("error getting page: %w", err)
+		}
+
+		defer page.Close()
+
+		SlowScrollToBottom(page)
+		page.MustWaitStable()
+
+		elems, err := page.Elements(endpointToScrape.MainElementSelector)
+		if err != nil {
+			return nil, fmt.Errorf("error getting main elements: %w", err)
+		}
+
+		for _, elem := range elems {
+			linkElem, err := elem.Element(endpointToScrape.DetailedViewTriggerSelector)
+			if err != nil {
+				fmt.Printf("error getting link element: %v", err)
+				continue
+			}
+
+			attr, err := linkElem.Attribute("href")
+			if err != nil {
+				fmt.Printf("error getting href attribute: %v", err)
+				continue
+			}
+
+			fullUrl := helpers.GetFullUrl(endpointToScrape.URL, *attr)
+			fmt.Println("Full URL: ", fullUrl)
+
+			detailPage, err := GetStealthPage(browser, fullUrl, endpointToScrape.DetailedViewMainElementSelector)
+			if err != nil {
+				fmt.Printf("error getting detailed view page: %v", err)
+				continue
+			}
+
+			detailPage.MustWaitStable()
+
+			detailElem := detailPage.MustElement(endpointToScrape.DetailedViewMainElementSelector)
+			if detailElem == nil {
+				fmt.Println("Detailed view element is null")
+				detailPage.Close()
+				continue
+			}
+
+			pageData := []PageData{{Page: nil, Element: detailElem, ActualLink: fullUrl}}
+			pageResults, err := processElements(pageData, endpointToScrape, relevantGroup)
+			if err != nil {
+				fmt.Printf("error processing detail page: %v", err)
+				detailPage.Close()
+				continue
+			}
+
+			results = append(results, pageResults...)
+			detailPage.Close()
+		}
+	}
+
+	return results, nil
 }
 
 func buildPaginationURL(baseURL string, config models.PaginationConfig, page int) string {
@@ -123,7 +178,6 @@ func buildPaginationURL(baseURL string, config models.PaginationConfig, page int
 }
 
 func buildURLParameterPagination(baseURL, parameter string, page int) string {
-	// Existing implementation for URL parameter pagination
 	if strings.Contains(baseURL, "?") {
 		if strings.Contains(baseURL, parameter) {
 			re := regexp.MustCompile(parameter + `=\d+`)
@@ -136,17 +190,19 @@ func buildURLParameterPagination(baseURL, parameter string, page int) string {
 
 func buildURLPathPagination(baseURL string, parameter string, page int, urlRegexToInsert string) string {
 	if urlRegexToInsert == "" {
-		// Default regex if not provided
 		urlRegexToInsert = `\d+`
 	}
-	re := regexp.MustCompile(urlRegexToInsert)
+	re, err := regexp.Compile(urlRegexToInsert)
+	if err != nil {
+		fmt.Println("Error extracting regex for pagination: ", err)
+		return baseURL
+	}
 	replacement := fmt.Sprintf("%s%d", parameter, page)
 
 	if re.MatchString(baseURL) {
 		return re.ReplaceAllString(baseURL, replacement)
 	}
 
-	// If the pattern is not found, return the base URL unchanged
 	return baseURL
 }
 
@@ -195,12 +251,10 @@ func findLinkSelector(selectors []models.FieldSelector, linkFieldId string) mode
 }
 
 func filterElements(fields []models.Field, results []models.ScrapeResult, endpointId string, groupId primitive.ObjectID, client *mongo.Client) ([]models.ScrapeResult, []models.ScrapeResult, error) {
-
 	var filtered []models.ScrapeResult
 	var toReplace []models.ScrapeResult
 	for _, element := range results {
 		uniqueId := getFieldValueByFieldKey(fields, "unique_identifier", element.Fields)
-		// fmt.Println("Unique ID: ", uniqueId)
 		if uniqueId == "" {
 			fmt.Println("Unique ID is empty, skipping")
 			continue
@@ -254,7 +308,6 @@ func getElementDetails(element *rod.Element, selectors []models.FieldSelector, f
 		}
 
 		if strings.TrimSpace(text.(string)) == "" {
-			// Try to get data from the element itself if fieldElement is not found or text is empty
 			if strings.TrimSpace(selector.AttributeToGet) != "" {
 				if attr, err := element.Attribute(selector.AttributeToGet); err == nil && attr != nil {
 					text = *attr
@@ -301,57 +354,14 @@ func (e ScrapeEndpointTestError) Error() string {
 	return fmt.Sprintf("scrape endpoint test error: %s", e.Message)
 }
 
-func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, client *mongo.Client, browser *rod.Browser) ([]models.ScrapeResultTest, []models.ScrapeResultTest, error) {
-	fmt.Println(("Scraping endpoint test"))
-
-	allElements := []PageData{}
-
-	fmt.Println("Scraping URL: ", endpointToScrape.URL)
-
-	page, err := GetStealthPage(browser, endpointToScrape.URL, endpointToScrape.MainElementSelector)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error getting page: %w", err)
-	}
-
-	defer page.Close()
-
-	SlowScrollToBottom(page)
-	page.MustWaitStable()
-
-	elements, err := getMainElements(page, endpointToScrape, GetScrapeType(endpointToScrape), 5)
-
-	defer func() {
-		for _, element := range elements {
-			if element.Page != nil {
-				element.Page.Close()
-			}
-		}
-
-	}()
-
-	if err != nil {
-		return nil, nil, fmt.Errorf("error finding elements: %w", err)
-	}
+func processElements(elements []PageData, endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup) ([]models.ScrapeResult, error) {
+	results := make([]models.ScrapeResult, 0, len(elements))
+	linkFieldId := findLinkFieldId(relevantGroup.Fields)
 
 	for _, element := range elements {
-		allElements = append(allElements, element)
-		if len(allElements) == 5 {
-			break
-		}
-	}
-
-	linkFieldId := findLinkFieldId(relevantGroup.Fields)
-	endpointLinkSelector := findLinkSelector(endpointToScrape.DetailFieldSelectors, linkFieldId)
-	fmt.Println("Link selector: ", endpointLinkSelector)
-
-	results := make([]models.ScrapeResultTest, 0, len(allElements))
-	for _, element := range allElements {
-		details, err := getElementDetailsTest(element.Element, endpointToScrape.DetailFieldSelectors, relevantGroup.Fields)
-		uniqueId := getFieldValueByFieldKeyTest(relevantGroup.Fields, "unique_identifier", details).(string)
-		// fmt.Println("Unique ID: ", uniqueId)
-		if uniqueId == "" {
-			fmt.Println("Unique ID is empty, skipping")
-			continue
+		details, err := getElementDetails(element.Element, endpointToScrape.DetailFieldSelectors, relevantGroup.Fields)
+		if err != nil {
+			return nil, fmt.Errorf("error getting element details: %w", err)
 		}
 
 		if element.ActualLink != "" {
@@ -362,12 +372,189 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 			}
 		}
 
-		if err != nil {
-			return nil, nil, fmt.Errorf("error getting element details: %w", err)
+		result := models.ScrapeResult{
+			ID:                  primitive.NewObjectID(),
+			UniqueHash:          helpers.GenerateScrapeResultHash(endpointToScrape.ID + getFieldValueByFieldKey(relevantGroup.Fields, "unique_identifier", details).(string)),
+			EndpointID:          endpointToScrape.ID,
+			GroupId:             relevantGroup.ID,
+			Fields:              details,
+			TimestampInitial:    time.Now().Format(time.RFC3339),
+			TimestampLastUpdate: time.Now().Format(time.RFC3339),
 		}
+		results = append(results, result)
+	}
+	return results, nil
+}
+
+func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, client *mongo.Client, browser *rod.Browser) ([]models.ScrapeResultTest, []models.ScrapeResultTest, error) {
+	fmt.Println("Scraping endpoint test")
+
+	var results []models.ScrapeResultTest
+	scrapeType := GetScrapeType(endpointToScrape)
+
+	switch scrapeType {
+	case PureDetails:
+		scraped, err := scrapeTestPureDetails(endpointToScrape, relevantGroup, browser)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error scraping pure details: %w", err)
+		}
+		results = scraped
+
+	case Previews:
+		scraped, err := scrapeTestPreviewsPages(endpointToScrape, relevantGroup, browser)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error scraping previews pages: %w", err)
+		}
+		results = scraped
+
+	case PreviewsWithDetails:
+		scraped, err := scrapeTestPreviewsWithDetails(endpointToScrape, relevantGroup, browser)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error scraping previews with details: %w", err)
+		}
+		results = scraped
+
+	default:
+		return nil, nil, fmt.Errorf("unknown scrape type: %v", scrapeType)
+	}
+
+	return results, nil, nil
+}
+
+func scrapeTestPureDetails(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, browser *rod.Browser) ([]models.ScrapeResultTest, error) {
+	page, err := GetStealthPage(browser, endpointToScrape.URL, endpointToScrape.DetailedViewMainElementSelector)
+	if err != nil {
+		return nil, fmt.Errorf("error getting page: %w", err)
+	}
+	defer page.Close()
+
+	SlowScrollToBottom(page)
+	page.MustWaitStable()
+
+	elements, err := getMainElements(page, endpointToScrape, PureDetails, 1)
+	if err != nil {
+		return nil, fmt.Errorf("error finding elements: %w", err)
+	}
+
+	return processTestElements(elements, endpointToScrape, relevantGroup)
+}
+
+func scrapeTestPreviewsPages(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, browser *rod.Browser) ([]models.ScrapeResultTest, error) {
+	var allElements []PageData
+
+	page, err := GetStealthPage(browser, endpointToScrape.URL, endpointToScrape.MainElementSelector)
+	if err != nil {
+		return nil, fmt.Errorf("error getting page: %w", err)
+	}
+	defer page.Close()
+
+	SlowScrollToBottom(page)
+	page.MustWaitStable()
+
+	elements, err := getMainElements(page, endpointToScrape, Previews, 5)
+	if err != nil {
+		return nil, fmt.Errorf("error finding elements: %w", err)
+	}
+
+	allElements = append(allElements, elements...)
+
+	return processTestElements(allElements, endpointToScrape, relevantGroup)
+}
+
+func scrapeTestPreviewsWithDetails(endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup, browser *rod.Browser) ([]models.ScrapeResultTest, error) {
+	var results []models.ScrapeResultTest
+
+	page, err := GetStealthPage(browser, endpointToScrape.URL, endpointToScrape.MainElementSelector)
+	if err != nil {
+		return nil, fmt.Errorf("error getting page: %w", err)
+	}
+	defer page.Close()
+
+	SlowScrollToBottom(page)
+	page.MustWaitStable()
+
+	elems, err := page.Elements(endpointToScrape.MainElementSelector)
+	if err != nil {
+		return nil, fmt.Errorf("error getting main elements: %w", err)
+	}
+
+	for i, elem := range elems {
+		if i >= 5 {
+			break // Limit to 5 elements for testing
+		}
+
+		linkElem, err := elem.Element(endpointToScrape.DetailedViewTriggerSelector)
+		if err != nil {
+			fmt.Printf("error getting link element: %v", err)
+			continue
+		}
+
+		attr, err := linkElem.Attribute("href")
+		if err != nil {
+			fmt.Printf("error getting href attribute: %v", err)
+			continue
+		}
+
+		fullUrl := helpers.GetFullUrl(endpointToScrape.URL, *attr)
+		fmt.Println("Full URL: ", fullUrl)
+
+		detailPage, err := GetStealthPage(browser, fullUrl, endpointToScrape.DetailedViewMainElementSelector)
+		if err != nil {
+			fmt.Printf("error getting detailed view page: %v", err)
+			continue
+		}
+
+		detailPage.MustWaitStable()
+
+		detailElem := detailPage.MustElement(endpointToScrape.DetailedViewMainElementSelector)
+		if detailElem == nil {
+			fmt.Println("Detailed view element is null")
+			detailPage.Close()
+			continue
+		}
+
+		pageData := []PageData{{Page: nil, Element: detailElem, ActualLink: fullUrl}}
+		pageResults, err := processTestElements(pageData, endpointToScrape, relevantGroup)
+		if err != nil {
+			fmt.Printf("error processing detail page: %v", err)
+			detailPage.Close()
+			continue
+		}
+
+		results = append(results, pageResults...)
+		detailPage.Close()
+	}
+
+	return results, nil
+}
+
+func processTestElements(elements []PageData, endpointToScrape models.Endpoint, relevantGroup models.ScrapeGroup) ([]models.ScrapeResultTest, error) {
+	results := make([]models.ScrapeResultTest, 0, len(elements))
+	linkFieldId := findLinkFieldId(relevantGroup.Fields)
+
+	for _, element := range elements {
+		details, err := getElementDetailsTest(element.Element, endpointToScrape.DetailFieldSelectors, relevantGroup.Fields)
+		if err != nil {
+			return nil, fmt.Errorf("error getting element details: %w", err)
+		}
+
+		if element.ActualLink != "" {
+			for i, detail := range details {
+				if detail.FieldID == linkFieldId {
+					details[i].Value = element.ActualLink
+				}
+			}
+		}
+
+		uniqueId := getFieldValueByFieldKeyTest(relevantGroup.Fields, "unique_identifier", details).(string)
+		if uniqueId == "" {
+			fmt.Println("Unique ID is empty, skipping")
+			continue
+		}
+
 		result := models.ScrapeResultTest{
 			ID:         primitive.NewObjectID(),
-			UniqueHash: "",
+			UniqueHash: helpers.GenerateScrapeResultHash(endpointToScrape.ID + uniqueId),
 			EndpointID: endpointToScrape.ID,
 			GroupId:    relevantGroup.ID,
 			Fields:     details,
@@ -376,7 +563,7 @@ func ScrapeEndpointTest(endpointToScrape models.Endpoint, relevantGroup models.S
 		results = append(results, result)
 	}
 
-	return results, nil, nil
+	return results, nil
 }
 
 func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelector, fields []models.Field) ([]models.ScrapeResultDetailTest, error) {
@@ -405,7 +592,6 @@ func getElementDetailsTest(element *rod.Element, selectors []models.FieldSelecto
 		}
 
 		if text == "" {
-			// Try to get data from the element itself if fieldElement is not found or text is empty
 			if strings.TrimSpace(selector.AttributeToGet) != "" {
 				if attr, err := element.Attribute(selector.AttributeToGet); err == nil && attr != nil {
 					text = *attr

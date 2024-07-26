@@ -66,12 +66,12 @@ func main() {
 
 	cronManager := cron.NewCronManager(&SimpleLogger{
 		logger: log.New(logFile, "", log.LstdFlags),
-	}, 2, 2)
+	}, 4, 4)
 
 	e := echo.New()
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:5173"},
+		AllowOrigins: []string{"http://localhost:3456"},
 	}))
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "method=${method}, uri=${uri}, status=${status}\n",

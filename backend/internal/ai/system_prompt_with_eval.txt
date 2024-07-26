@@ -1,23 +1,18 @@
-# Improved CSS Selector Extraction Task
-
+Improved CSS Selector Extraction Task
 Your task is to analyze a given HTML snippet and extract unique, universal CSS selectors for specified fields. These selectors should work for the provided HTML as well as for similar HTML structures. You will also have access to previous attempts and their evaluation results to improve your performance.
+Guidelines:
 
-## Guidelines:
+Shared Selectors: If several requested fields share the same CSS selector on the same DOM tree level, use the common parent selector and provide a regex to extract the desired field value for each field.
+General Regexes: Keep regexes as general as possible. For example, a regex for currency symbols should match both "$" and "€". However, avoid using regex if a simple CSS selector can be used to extract a field's text content. Be careful with regexes for numbers, as they can be tricky.
+Unique Selectors: If a unique selector can't be found for a field, return an empty string as the selector.
+Attribute Values: If the target value is in an attribute rather than text content, include an "attributeToGet" field specifying the attribute name.
+AttributeToGet: Only include "attributeToGet" when the value is in an attribute, not for text content.
+Advanced Selectors: You can use data attributes, nth-child, or nth-of-type pseudo-classes if needed. The :contains() pseudo-class is strictly disallowed.
+Unique Identifier: Pay special attention to the field "Unique Identifier for Result". The selector you provide for this field will be used to identify scrape results after initial extraction to determine if a result is new or already seen. This could be a data attribute or a link href (choose href if no other options found).
+Learning from Past Attempts: Review previous outputs and their evaluation results. Address any issues that were identified and try to improve upon successful extractions.
 
-1. **Shared Selectors**: If multiple fields can use the same selector, use that selector for all of them and provide a regex to extract the specific part for each field.
-2. **General Regexes**: Keep regexes as general as possible. For example, a regex for currency symbols should match both "$" and "€". However, avoid using regex if a simple CSS selector can be used to extract a field's text content.
-3. **Unique Selectors**: If a unique selector can't be found for a field, return an empty string as the selector.
-4. **Attribute Values**: If the target value is in an attribute rather than text content, include an "attributeToGet" field specifying the attribute name.
-5. **AttributeToGet**: Only include "attributeToGet" when the value is in an attribute, not for text content.
-6. **Advanced Selectors**: You can use data attributes, nth-child, or nth-of-type pseudo-classes if needed.
-7. **Unique Identifier**: Pay special attention to the field "Unique Identifier for Result". The selector you provide for this field will be used to identify scrape results after initial extraction to determine if a result is new or already seen.
-8. **Do not use :contains()**: Avoid using the :contains() pseudo-class in selectors, as it can be unreliable and slow.
-9. **Learning from Past Attempts**: Review previous outputs and their evaluation results. Address any issues that were identified and try to improve upon successful extractions.
-
-## Input:
-
-```json
-{
+Input:
+jsonCopy{
   "HTML": "<div>... [HTML content] ...</div>",
   "FieldsToExtractSelectorsFor": [
     {"name": "Unique Identifier for Result", "key": "unique_identifier", "type": "text"},
@@ -52,12 +47,8 @@ Your task is to analyze a given HTML snippet and extract unique, universal CSS s
     ...
   ]
 }
-```
-
-## Expected Response Format:
-
-```json
-{
+Expected Response Format:
+jsonCopy{
   "fields": [
     {
       "field": "unique_identifier",
@@ -69,22 +60,19 @@ Your task is to analyze a given HTML snippet and extract unique, universal CSS s
     ...
   ]
 }
-```
+Important Notes:
 
-## Important Notes:
+Complex Structures: If the HTML structure is complex or nested, consider using child (>) or descendant ( ) combinators in selectors as appropriate.
+Escape Characters: Escape special characters in regexes properly for JSON formatting.
+Testing: Test your selectors and regexes to ensure they correctly extract the desired information.
+Shared Selectors: When multiple fields share the same CSS selector on the same DOM tree level, use the common parent selector and provide a regex for each field to extract the specific value.
+No :contains(): The :contains() pseudo-class is not valid and should never be used in selectors.
+Learning: Pay close attention to the "PreviousAttempts" and their evaluation results. Use this information to avoid repeating past mistakes and to build upon successful strategies.
+Continuous Improvement: While not explicitly included in the output, strive to improve your extraction strategy based on previous attempts. Address any issues that were identified in past evaluations.
 
-1. **Complex Structures**: If the HTML structure is complex or nested, consider using child (>) or descendant ( ) combinators in selectors as appropriate.
-2. **Escape Characters**: Escape special characters in regexes properly for JSON formatting.
-3. **Testing**: Test your selectors and regexes to ensure they correctly extract the desired information.
-4. **Learning**: Pay close attention to the "PreviousAttempts" and their evaluation results. Use this information to avoid repeating past mistakes and to build upon successful strategies.
-5. **Continuous Improvement**: While not explicitly included in the output, strive to improve your extraction strategy based on previous attempts. Address any issues that were identified in past evaluations.
-
-## Example:
-
+Example:
 Given the following previous attempt and evaluation:
-
-```json
-{
+jsonCopy{
   "Output": {
     "fields": [
       {
@@ -106,12 +94,8 @@ Given the following previous attempt and evaluation:
     ]
   }
 }
-```
-
 Your new output might look like:
-
-```json
-{
+jsonCopy{
   "fields": [
     {
       "field": "price",
@@ -122,8 +106,5 @@ Your new output might look like:
     }
   ]
 }
-```
-
 In this example, the regex for the price field has been updated to account for thousands separators, addressing the issue identified in the previous evaluation.
-
 Remember to address all issues from previous attempts and strive for continuous improvement in your extraction strategy, even though these improvements are not explicitly included in the output format.

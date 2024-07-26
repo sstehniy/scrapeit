@@ -47,13 +47,8 @@ func GetStealthPage(browser *rod.Browser, url string, elementToWaitFor string) (
 		return page, fmt.Errorf("error waiting for load: %w", err)
 	}
 
-	err = page.Context(ctx).WaitStable(2 * time.Second)
-	if err != nil {
-		return page, fmt.Errorf("error waiting for stability: %w", err)
-	}
-
 	// Wait for the specific element (max 10 seconds)
-	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	_, err = page.Context(ctx).Element(elementToWaitFor)

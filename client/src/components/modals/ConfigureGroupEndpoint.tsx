@@ -1076,7 +1076,7 @@ const SecondStepContent: FC<{
 					<span className="loading loading-spinner loading-lg"></span>
 				</div>
 			)}
-			{sampleData.length > 0 && (
+			{sampleData?.length > 0 && (
 				<>
 					<div
 						className="w-full mb-5"

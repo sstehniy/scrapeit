@@ -9,7 +9,6 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-// Logger is an interface for logging operations
 type Logger interface {
 	Info(msg string, keysAndValues ...interface{})
 	Error(msg string, keysAndValues ...interface{})
@@ -55,7 +54,7 @@ func NewCronManager(logger Logger, maxConcurrentTasks, numWorkers int) *CronMana
 func (cm *CronManager) AddJob(job CronManagerJob) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
-
+	job.Status = CronJobStatusIdle
 	cm.Jobs = append(cm.Jobs, &job)
 	addedJob := cm.getJob(job.GroupID, job.EndpointID)
 	cm.logger.Info("Adding new job", "groupId", job.GroupID, "endpointId", job.EndpointID, "interval", job.Interval)
@@ -119,9 +118,10 @@ func (cm *CronManager) Stop() {
 
 func (cm *CronManager) DestroyJob(groupId string, endpointId string) {
 	cm.mu.Lock()
-	defer cm.mu.Unlock()
 
 	cm.destroyJob(groupId, endpointId)
+	cm.mu.Unlock()
+
 	cm.formatAllJobs()
 }
 
@@ -230,6 +230,7 @@ func (cm *CronManager) formatAllJobs() {
 		EndpointID string
 		Interval   string
 		LastRun    string
+		Status     CronJobStatus
 	}
 	jobsToLog := []*formattedJob{}
 	for _, job := range cm.Jobs {
@@ -239,6 +240,7 @@ func (cm *CronManager) formatAllJobs() {
 			EndpointID: job.EndpointID,
 			Interval:   job.Interval,
 			LastRun:    job.LastRun,
+			Status:     job.Status,
 		})
 	}
 

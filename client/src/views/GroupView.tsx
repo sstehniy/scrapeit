@@ -1,4 +1,22 @@
+import {
+	useInfiniteQuery,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
+import axios from "axios";
+import { throttle } from "lodash";
 import { type FC, useCallback, useEffect, useRef, useState } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
+import { GroupEndpoints } from "../components/GroupEndpoints";
+import { ResultsFilters } from "../components/ResultsFilters";
+import { ResultsTable } from "../components/ResultsTable";
+import { ConfigureGroupNotificationModal } from "../components/modals/ConfigureGroupNotification";
+import { ConfigureGroupSchema } from "../components/modals/ConfigureGroupSchema";
+import { ConfirmArchiveCurrentGroup } from "../components/modals/ConfirmArchiveCurrentGroup";
+import { Button } from "../components/ui/Button";
+import { useComponentSize } from "../hooks/useComponentSize";
 import {
 	type Field,
 	type NotificationConfig,
@@ -6,24 +24,6 @@ import {
 	type ScrapeResult,
 	SelectorStatus,
 } from "../types";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
-import {
-	useQuery,
-	useMutation,
-	useQueryClient,
-	useInfiniteQuery,
-} from "@tanstack/react-query";
-import { ResultsTable } from "../components/ResultsTable";
-import { useComponentSize } from "../hooks/useComponentSize";
-import { throttle } from "lodash";
-import { GroupEndpoints } from "../components/GroupEndpoints";
-import { toast } from "react-toastify";
-import { ConfigureGroupSchema } from "../components/modals/ConfigureGroupSchema";
-import { Button } from "../components/ui/Button";
-import { ConfirmArchiveCurrentGroup } from "../components/modals/ConfirmArchiveCurrentGroup";
-import { ResultsFilters } from "../components/ResultsFilters";
-import { ConfigureGroupNotificationModal } from "../components/modals/ConfigureGroupNotification";
 
 const pageSize = 100;
 
@@ -155,16 +155,15 @@ export const GroupView: FC<{
 		hasMore: boolean;
 	}>({
 		queryKey: ["groupResults", groupId, searchConfig],
-		queryFn: ({ pageParam }) => {
-			return axios
+		queryFn: ({ pageParam }) =>
+			axios
 				.post("/api/scrape/results", {
 					...searchConfig,
 					offset: pageParam,
 					groupId,
 					isArchive: archived,
 				})
-				.then((res) => res.data);
-		},
+				.then((res) => res.data),
 		refetchInterval: !archived ? 30000 : 0,
 		getNextPageParam: (lastPage, pages) => {
 			return lastPage.hasMore ? pages.length * searchConfig.limit : undefined;
@@ -189,9 +188,7 @@ export const GroupView: FC<{
 			changes: FieldChange[];
 			versionTag?: string;
 			shouldArchive?: boolean;
-		}) => {
-			return axios.put(`/api/scrape-groups/${groupId}/schema`, data);
-		},
+		}) => axios.put(`/api/scrape-groups/${groupId}/schema`, data),
 		onMutate: (data) => {
 			setShowGroupSchemaSettings(false);
 			setShowConfirmGroupArchive({

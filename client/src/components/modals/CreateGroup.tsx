@@ -3,7 +3,7 @@ import { Modal, type ModalProps } from "../ui/Modal";
 import { TextInput } from "../ui/TextInput";
 
 type CreateGroupModalProps = Pick<ModalProps, "isOpen" | "onClose"> & {
-	onConfirm: (name: string) => void;
+	onConfirm: (data: { name: string }) => void;
 };
 
 export const CreateGroupModal: FC<CreateGroupModalProps> = ({
@@ -33,7 +33,7 @@ export const CreateGroupModal: FC<CreateGroupModalProps> = ({
 				{
 					label: "Create",
 					onClick: () => {
-						onConfirm(name);
+						onConfirm({ name });
 						setName("");
 					},
 					className: "bg-blue-500 text-white",

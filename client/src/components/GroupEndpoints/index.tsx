@@ -1,15 +1,16 @@
-import { type FC, useCallback, useState } from "react";
-import { type Endpoint, type ScrapeGroup, SelectorStatus } from "../../types";
-import { getColoredEndpointPill } from "../ColoredEndpointPill";
-import { getBaseUrl } from "../../util/url";
-import { ConfigureGroupEndpoint } from "../modals/ConfigureGroupEndpoint";
+import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { type FC, useCallback, useState } from "react";
 import { toast } from "react-toastify";
-import { Button } from "../ui/Button";
-import { ConfirmRemoveEndpoint } from "../modals/ConfirmRemoveEndpoint";
-import { WithTooltip } from "../ui/WithTooltip";
 import { v4 } from "uuid";
+import { type Endpoint, type ScrapeGroup, SelectorStatus } from "../../types";
+import { getBaseUrl } from "../../util/url";
+import { getColoredEndpointPill } from "../ColoredEndpointPill";
+import { ConfigureGroupEndpoint } from "../modals/ConfigureGroupEndpoint";
+import { ConfirmRemoveEndpoint } from "../modals/ConfirmRemoveEndpoint";
 import { ConfirmRemoveEndpointResults } from "../modals/ConfirmRemoveEndpointResults";
+import { Button } from "../ui/Button";
+import { WithTooltip } from "../ui/WithTooltip";
 
 type GroupEndpointsProps = {
 	group: ScrapeGroup;
@@ -43,7 +44,9 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
 			onConfirm: () => void;
 		}>({
 			isOpen: false,
-			onConfirm: () => {},
+			onConfirm: () => {
+				return;
+			},
 		});
 	const [
 		showConfirmRemoveEndpointResultsModal,
@@ -53,86 +56,120 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
 		onConfirm: () => void;
 	}>({
 		isOpen: false,
-		onConfirm: () => {},
+		onConfirm: () => {
+			return;
+		},
+	});
+
+	const deleteEndpointResultsMutation = useMutation({
+		mutationFn: ({
+			endpointId,
+			groupId,
+		}: { groupId: string; endpointId: string }) =>
+			axios.delete(
+				`/api/scrape-groups/${groupId}/endpoints/results/${endpointId}`,
+			),
+		onMutate: () => {
+			setShowConfirmRemoveEndpointResultsModal({
+				isOpen: false,
+				onConfirm: () => {
+					return;
+				},
+			});
+		},
+		onSuccess: onEndpointChange,
+		onError: (e) => {
+			toast.error("Failed to delete endpoint results");
+			console.error(e);
+		},
 	});
 
 	const handleDeleteEndpointResults = useCallback(
 		async (endpointId: string) => {
 			setShowConfirmRemoveEndpointResultsModal({
 				isOpen: true,
-				onConfirm: async () => {
-					try {
-						await axios.delete(
-							`/api/scrape-groups/${group.id}/endpoints/results/${endpointId}`,
-						);
-						setShowConfirmRemoveEndpointResultsModal({
-							isOpen: false,
-							onConfirm: () => {},
-						});
-						onEndpointChange();
-					} catch (e) {
-						toast.error("Failed to delete endpoint");
-						console.error(e);
-					}
+				onConfirm: () => {
+					deleteEndpointResultsMutation.mutate({
+						groupId: group.id,
+						endpointId,
+					});
 				},
 			});
 		},
-		[group.id, onEndpointChange],
+		[group.id, deleteEndpointResultsMutation],
 	);
 
+	const deleteEndpointMutation = useMutation({
+		mutationFn: ({
+			endpointId,
+			groupId,
+		}: { groupId: string; endpointId: string }) =>
+			axios.delete(`/api/scrape-groups/${groupId}/endpoints/${endpointId}`),
+		onMutate: () => {
+			setShowConfirmRemoveEndpointModal({
+				isOpen: false,
+				onConfirm: () => {
+					return;
+				},
+			});
+		},
+		onSuccess: onEndpointChange,
+		onError: (e) => {
+			toast.error("Failed to delete endpoint");
+			console.error(e);
+		},
+	});
 	const handleDeleteEndpoint = useCallback(
 		async (endpointId: string) => {
 			setShowConfirmRemoveEndpointModal({
 				isOpen: true,
-				onConfirm: async () => {
-					try {
-						await axios.delete(
-							`/api/scrape-groups/${group.id}/endpoints/${endpointId}`,
-						);
-						onEndpointChange();
-						setShowConfirmRemoveEndpointModal({
-							isOpen: false,
-							onConfirm: () => {},
-						});
-					} catch (e) {
-						toast.error("Failed to delete endpoint");
-						console.error(e);
-					}
+				onConfirm: () => {
+					deleteEndpointMutation.mutate({ endpointId, groupId: group.id });
 				},
 			});
 		},
-		[group.id, onEndpointChange],
+		[group.id, deleteEndpointMutation],
 	);
+
+	const createEndpointMutation = useMutation({
+		mutationFn: ({
+			endpoint,
+			groupId,
+		}: { groupId: string; endpoint: Endpoint }) =>
+			axios.post(`/api/scrape-groups/${groupId}/endpoints`, {
+				endpoint,
+			}),
+		onSuccess: onEndpointChange,
+		onError: (e) => {
+			toast.error("Failed to create endpoint");
+			console.error(e);
+		},
+	});
+
+	const editEndpointMutation = useMutation({
+		mutationFn: ({
+			endpoint,
+			groupId,
+		}: { groupId: string; endpoint: Endpoint }) =>
+			axios.put(`/api/scrape-groups/${groupId}/endpoints/${endpoint.id}`, {
+				endpoint,
+			}),
+		onSuccess: onEndpointChange,
+		onError: (e) => {
+			toast.error("Failed to save endpoint");
+			console.error(e);
+		},
+	});
 
 	const handleCreateEndpoint = useCallback(
 		async (endpoint: Endpoint, type: "create" | "save") => {
 			if (type === "create") {
-				try {
-					console.log("endpoint", endpoint);
-					await axios.post(`/api/scrape-groups/${group.id}/endpoints`, {
-						endpoint,
-					});
-				} catch (e) {
-					toast.error("Failed to create endpoint");
-					console.error(e);
-				}
+				createEndpointMutation.mutate({ endpoint, groupId: group.id });
 			} else {
-				try {
-					await axios.put(
-						`/api/scrape-groups/${group.id}/endpoints/${endpoint.id}`,
-						{
-							endpoint,
-						},
-					);
-					onEndpointChange();
-				} catch (e) {
-					toast.error("Failed to save endpoint");
-					console.error(e);
-				}
+				editEndpointMutation.mutate({ endpoint, groupId: group.id });
 			}
-			onEndpointChange();
 		},
-		[group.id, onEndpointChange],
+		[group.id, editEndpointMutation, createEndpointMutation],
 	);
 
 	const handleExportGroupEndpointConfig = (ep: Endpoint) => {
@@ -398,7 +435,9 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
 					onClose={() =>
 						setShowConfirmRemoveEndpointResultsModal({
 							isOpen: false,
-							onConfirm: () => {},
+							onConfirm: () => {
+								return;
+							},
 						})
 					}
 					onConfirm={showConfirmRemoveEndpointResultsModal.onConfirm}
@@ -410,7 +449,9 @@ export const GroupEndpoints: FC<GroupEndpointsProps> = ({
 					onClose={() =>
 						setShowConfirmRemoveEndpointModal({
 							isOpen: false,
-							onConfirm: () => {},
+							onConfirm: () => {
+								return;
+							},
 						})
 					}
 					onConfirm={showConfirmRemoveEndpointModal.onConfirm}

@@ -5,11 +5,13 @@ import type React from "react";
 import { type FC, useCallback, useEffect, useState } from "react";
 import { JsonView, darkStyles } from "react-json-view-lite";
 import "react-json-view-lite/dist/index.css";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { v4 } from "uuid";
 import {
 	type Endpoint,
 	type Field,
+	FieldSelector,
 	PaginationConfig,
 	type ScrapeGroup,
 	type ScrapeResultTest,
@@ -136,7 +138,7 @@ const FirstStepContent: FC<{
 	setFirstStepErrors: React.Dispatch<
 		React.SetStateAction<{ [key: string]: string }>
 	>;
-	handleTestGettingElement: () => Promise<void>;
+	handleTestGettingElement: () => void;
 	testElementLoading: boolean;
 	testElementError: string | null;
 	testElementResult: string | null;
@@ -1198,29 +1200,57 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
 		}
 	}, [editEndpoint, fields]);
 
-	const handleTestGettingElement = useCallback(async () => {
+	const testGettingElementMutation = useMutation({
+		mutationFn: ({ endpoint }: { endpoint: Endpoint }) =>
+			axios
+				.post("/api/selectors/test", {
+					endpoint,
+				})
+				.then((resp) => resp.data as { html: string }),
+		onSuccess: (data) => setTestElementResult(data.html),
+		onMutate: () => {
+			setTestElementError(null);
+			setTestElementResult(null);
+			setTestElementLoading(true);
+		},
+		onError: (error) => {
+			console.error(error);
+			setTestElementError("Error while testing element");
+		},
+		onSettled: () => setTestElementLoading(false),
+	});
+
+	const handleTestGettingElement = useCallback(() => {
 		if (!endpoint.url.trim() || !endpoint.mainElementSelector.trim()) {
 			setTestElementError("Please enter a URL");
 			return;
 		}
-		try {
-			setTestElementError(null);
-			setTestElementResult(null);
-			setTestElementLoading(true);
-			const response = await axios.post("/api/selectors/test", {
-				endpoint,
-			});
-			setTestElementResult(response.data.html);
-		} catch (error) {
+		testGettingElementMutation.mutate({ endpoint });
+	}, [testGettingElementMutation, endpoint]);
+
+	const handleTestScrapeMutation = useMutation({
+		mutationFn: ({ group }: { group: ScrapeGroup }) =>
+			axios
+				.post("/api/scrape/endpoint-test", {
+					group,
+				})
+				.then((resp) => resp.data as ScrapeResultTest[]),
+		onSuccess: (data) => setSampleData(data),
+		onMutate: () => {
+			setSampleData([]);
+			setLoadingSampleData(true);
+		},
+		onError: (error) => {
 			console.error(error);
-			setTestElementError("Error while testing element");
-		} finally {
-			setTestElementLoading(false);
-		}
-	}, [endpoint]);
+			toast.error("Failed to test scrape");
+		},
+		onSettled: () => {
+			setLoadingSampleData(false);
+		},
+	});
 
 	const handleTestScrape = useCallback(
-		async (ep: Endpoint) => {
+		(ep: Endpoint) => {
 			const endpointCopy: Endpoint = {
 				...ep,
 				paginationConfig: {
@@ -1240,32 +1270,16 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
 				isArchived: false,
 				versionTag: "",
 			};
-			setSampleData([]);
-			setLoadingSampleData(true);
-			try {
-				const response = await axios.post("/api/scrape/endpoint-test", {
-					group,
-				});
-				setSampleData(response.data);
-			} catch (error) {
-				console.error(error);
-				toast.error("Failed to test scrape");
-			} finally {
-				setLoadingSampleData(false);
-			}
+
+			handleTestScrapeMutation.mutate({ group });
 		},
-		[fields],
+		[fields, handleTestScrapeMutation],
 	);
 
-	const handleExtractSelectorForField = useCallback(
-		async (field: Field, remark: string) => {
-			if (fieldsWithLoadingSelectors.includes(field.id)) {
-				return;
-			}
-			setFieldsWithLoadingSelectors((prev) => [...prev, field.id]);
-			console.log("Extracting selector for field", field);
-			try {
-				const response = await axios.post("/api/selectors/extract", {
+	const extractSelectorForFieldMutation = useMutation({
+		mutationFn: ({ field, remark }: { field: Field; remark: string }) =>
+			axios
+				.post("/api/selectors/extract", {
 					endpoint,
 					fieldsToExtractSelectorsFor: [
 						{
@@ -1275,68 +1289,88 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
 							remark,
 						},
 					],
-				});
-				console.log("Extracted selectors", response.data);
-				const newEndpoint: Endpoint = {
-					...endpoint,
-					detailFieldSelectors: endpoint.detailFieldSelectors.map((selector) =>
-						selector.fieldId === field.id
-							? {
-									...selector,
-									regexMatchIndexToUse:
-										response.data.fields[0]?.regexMatchIndexToUse,
-									selector: response.data.fields[0]?.selector || "",
-									attributeToGet: response.data.fields[0]?.attributeToGet || "",
-									regex: response.data.fields[0]?.regex || "",
-								}
-							: selector,
-					),
-				};
-				setEndpoint(newEndpoint);
-				setTotalCost((prev) => prev + response.data.totalCost);
-				setFieldsWithLoadingSelectors((prev) =>
-					prev.filter((id) => id !== field.id),
-				);
-				handleTestScrape(newEndpoint);
-			} catch (error) {
-				setFieldsWithLoadingSelectors([]);
-				console.error(error);
-				toast.error("Failed to extract selector for field");
-			}
-		},
-		[endpoint, fieldsWithLoadingSelectors, handleTestScrape],
-	);
-
-	const handleExtractSelectorsForAllFields = useCallback(
-		async (remarks: Remark[]) => {
-			const toExtract = fields.filter(
-				(f) =>
-					!endpoint.detailFieldSelectors.find((df) => df.fieldId === f.id)
-						?.lockedForEdit,
+				})
+				.then(
+					(res) => res.data as { fields: FieldSelector[]; totalCost: number },
+				),
+		onSuccess: ({ fields, totalCost }, { field }) => {
+			console.log("Extracted selectors", fields);
+			const newEndpoint: Endpoint = {
+				...endpoint,
+				detailFieldSelectors: endpoint.detailFieldSelectors.map((selector) =>
+					selector.fieldId === field.id
+						? {
+								...selector,
+								regexMatchIndexToUse: fields[0]?.regexMatchIndexToUse,
+								selector: fields[0]?.selector || "",
+								attributeToGet: fields[0]?.attributeToGet || "",
+								regex: fields[0]?.regex || "",
+							}
+						: selector,
+				),
+			};
+			setEndpoint(newEndpoint);
+			setTotalCost((prev) => prev + totalCost);
+			setFieldsWithLoadingSelectors((prev) =>
+				prev.filter((id) => id !== field.id),
 			);
+			handleTestScrape(newEndpoint);
+		},
+		onMutate: ({ field }) => {
+			setFieldsWithLoadingSelectors((prev) => [...prev, field.id]);
+			console.log("Extracting selector for field", field);
+		},
+		onError: (error) => {
+			setFieldsWithLoadingSelectors([]);
+			console.error(error);
+			toast.error("Failed to extract selector for field");
+		},
+	});
 
-			if (toExtract.length === 0) {
+	const handleExtractSelectorForField = useCallback(
+		(field: Field, remark: string) => {
+			if (fieldsWithLoadingSelectors.includes(field.id)) {
 				return;
 			}
-			setFieldsWithLoadingSelectors(toExtract.map((f) => f.id));
-			const response = await axios.post("/api/selectors/extract", {
-				endpoint,
-				fieldsToExtractSelectorsFor: toExtract.map((field) => ({
-					key: field.key,
-					name: field.name,
-					type: field.type,
-					remark: remarks.find((r) => r.fieldId === field.id)?.remark,
-				})),
+
+			extractSelectorForFieldMutation.mutate({
+				field,
+				remark,
 			});
-			console.log("Extracted selectors", response.data);
+		},
+		[fieldsWithLoadingSelectors, extractSelectorForFieldMutation],
+	);
+
+	const extractSelectorsForAllFieldsMutation = useMutation({
+		mutationFn: ({
+			toExtract,
+			remarks,
+		}: { toExtract: Field[]; remarks: Remark[]; groupFields: Field[] }) =>
+			axios
+				.post("/api/selectors/extract", {
+					endpoint,
+					fieldsToExtractSelectorsFor: toExtract.map((field) => ({
+						key: field.key,
+						name: field.name,
+						type: field.type,
+						remark: remarks.find((r) => r.fieldId === field.id)?.remark,
+					})),
+				})
+				.then(
+					(res) => res.data as { fields: FieldSelector[]; totalCost: number },
+				),
+		onMutate: ({ toExtract }) =>
+			setFieldsWithLoadingSelectors(toExtract.map((f) => f.id)),
+		onSuccess: ({ fields, totalCost }, { groupFields }) => {
+			console.log("Extracted selectors", fields);
 			const newEndpoint: Endpoint = {
 				...endpoint,
 				detailFieldSelectors: endpoint.detailFieldSelectors.map((selector) => {
-					const field = fields.find((f) => f.id === selector.fieldId);
-					console.log("Field", field, selector);
-					const extractedField = response.data.fields.find(
+					const groupField = groupFields.find((f) => f.id === selector.fieldId);
+					console.log("Field", groupField, selector);
+					const extractedField = fields.find(
 						// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-						(extractedField: any) => extractedField.field === field?.key,
+						(extractedField: any) => extractedField.field === groupField?.key,
 					);
 					if (!extractedField) {
 						return selector;
@@ -1350,13 +1384,36 @@ export const ConfigureGroupEndpoint: FC<ConfigureGroupEndpointProps> = ({
 					};
 				}),
 			};
-			setTotalCost((prev) => prev + response.data.totalCost);
+			setTotalCost((prev) => prev + totalCost);
 			setEndpoint(newEndpoint);
 
 			setFieldsWithLoadingSelectors([]);
 			handleTestScrape(newEndpoint);
 		},
-		[fields, endpoint, handleTestScrape],
+		onError: (error) => {
+			console.error(error);
+			toast.error("Failed to extract all selectors");
+		},
+	});
+
+	const handleExtractSelectorsForAllFields = useCallback(
+		(remarks: Remark[]) => {
+			const toExtract = fields.filter(
+				(f) =>
+					!endpoint.detailFieldSelectors.find((df) => df.fieldId === f.id)
+						?.lockedForEdit,
+			);
+
+			if (toExtract.length === 0) {
+				return;
+			}
+			extractSelectorsForAllFieldsMutation.mutate({
+				groupFields: fields,
+				remarks,
+				toExtract,
+			});
+		},
+		[fields, extractSelectorsForAllFieldsMutation, endpoint],
 	);
 
 	const validateFirstStep = useCallback((ep: Endpoint) => {

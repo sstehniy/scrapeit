@@ -1,11 +1,12 @@
-import { FC, useEffect, useState } from "react";
-import { ArchivedScrapeGroup, ScrapeGroup } from "../types";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { FC, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { GroupCard } from "../components/GroupCard";
-import { CreateGroupModal } from "../components/modals/CreateGroup";
-import { useNavigate } from "react-router-dom";
 import { ConfirmDeleteGroup } from "../components/modals/ConfirmDeleteGroup";
+import { CreateGroupModal } from "../components/modals/CreateGroup";
+import { ArchivedScrapeGroup, ScrapeGroup } from "../types";
 
 export const GroupsOverview: FC = () => {
 	const [showArchivedGroups, setShowArchivedGroups] = useState(false);
@@ -34,15 +35,15 @@ export const GroupsOverview: FC = () => {
 };
 
 const ArchivedGroups = () => {
-	const [scrapeGroups, setScrapeGroups] = useState<
-		ArchivedScrapeGroup[] | null
-	>(null);
-
-	useEffect(() => {
-		axios.get(`/api/scrape-groups/archived`).then((data) => {
-			setScrapeGroups(data.data);
-		});
-	}, []);
+	const { data: scrapeGroups } = useQuery({
+		queryKey: ["archived-groups"],
+		queryFn: () =>
+			axios
+				.get(`/api/scrape-groups/archived`)
+				.then((resp) => resp.data as ArchivedScrapeGroup[]),
+		refetchOnReconnect: true,
+		enabled: true,
+	});
 
 	const groupedByOriginalId = scrapeGroups?.reduce(
 		(acc, group) => {
@@ -61,7 +62,7 @@ const ArchivedGroups = () => {
 				<div className="flex justify-center items-center h-64">
 					<span className="loading loading-spinner loading-lg text-primary"></span>
 				</div>
-			) : scrapeGroups.length === 0 ? (
+			) : scrapeGroups?.length === 0 ? (
 				<div className="text-center py-12">
 					<p className="text-xl text-gray-600">No archived groups found.</p>
 				</div>
@@ -88,7 +89,6 @@ const ArchivedGroups = () => {
 };
 
 const ActiveGroups = () => {
-	const [scrapeGroups, setScrapeGroups] = useState<ScrapeGroup[] | null>(null);
 	const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
 	const navigate = useNavigate();
 	const [showConfirmDeleteGroupModal, setShowConfirmDeleteGroupModal] =
@@ -96,11 +96,31 @@ const ActiveGroups = () => {
 			isOpen: boolean;
 			onConfirm: () => void;
 		} | null>(null);
-	useEffect(() => {
-		axios.get(`/api/scrape-groups`).then((data) => {
-			setScrapeGroups(data.data);
-		});
-	}, []);
+	const {
+		data: scrapeGroups,
+		refetch,
+		isLoading,
+	} = useQuery({
+		queryKey: ["active-groups"],
+		queryFn: () =>
+			axios
+				.get(`/api/scrape-groups`)
+				.then((resp) => resp.data as ScrapeGroup[]),
+		refetchOnReconnect: true,
+		enabled: true,
+	});
+
+	const createGroupMutation = useMutation({
+		mutationFn: ({ name }: { name: string }) =>
+			axios
+				.post(`/api/scrape-groups`, { name })
+				.then((resp) => resp.data as ScrapeGroup),
+		onSuccess: ({ id }) => refetch().then(() => navigate(`/group/${id}`)),
+		onError: (error) => {
+			console.error(error);
+			toast.error("Failed to create group");
+		},
+	});
 
 	const handleExportGroupConfig = (group: ScrapeGroup) => {
 		const json = JSON.stringify(group, null, 2);
@@ -113,22 +133,34 @@ const ActiveGroups = () => {
 		URL.revokeObjectURL(url);
 	};
 
-	const handleCreateGroup = (name: string) => {
-		axios
-			.post(`/api/scrape-groups`, { name })
-			.then((response) => {
-				toast.success("Group created");
-				setShowCreateGroupModal(false);
-				setScrapeGroups((prev) =>
-					prev ? [...prev, response.data] : [response.data],
-				);
-				navigate(`/group/${response.data.id}`);
-			})
-			.catch((error) => {
-				console.error(error);
-				toast.error("Failed to create group");
-			});
-	};
+	const importGroupMutation = useMutation({
+		mutationFn: ({ group }: { group: ScrapeGroup }) =>
+			axios.post(`/api/scrape-groups`, group),
+		onError: (error) => {
+			console.error(error);
+			toast.error("Failed to import group");
+		},
+		onSuccess: () => {
+			toast.success("Group imported");
+			refetch();
+		},
+	});
+
+	const deleteScrapeGroupMutation = useMutation({
+		mutationFn: ({ group }: { group: ScrapeGroup }) =>
+			axios.delete(`/api/scrape-groups/${group.id}`),
+		onSuccess: () => {
+			toast.success("Group deleted");
+			refetch();
+		},
+		onSettled: () => setShowConfirmDeleteGroupModal(null),
+		onError: (error) => {
+			console.error(error);
+			toast.error("Failed to delete group");
+		},
+	});
+
+	if (!scrapeGroups && isLoading) return <p>Loading...</p>;
 
 	return (
 		<>
@@ -157,18 +189,7 @@ const ActiveGroups = () => {
 								if (typeof content !== "string") return;
 								try {
 									const group = JSON.parse(content);
-									axios
-										.post(`/api/scrape-groups`, group)
-										.then((response) => {
-											toast.success("Group imported");
-											setScrapeGroups((prev) =>
-												prev ? [...prev, response.data] : [response.data],
-											);
-										})
-										.catch((error) => {
-											console.error(error);
-											toast.error("Failed to import group");
-										});
+									importGroupMutation.mutate({ group });
 								} catch (error) {
 									console.error(error);
 									toast.error("Failed to parse group config");
@@ -183,7 +204,7 @@ const ActiveGroups = () => {
 				<div className="flex justify-center items-center h-64">
 					<span className="loading loading-spinner loading-lg text-primary"></span>
 				</div>
-			) : scrapeGroups.length === 0 ? (
+			) : scrapeGroups?.length === 0 ? (
 				<div className="text-center py-12">
 					<p className="text-xl text-gray-600">
 						No groups found. Create your first group!
@@ -191,7 +212,7 @@ const ActiveGroups = () => {
 				</div>
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{scrapeGroups.map((group) => (
+					{scrapeGroups?.map((group) => (
 						<GroupCard
 							key={group.id}
 							group={group}
@@ -199,24 +220,7 @@ const ActiveGroups = () => {
 							onDelete={() => {
 								setShowConfirmDeleteGroupModal({
 									isOpen: true,
-									onConfirm: () => {
-										axios
-											.delete(`/api/scrape-groups/${group.id}`)
-											.then(() => {
-												setScrapeGroups(
-													(prev) =>
-														prev?.filter((g) => g.id !== group.id) || null,
-												);
-												toast.success("Group deleted");
-											})
-											.catch((error) => {
-												console.error(error);
-												toast.error("Failed to delete group");
-											})
-											.finally(() => {
-												setShowConfirmDeleteGroupModal(null);
-											});
-									},
+									onConfirm: () => deleteScrapeGroupMutation.mutate({ group }),
 								});
 							}}
 						/>
@@ -227,7 +231,7 @@ const ActiveGroups = () => {
 				<CreateGroupModal
 					isOpen={showCreateGroupModal}
 					onClose={() => setShowCreateGroupModal(false)}
-					onConfirm={handleCreateGroup}
+					onConfirm={createGroupMutation.mutate}
 				/>
 			)}
 			{showConfirmDeleteGroupModal && (

@@ -1,0 +1,82 @@
+services:
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+  golang-scraper:
+    build:
+      context: ./backend
+    depends_on:
+      - chromium
+    environment:
+      - ROD_BROWSER_WS_URL=ws://chromium:3455
+      - MONGO_URI=mongodb://mongodb:27017/scraper
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./backend:/app
+      - /app/tmp
+      - ./backend/logs:/app/logs
+    ports:
+      - "3457:3457"
+    entrypoint: ["/bin/wait-for-it.sh", "chromium", "3455", "--", "air"]
+
+  chromium:
+    image: browserless/chrome:latest
+    shm_size: 512M
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 4G
+    environment:
+      - DEBUG=browserless:*
+      - PORT=3455
+      - DEMO_MODE=false
+      - DEFAULT_LAUNCH_ARGS=["--no-sandbox", "--window-size=1920,1080", "--start-fullscreen", "--disable-setuid-sandbox", "--no-first-run", "--no-zygote", "--disable-extensions"]
+      - KEEP_ALIVE=true
+      - CONNECTION_TIMEOUT=600000
+      - PREBOOT_CHROME=true
+      - MAX_CONCURRENT_SESSIONS=5
+    ports:
+      - "3455:3455"
+    volumes:
+      - ./chrome-cache:/tmp/chrome-cache
+      - ./user-data-dir:/tmp/user-data-dir
+  frontend:
+    build:
+      context: ./client
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    ports:
+      - "3456:3456"
+    depends_on:
+      - golang-scraper
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  bot:
+    build:
+      context: ./bot
+    volumes:
+      - ./bot:/app
+      - /app/node_modules
+    depends_on:
+      - golang-scraper
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    ports:
+      - "5005:5005"
+
+volumes:
+  mongo-data:
+  redis-data:

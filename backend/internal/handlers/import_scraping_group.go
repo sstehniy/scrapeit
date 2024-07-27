@@ -24,10 +24,6 @@ func ImportScrapingGroup(e echo.Context) error {
 
 	body.Group.ID = primitive.NewObjectID()
 
-	for idx := range body.Group.Fields {
-		body.Group.Fields[idx].ID = uuid.New().String()
-	}
-
 	for idx := range body.Group.Endpoints {
 		body.Group.Endpoints[idx].ID = uuid.New().String()
 	}

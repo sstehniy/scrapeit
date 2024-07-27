@@ -5,7 +5,7 @@ FROM node:current-slim
 WORKDIR /app
 
 # Copy the package.json and package-lock.json files to the working directory
-COPY package.json package-lock.json ./
+COPY package.json  ./
 
 RUN rm -rf node_modules
 

@@ -135,7 +135,7 @@ const ActiveGroups = () => {
 
 	const importGroupMutation = useMutation({
 		mutationFn: ({ group }: { group: ScrapeGroup }) =>
-			axios.post(`/api/scrape-groups`, group),
+			axios.post(`/api/scrape-groups/import`, { group }),
 		onError: (error) => {
 			console.error(error);
 			toast.error("Failed to import group");
@@ -189,6 +189,7 @@ const ActiveGroups = () => {
 								if (typeof content !== "string") return;
 								try {
 									const group = JSON.parse(content);
+									group.name = group.name + " (imported)";
 									importGroupMutation.mutate({ group });
 								} catch (error) {
 									console.error(error);

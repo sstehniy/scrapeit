@@ -26,7 +26,7 @@ func HandleCallInternalScrapeEndpoint(e *echo.Echo, groupId, endpointId string, 
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:8080/internal/scrape/endpoint", bytes.NewBuffer(bodyBytes))
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:3457/internal/scrape/endpoint", bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return err

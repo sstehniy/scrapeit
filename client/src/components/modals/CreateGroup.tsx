@@ -42,16 +42,6 @@ export const CreateGroupModal: FC<CreateGroupModalProps> = ({
 			]}
 		>
 			<div className="space-y-2 w-[450px]">
-				{/* <label className="label">Name</label>
-				<input
-					type="text"
-					name="name"
-					id="name"
-					className="input input-bordered flex items-center gap-2 w-full"
-					value={name}
-					onChange={(e) => setName(e.target.value)}
-					required
-				/> */}
 				<TextInput
 					labelClassName="label"
 					className="input input-bordered flex items-center gap-2"

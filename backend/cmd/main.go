@@ -131,7 +131,7 @@ func main() {
 
 	ai := api.Group("/ai")
 	ai.POST("/completion", handlers.CompletionHandler)
-	fmt.Println("Starting server on port 8080")
+	fmt.Println("Starting server on port 3457")
 	fmt.Println("Setting up cron jobs")
 	setupCronJobs(e, cronManager, DbClient)
 	fmt.Println("Cron jobs set up")
@@ -148,7 +148,7 @@ func main() {
 	}()
 
 	// Start server
-	if err := e.Start(":8080"); err != nil && err != http.ErrServerClosed {
+	if err := e.Start(":3457"); err != nil && err != http.ErrServerClosed {
 		e.Logger.Fatal(err)
 	}
 

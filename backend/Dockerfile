@@ -21,8 +21,8 @@ COPY . .
 COPY wait-for-it.sh /bin/wait-for-it.sh
 RUN chmod +x /bin/wait-for-it.sh
 
-# Expose port 8080 to the outside world
-EXPOSE 8080
+# Expose port 3457 to the outside world
+EXPOSE 3457
 
 # Command to run Air for hot-reloading
-CMD ["wait-for-it.sh", "chromium", "3000", "--", "air"]
+CMD ["wait-for-it.sh", "chromium", "3455", "--", "air"]

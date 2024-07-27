@@ -81,7 +81,7 @@ func ScrapeEndpointHandler(c echo.Context) error {
 		toInsert = append(toInsert, r)
 	}
 
-	result, err := allResultsCollection.InsertMany(context.TODO(), toInsert, &options.InsertManyOptions{})
+	_, err = allResultsCollection.InsertMany(context.TODO(), toInsert, &options.InsertManyOptions{})
 	if err != nil {
 		fmt.Println("Error inserting new results:", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -118,11 +118,27 @@ func ScrapeEndpointHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	notificationConfigResult := dbClient.Database("scrapeit").Collection("notification_configs").FindOne(c.Request().Context(), bson.M{"groupId": relevantGroup.ID.Hex()})
-	fmt.Println("Here is the result", result)
-	if notificationConfigResult.Err() != mongo.ErrNoDocuments {
-		helpers.HandleNotifyResults(notificationConfigResult, *relevantGroup, results, toReplace)
+	notificationConfigs := []models.NotificationConfig{}
+
+	notificationConfigResult, err := dbClient.Database("scrapeit").Collection("notification_configs").Find(c.Request().Context(), bson.M{"groupId": relevantGroup.ID})
+	if err != nil {
+		fmt.Println("Failed to get notification configs")
+	} else {
+		for notificationConfigResult.Next(context.Background()) {
+			var config models.NotificationConfig
+			if err := notificationConfigResult.Decode(&config); err != nil {
+				fmt.Println("failed to decode config into struct")
+			} else {
+				notificationConfigs = append(notificationConfigs, config)
+			}
+		}
+		fmt.Println("Here is the result", notificationConfigs)
+		if len(notificationConfigs) > 0 {
+			helpers.HandleNotifyResults(notificationConfigs, *relevantGroup, results, toReplace)
+		}
 	}
+
+	defer notificationConfigResult.Close(context.Background())
 
 	return c.JSON(http.StatusOK, ScraperEndpointHandlerResponse{
 		NewResults:      results,

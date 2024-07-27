@@ -7,7 +7,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// ScrapeGroup represents a group of scrapes with associated fields and endpoints
 type ScrapeGroup struct {
 	ID            primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Name          string             `json:"name" bson:"name"`
@@ -67,7 +66,6 @@ type ScrapeGroupLocal struct {
 	Endpoints []Endpoint `json:"endpoints" bson:"endpoints"`
 }
 
-// Field represents a single field with its type and name
 type Field struct {
 	ID              string    `json:"id" bson:"id"`
 	Name            string    `json:"name" bson:"name"`
@@ -77,7 +75,6 @@ type Field struct {
 	Order           int       `json:"order" bson:"order"`
 }
 
-// FieldType defines the type of a field
 type FieldType string
 
 const (
@@ -87,7 +84,6 @@ const (
 	FieldTypeNumber FieldType = "number"
 )
 
-// Endpoint represents an endpoint with its configuration
 type Endpoint struct {
 	ID                              string           `json:"id" bson:"id"`
 	Name                            string           `json:"name" bson:"name"`
@@ -112,7 +108,6 @@ const (
 	PaginationConfigTypePath         PaginationConfigType = "url_path"
 )
 
-// PaginationConfig represents pagination configuration for an endpoint
 type PaginationConfig struct {
 	Type             string  `json:"type" bson:"type"`
 	Parameter        string  `json:"parameter,omitempty" bson:"parameter,omitempty"`
@@ -122,7 +117,6 @@ type PaginationConfig struct {
 	UrlRegexToInsert *string `json:"urlRegexToInsert,omitempty" bson:"urlRegexToInsert,omitempty"`
 }
 
-// ScrapeStatus defines the status of a scrape
 type ScrapeStatus string
 
 const (
@@ -138,7 +132,6 @@ const (
 	SelectorStatusNew         SelectorStatusValue = "new"
 )
 
-// FieldSelector represents a selector for a field
 type FieldSelector struct {
 	ID                   string              `json:"id" bson:"id"`
 	FieldID              string              `json:"fieldId" bson:"fieldId"`
@@ -150,7 +143,6 @@ type FieldSelector struct {
 	LockedForEdit        bool                `json:"lockedForEdit" bson:"lockedForEdit"`
 }
 
-// SearchConfig represents search configuration for an endpoint
 type SearchConfig struct {
 	ID    string `json:"id" bson:"id"`
 	Name  string `json:"name" bson:"name"`
@@ -174,8 +166,6 @@ type FieldToExtractSelectorsFor struct {
 }
 
 type FieldSelectorsRequest struct {
-	// URL                         string                       `json:"url" bson:"url"`
-	// MainElementSelector         string                       `json:"mainElementSelector" bson:"mainElementSelector"`
 	Endpoint                    Endpoint                     `json:"endpoint" bson:"endpoint"`
 	FieldsToExtractSelectorsFor []FieldToExtractSelectorsFor `json:"fieldsToExtractSelectorsFor" bson:"fieldsToExtractSelectorsFor"`
 }
@@ -262,8 +252,9 @@ type FieldChange struct {
 }
 
 type NotificationConfig struct {
-	ID               primitive.ObjectID      `json:"_id" bson:"_id,omitempty"`
+	ID               primitive.ObjectID      `json:"id" bson:"_id,omitempty"`
 	GroupId          primitive.ObjectID      `json:"groupId" bson:"groupId"`
+	Name             string                  `json:"name" bson:"name"`
 	FieldIdsToNotify []string                `json:"fieldIdsToNotify" bson:"fieldIdsToNotify"`
 	Conditions       []NotificationCondition `json:"conditions" bson:"conditions"`
 }

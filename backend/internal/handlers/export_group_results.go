@@ -97,6 +97,7 @@ func ExportGroupResultsHandler(c echo.Context) error {
 			"error": "failed to get cursor for results",
 		})
 	}
+	defer cursor.Close(context.Background())
 
 	for cursor.Next(context.Background()) {
 		var result models.ScrapeResult

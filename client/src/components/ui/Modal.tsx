@@ -55,7 +55,7 @@ export const Modal: FC<PropsWithChildren<ModalProps>> = ({
 			}}
 		>
 			<div
-				className="modal-box max-w-max px-14 overflow-x-hidden"
+				className="modal-box max-w-max px-10 overflow-x-hidden"
 				ref={modalContentRef}
 			>
 				<Button

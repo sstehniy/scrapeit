@@ -82,11 +82,13 @@ func DeleteScrapingGroup(c echo.Context) error {
 
 	archivedFilter := bson.M{"originalId": groupIdObj}
 	cursor, err := dbClient.Database("scrapeit").Collection("scrape_groups").Find(c.Request().Context(), archivedFilter)
+
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": err.Error(),
 		})
 	}
+	defer cursor.Close(context.Background())
 
 	allArchivedGroupIds := []primitive.ObjectID{}
 
@@ -116,6 +118,15 @@ func DeleteScrapingGroup(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": err.Error(),
 		})
+	}
+
+	// remove notification configs
+	notificationConfigsFilter := bson.M{"groupId": group.ID}
+
+	_, err = dbClient.Database("scrapeit").Collection("notification_configs").DeleteMany(context.Background(), notificationConfigsFilter)
+
+	if err != nil {
+		fmt.Printf("Failed to delete notification configs for group: %v", err)
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Group deleted successfully"})

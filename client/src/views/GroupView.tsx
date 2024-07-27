@@ -25,7 +25,7 @@ import { ConfirmArchiveCurrentGroup } from "../components/modals/ConfirmArchiveC
 import { ResultsFilters } from "../components/ResultsFilters";
 import { ConfigureGroupNotificationModal } from "../components/modals/ConfigureGroupNotification";
 
-const pageSize = 500;
+const pageSize = 100;
 
 export type SearchConfig = {
 	offset: number;
@@ -130,7 +130,7 @@ export const GroupView: FC<{
 	const {
 		data: scrapingGroupNotificationConfig,
 		isLoading: scrapingGroupNotificationConfigLoading,
-	} = useQuery<NotificationConfig>({
+	} = useQuery<NotificationConfig[]>({
 		queryKey: ["scrapingGroupNotificationSettings", groupId],
 		queryFn: () =>
 			axios
@@ -165,7 +165,7 @@ export const GroupView: FC<{
 				})
 				.then((res) => res.data);
 		},
-		refetchInterval: archived ? 30000 : 0,
+		refetchInterval: !archived ? 30000 : 0,
 		getNextPageParam: (lastPage, pages) => {
 			return lastPage.hasMore ? pages.length * searchConfig.limit : undefined;
 		},
@@ -251,8 +251,14 @@ export const GroupView: FC<{
 	});
 
 	const updateGroupNotificationConfigMutation = useMutation({
-		mutationFn: (config: NotificationConfig) =>
-			axios.put(`/api/scrape-groups/${groupId}/notification-config`, config),
+		mutationFn: (configs: NotificationConfig[]) =>
+			axios.put(
+				`/api/scrape-groups/${groupId}/notification-config`,
+				configs.map((c) => {
+					const { id, ...rest } = c;
+					return rest;
+				}),
+			),
 		onMutate: () => {
 			setShowGroupNotificationConfig(false);
 			toast.info("Updating group notification config...");
@@ -438,9 +444,13 @@ export const GroupView: FC<{
 					<ConfigureGroupNotificationModal
 						isOpen={showGroupNotificationConfig}
 						onClose={() => setShowGroupNotificationConfig(false)}
-						groupNotificationConfig={scrapingGroupNotificationConfig}
-						onConfirm={(config) => {
-							updateGroupNotificationConfigMutation.mutate(config);
+						groupNotificationConfigs={
+							scrapingGroupNotificationConfig?.length
+								? scrapingGroupNotificationConfig
+								: undefined
+						}
+						onConfirm={(configs) => {
+							updateGroupNotificationConfigMutation.mutate(configs);
 						}}
 						group={group}
 					/>

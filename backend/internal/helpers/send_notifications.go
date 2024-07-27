@@ -6,161 +6,155 @@ import (
 	"fmt"
 	"net/http"
 	"scrapeit/internal/models"
-
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func HandleNotifyResults(res *mongo.SingleResult, group models.ScrapeGroup, results []models.ScrapeResult, toReplace []models.ScrapeResult) {
-	var relevantNotificationConfig models.NotificationConfig
-	err := res.Decode(&relevantNotificationConfig)
-	if err != nil {
-		fmt.Println("Error decoding notification config:", err)
-		return
-	}
+func HandleNotifyResults(configs []models.NotificationConfig, group models.ScrapeGroup, results []models.ScrapeResult, toReplace []models.ScrapeResult) {
 
 	type ScrapeResultWithStatus struct {
 		Status string              `json:"status"`
 		Result models.ScrapeResult `json:"result"`
 	}
+	for _, config := range configs {
 
-	allResults := []ScrapeResultWithStatus{}
-	for _, r := range results {
-		allResults = append(allResults, ScrapeResultWithStatus{
-			Status: "new",
-			Result: r,
-		})
-	}
-	for _, r := range toReplace {
-		allResults = append(allResults, ScrapeResultWithStatus{
-			Status: "updated",
-			Result: r,
-		})
-	}
-	fmt.Println("All results:", len(allResults))
-	resultsToNotify := []ScrapeResultWithStatus{}
-	for _, result := range allResults {
-		mustBeNotified := true
-	OUTER:
-		for conditionIdx, condition := range relevantNotificationConfig.Conditions {
-			var foundValueByField interface{}
-			for _, value := range result.Result.Fields {
-				if value.FieldID == condition.FieldId {
-					foundValueByField = value.Value
-					foundSchemaField := group.GetFieldById(value.FieldID)
-					relevantNotificationConfig.Conditions[conditionIdx].FieldName = foundSchemaField.Name
-					break
-				}
-			}
-			if _, ok := foundValueByField.(float64); ok {
-				value := foundValueByField.(float64)
-				switch condition.Operator {
-				case "=":
-					if value != condition.Value {
-						mustBeNotified = false
-						break OUTER
-					}
-				case "!=":
-					if value == condition.Value {
-						mustBeNotified = false
-						break OUTER
-					}
-				case ">":
-					if value <= condition.Value {
-						mustBeNotified = false
-						break OUTER
-					}
-				case "<":
-					if value >= condition.Value {
-						mustBeNotified = false
-						break OUTER
-					}
-				}
-			}
+		allResults := []ScrapeResultWithStatus{}
+		for _, r := range results {
+			allResults = append(allResults, ScrapeResultWithStatus{
+				Status: "new",
+				Result: r,
+			})
 		}
-		if mustBeNotified {
-			resultsToNotify = append(resultsToNotify, result)
+		for _, r := range toReplace {
+			allResults = append(allResults, ScrapeResultWithStatus{
+				Status: "updated",
+				Result: r,
+			})
 		}
-	}
-
-	if len(resultsToNotify) > 0 {
-		requestBody := models.NotificationSearchResultRequestBody{
-			GroupName: group.Name,
-			Filters:   relevantNotificationConfig.Conditions,
-			Results:   []models.NotificationResult{},
-		}
-		for _, result := range resultsToNotify {
-			notificationResult := models.NotificationResult{
-				Status:       result.Status,
-				EndpointName: group.GetEndpointById(result.Result.EndpointID).Name,
-				Fields:       []models.NotificationResultField{},
-				URL:          "",
-			}
-			for _, field := range result.Result.Fields {
-				shouldAddField := false
-				for _, fieldIdToNotify := range relevantNotificationConfig.FieldIdsToNotify {
-					if field.FieldID == fieldIdToNotify {
-						shouldAddField = true
+		fmt.Println("All results:", len(allResults))
+		resultsToNotify := []ScrapeResultWithStatus{}
+		for _, result := range allResults {
+			mustBeNotified := true
+		OUTER:
+			for conditionIdx, condition := range config.Conditions {
+				var foundValueByField interface{}
+				for _, value := range result.Result.Fields {
+					if value.FieldID == condition.FieldId {
+						foundValueByField = value.Value
+						foundSchemaField := group.GetFieldById(value.FieldID)
+						config.Conditions[conditionIdx].FieldName = foundSchemaField.Name
 						break
 					}
 				}
-				if shouldAddField {
-					foundFieldName := ""
-					for _, fieldConfig := range group.Fields {
-						if fieldConfig.ID == field.FieldID {
-							foundFieldName = fieldConfig.Name
+				if _, ok := foundValueByField.(float64); ok {
+					value := foundValueByField.(float64)
+					switch condition.Operator {
+					case "=":
+						if value != condition.Value {
+							mustBeNotified = false
+							break OUTER
+						}
+					case "!=":
+						if value == condition.Value {
+							mustBeNotified = false
+							break OUTER
+						}
+					case ">":
+						if value <= condition.Value {
+							mustBeNotified = false
+							break OUTER
+						}
+					case "<":
+						if value >= condition.Value {
+							mustBeNotified = false
+							break OUTER
+						}
+					}
+				}
+			}
+			if mustBeNotified {
+				resultsToNotify = append(resultsToNotify, result)
+			}
+		}
+
+		if len(resultsToNotify) > 0 {
+			requestBody := models.NotificationSearchResultRequestBody{
+				GroupName: group.Name,
+				Filters:   config.Conditions,
+				Results:   []models.NotificationResult{},
+			}
+			for _, result := range resultsToNotify {
+				notificationResult := models.NotificationResult{
+					Status:       result.Status,
+					EndpointName: group.GetEndpointById(result.Result.EndpointID).Name,
+					Fields:       []models.NotificationResultField{},
+					URL:          "",
+				}
+				for _, field := range result.Result.Fields {
+					shouldAddField := false
+					for _, fieldIdToNotify := range config.FieldIdsToNotify {
+						if field.FieldID == fieldIdToNotify {
+							shouldAddField = true
 							break
 						}
 					}
-					notificationResult.Fields = append(notificationResult.Fields, models.NotificationResultField{
-						FieldName: foundFieldName,
-						Value:     field.Value,
-					})
+					if shouldAddField {
+						foundFieldName := ""
+						for _, fieldConfig := range group.Fields {
+							if fieldConfig.ID == field.FieldID {
+								foundFieldName = fieldConfig.Name
+								break
+							}
+						}
+						notificationResult.Fields = append(notificationResult.Fields, models.NotificationResultField{
+							FieldName: foundFieldName,
+							Value:     field.Value,
+						})
+					}
 				}
-			}
-			foundUrlFieldId := ""
-			for _, fieldConfig := range group.Fields {
-				if fieldConfig.Type == models.FieldTypeLink {
-					foundUrlFieldId = fieldConfig.ID
-					break
+				foundUrlFieldId := ""
+				for _, fieldConfig := range group.Fields {
+					if fieldConfig.Type == models.FieldTypeLink {
+						foundUrlFieldId = fieldConfig.ID
+						break
+					}
+
+				}
+				foundEndpoint := group.GetEndpointById(result.Result.EndpointID)
+				if foundEndpoint != nil {
+					urlValue := ""
+					for _, field := range result.Result.Fields {
+						if field.FieldID == foundUrlFieldId {
+							urlValue = field.Value.(string)
+							break
+						}
+					}
+					notificationResult.URL = GetFullUrl(foundEndpoint.URL, urlValue)
 				}
 
-			}
-			foundEndpoint := group.GetEndpointById(result.Result.EndpointID)
-			if foundEndpoint != nil {
-				urlValue := ""
-				for _, field := range result.Result.Fields {
-					if field.FieldID == foundUrlFieldId {
-						urlValue = field.Value.(string)
+				imageFieldId := ""
+				for _, fieldConfig := range group.Fields {
+					if fieldConfig.Type == models.FieldTypeImage {
+						imageFieldId = fieldConfig.ID
 						break
 					}
 				}
-				notificationResult.URL = GetFullUrl(foundEndpoint.URL, urlValue)
-			}
-
-			imageFieldId := ""
-			for _, fieldConfig := range group.Fields {
-				if fieldConfig.Type == models.FieldTypeImage {
-					imageFieldId = fieldConfig.ID
-					break
-				}
-			}
-			imageValue := ""
-			if imageFieldId != "" {
-				for _, field := range result.Result.Fields {
-					if field.FieldID == imageFieldId {
-						imageValue = field.Value.(string)
-						break
+				imageValue := ""
+				if imageFieldId != "" {
+					for _, field := range result.Result.Fields {
+						if field.FieldID == imageFieldId {
+							imageValue = field.Value.(string)
+							break
+						}
 					}
 				}
-			}
 
-			notificationResult.ImageUrl = imageValue
-			requestBody.Results = append(requestBody.Results, notificationResult)
+				notificationResult.ImageUrl = imageValue
+				requestBody.Results = append(requestBody.Results, notificationResult)
+			}
+			sendNotification(
+				requestBody,
+			)
+
 		}
-		sendNotification(
-			requestBody,
-		)
-
 	}
 }
 

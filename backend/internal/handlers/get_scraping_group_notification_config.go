@@ -8,25 +8,42 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func getGroupNotificationConfigById(ctx context.Context, groupId string, client *mongo.Client) (models.NotificationConfig, error) {
+func getGroupNotificationConfigById(ctx context.Context, groupId string, client *mongo.Client) ([]models.NotificationConfig, error) {
 
-	var groupNotificationConfig models.NotificationConfig
 	groupCollection := client.Database("scrapeit").Collection("notification_configs")
 
-	groupNotificationConfigQuery := bson.M{"groupId": groupId}
-	groupNotificationConfigResult := groupCollection.FindOne(ctx, groupNotificationConfigQuery)
-	if groupNotificationConfigResult.Err() == mongo.ErrNoDocuments {
-		return models.NotificationConfig{}, nil
-	}
-	err := groupNotificationConfigResult.Decode(&groupNotificationConfig)
+	groupIdObj, err := primitive.ObjectIDFromHex(groupId)
 	if err != nil {
-		return models.NotificationConfig{}, ScrapeGroupError{Message: "Failed to decode groupNotificationConfigQuery"}
+		fmt.Println("Failed to convert groupId to ObjectId: ", err)
+		return []models.NotificationConfig{}, err
 	}
 
-	return groupNotificationConfig, nil
+	groupNotificationConfigQuery := bson.M{"groupId": groupIdObj}
+	groupNotificationConfigResult, err := groupCollection.Find(ctx, groupNotificationConfigQuery)
+
+	notificationConfigs := []models.NotificationConfig{}
+
+	if err != nil {
+		return notificationConfigs, nil
+	}
+
+	defer groupNotificationConfigResult.Close(context.Background())
+
+	for groupNotificationConfigResult.Next(ctx) {
+		var notConfig models.NotificationConfig
+		err := groupNotificationConfigResult.Decode(&notConfig)
+		if err != nil {
+			fmt.Println("error decoding group Not Config")
+		} else {
+			notificationConfigs = append(notificationConfigs, notConfig)
+		}
+	}
+
+	return notificationConfigs, nil
 
 }
 
@@ -45,10 +62,6 @@ func GetScrapingGroupNotificationConfig(c echo.Context) error {
 	}
 
 	fmt.Println(groupNotificationConfigResult)
-
-	if groupNotificationConfigResult.GroupId.IsZero() {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "Group not found"})
-	}
 
 	return c.JSON(http.StatusOK, groupNotificationConfigResult)
 }

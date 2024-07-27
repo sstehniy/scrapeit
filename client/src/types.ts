@@ -121,7 +121,9 @@ type ScrapeResultDetailTest = ScrapeResultDetail & {
 };
 
 type NotificationConfig = {
+	id: string;
 	groupId: string;
+	name: string;
 	fieldIdsToNotify: string[];
 	conditions: NotificationCondition[];
 };

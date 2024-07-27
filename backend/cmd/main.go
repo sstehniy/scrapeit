@@ -117,7 +117,6 @@ func main() {
 	groups.GET("/version-tag-exists/:versionTag", handlers.VersionTagExists)
 	groups.GET("/:id/notification-config", handlers.GetScrapingGroupNotificationConfig)
 	groups.PUT("/:id/notification-config", handlers.ChangeScrapingGroupNotificationConfig)
-	groups.DELETE("/:id/notification-config", handlers.DeleteScrapingGroupNotificationConfig)
 
 	// Endpoints within scrape groups
 	groups.POST("/:groupId/endpoints", handlers.CreateScrapingGroupEndpoint)
@@ -176,6 +175,9 @@ func setupCronJobs(e *echo.Echo, cronManager *cron.CronManager, client *mongo.Cl
 
 		return
 	}
+
+	defer cursor.Close(context.Background())
+
 	if err := cursor.All(context.Background(), &groups); err != nil {
 		fmt.Println("Error getting groups:", err)
 		return

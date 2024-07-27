@@ -80,7 +80,7 @@ export const ConfigureGroupNotificationModal: FC<
 					className: "bg-gray-500 text-white",
 				},
 				{
-					label: "Create",
+					label: "Save",
 					onClick: () => {
 						handleConfirm(configs);
 					},
@@ -90,7 +90,6 @@ export const ConfigureGroupNotificationModal: FC<
 			]}
 		>
 			<div className="space-y-2 w-[500px]">
-				<label className="label">Notifications Config</label>
 				{configs.map((config) => (
 					<div
 						className="collapse collapse-plus  bg-base-200 border-2 border-secondary-content relative"
@@ -188,9 +187,7 @@ export const ConfigureGroupNotificationModal: FC<
 											<label
 												htmlFor={field.id + config.id}
 												className={`cursor-pointer btn btn-sm  w-full rounded-sm border ${
-													isChecked
-														? "btn-success"
-														: "btn-secondary btn-outline"
+													isChecked ? "btn-accent" : "btn-secondary btn-outline"
 												} transition-colors duration-300`}
 												title={field.name}
 											>
@@ -343,7 +340,7 @@ export const ConfigureGroupNotificationModal: FC<
 											))}
 										</select>
 										<input
-											className="input input-sm h-10 rounded-lg border-0 focus:ring-0 focus:outline-none focus:ring-offset-0"
+											className="input input-sm h-10 rounded-lg border-0 focus:ring-0 focus:outline-none focus:ring-offset-0 flex-1"
 											type="number"
 											value={condition.value ?? 0}
 											onChange={(e) => {

@@ -169,11 +169,9 @@ func scrapeTestPreviewsPages(endpointToScrape models.Endpoint, relevantGroup mod
 	if err != nil {
 		return nil, fmt.Errorf("error getting page: %w", err)
 	}
-	defer page.Close()
 
 	SlowScrollToBottom(page)
 	page.MustWaitStable()
-
 	elements, err := getMainElements(page, endpointToScrape, Previews, 5)
 	if err != nil {
 		return nil, fmt.Errorf("error finding elements: %w", err)
@@ -181,7 +179,10 @@ func scrapeTestPreviewsPages(endpointToScrape models.Endpoint, relevantGroup mod
 
 	allElements = append(allElements, elements...)
 
-	return processTestElements(allElements, endpointToScrape, relevantGroup)
+	processed, _ := processTestElements(allElements, endpointToScrape, relevantGroup)
+	page.MustClose()
+	return processed, nil
+
 }
 
 // END: scrapePreviewsPages
@@ -243,7 +244,6 @@ func scrapePreviewsWithDetails(ctx context.Context, endpointToScrape models.Endp
 					log.Printf("Error getting detailed view page: %v", err)
 					return
 				}
-				defer detailPage.Close()
 
 				detailPage.MustWaitStable()
 				detailElem := detailPage.MustElement(endpointToScrape.DetailedViewMainElementSelector)
@@ -262,6 +262,7 @@ func scrapePreviewsWithDetails(ctx context.Context, endpointToScrape models.Endp
 				for _, pgResult := range pageResults {
 					resultsChan <- pgResult
 				}
+				detailPage.MustClose()
 			}(elem)
 		}
 	}
@@ -334,7 +335,6 @@ func scrapeTestPreviewsWithDetails(endpointToScrape models.Endpoint, relevantGro
 			}
 
 			detailPage.MustWaitStable()
-			defer detailPage.MustClose()
 
 			detailElem := detailPage.MustElement(endpointToScrape.DetailedViewMainElementSelector)
 			if detailElem == nil {
@@ -354,6 +354,7 @@ func scrapeTestPreviewsWithDetails(endpointToScrape models.Endpoint, relevantGro
 			for _, result := range pageResults {
 				resultsChan <- result
 			}
+			detailPage.MustClose()
 		}(elem)
 	}
 

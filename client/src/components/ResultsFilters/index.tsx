@@ -31,7 +31,7 @@ export const ResultsFilters: FC<ResultsFiltersProps> = ({
 }) => {
 	const [q, setQ] = useState("");
 	const [limit, setLimit] = useState(30);
-	const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
+	const [_endpoints, setEndpoints] = useState<Endpoint[]>([]);
 	const [filters, setFilters] = useState<SearchFilter[]>([]);
 	const [showExportOptionsModal, setShowExportOptionsModal] = useState<{
 		isOpen: boolean;

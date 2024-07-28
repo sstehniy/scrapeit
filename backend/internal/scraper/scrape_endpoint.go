@@ -387,9 +387,9 @@ func processElementText(element *rod.Element, selector models.FieldSelector) (in
 			}
 		}
 		if strings.TrimSpace(selector.Regex) != "" {
-			fmt.Println("Original text: ", text, selector.Regex)
+			// fmt.Println("Original text: ", text, selector.Regex)
 			if extractedText, matches, err := helpers.ExtractStringWithRegex(text.(string), selector.Regex, selector.RegexMatchIndexToUse); err == nil {
-				fmt.Println("Extracted text: ", extractedText)
+				// fmt.Println("Extracted text: ", extractedText)
 				text = extractedText
 				extractMatches = matches
 			}
@@ -662,8 +662,6 @@ func getFieldValueByFieldKey(fields []models.Field, fieldKey string, details []m
 
 		if field.Key == fieldKey {
 			for _, detail := range details {
-				fmt.Printf("Detail: %v", detail.Value)
-
 				if detail.FieldID == field.ID {
 					return detail.Value
 				}

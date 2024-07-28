@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"scrapeit/internal/models"
@@ -27,7 +28,7 @@ func cleanHTML(input string) string {
 
 func GetMainElementHTMLContent(endpoint models.Endpoint, maxElements int) (string, error) {
 	browser := GetBrowser()
-	defer browser.Close()
+
 	scrapeType := GetScrapeType(endpoint)
 	elementToWaitFor := endpoint.MainElementSelector
 	if scrapeType == PureDetails {
@@ -37,7 +38,7 @@ func GetMainElementHTMLContent(endpoint models.Endpoint, maxElements int) (strin
 	fmt.Printf("Element selector: %v\n", elementToWaitFor)
 
 	fmt.Println("Scrape type: ", GetScrapeType(endpoint))
-	page, err := GetStealthPage(browser, endpoint.URL, elementToWaitFor)
+	page, err := GetStealthPage(context.Background(), browser, endpoint.URL, elementToWaitFor)
 	if err != nil {
 		return "", err
 	}

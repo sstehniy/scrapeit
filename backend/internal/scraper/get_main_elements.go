@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"context"
 	"fmt"
 	"scrapeit/internal/helpers"
 	"scrapeit/internal/models"
@@ -50,7 +51,7 @@ func getMainElements(page *rod.Page, endpoint models.Endpoint, scrapeType Scrape
 			fullUrl := helpers.GetFullUrl(endpoint.URL, *attr)
 			fmt.Println("Full URL: ", fullUrl)
 
-			newPage, err := GetStealthPage(page.Browser(), fullUrl, endpoint.DetailedViewMainElementSelector)
+			newPage, err := GetStealthPage(context.Background(), page.Browser(), fullUrl, endpoint.DetailedViewMainElementSelector)
 			if err != nil {
 				fmt.Printf("error getting detailed view page: %v", err)
 				newPage.MustClose()

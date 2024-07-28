@@ -61,7 +61,6 @@ func ScrapeEndpointHandler(c echo.Context) error {
 	}
 
 	browser := scraper.GetBrowser()
-	defer browser.Close()
 
 	results, toReplace, err := scraper.ScrapeEndpoint(*endpointToScrape, *relevantGroup, dbClient, browser)
 	if err != nil {
@@ -84,7 +83,6 @@ func ScrapeEndpointHandler(c echo.Context) error {
 	_, err = allResultsCollection.InsertMany(context.TODO(), toInsert, &options.InsertManyOptions{})
 	if err != nil {
 		fmt.Println("Error inserting new results:", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	fmt.Println("Here go the to replace", toReplace)
@@ -106,7 +104,6 @@ func ScrapeEndpointHandler(c echo.Context) error {
 		_, err = allResultsCollection.BulkWrite(c.Request().Context(), bulkWrites)
 		if err != nil {
 			fmt.Println("Error updating existing results:", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
 
@@ -115,7 +112,6 @@ func ScrapeEndpointHandler(c echo.Context) error {
 	_, err = groupCollection.UpdateOne(c.Request().Context(), groupQuery, bson.M{"$set": bson.M{"endpoints": relevantGroup.Endpoints}})
 	if err != nil {
 		fmt.Println("Error updating group:", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	notificationConfigs := []models.NotificationConfig{}

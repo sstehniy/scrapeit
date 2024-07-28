@@ -10,6 +10,7 @@ import (
 	"scrapeit/internal/cron"
 	"scrapeit/internal/handlers"
 	"scrapeit/internal/models"
+	"scrapeit/internal/scraper"
 	"syscall"
 	"time"
 
@@ -43,10 +44,15 @@ func main() {
 		panic(err)
 	}
 
+	browser := scraper.GetBrowser()
+
 	defer func() {
 		fmt.Println("Disconnecting from MongoDB")
 		if err := DbClient.Disconnect(ctx); err != nil {
 			panic(err)
+		}
+		if browser != nil {
+			browser.MustClose()
 		}
 	}()
 
@@ -183,7 +189,12 @@ func setupCronJobs(e *echo.Echo, cronManager *cron.CronManager, client *mongo.Cl
 		return
 	}
 	for _, group := range groups {
+		if len(group.Endpoints) == 0 {
+			continue
+		}
+
 		for _, endpoint := range group.Endpoints {
+
 			if endpoint.Active {
 				cronManager.AddJob(cron.CronManagerJob{
 					GroupID:    group.ID.Hex(),

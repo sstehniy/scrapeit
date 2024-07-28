@@ -94,7 +94,6 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 	toReplaceChan := make(chan []models.ScrapeResult)
 
 	browser := scraper.GetBrowser()
-	defer browser.Close()
 
 	for _, endpointToScrape := range endpointsToScrape {
 		fmt.Println("Scraping endpoints:", endpointToScrape.ID)
@@ -102,6 +101,7 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 		go func(endpoint models.Endpoint) {
 			results, toReplace, err := scraper.ScrapeEndpoint(endpoint, *relevantGroup, dbClient, browser)
 			if err != nil {
+				fmt.Println("errorrrr: ", err)
 				fmt.Println("Error scraping endpoint:", err)
 				resultsChan <- []models.ScrapeResult{}
 				toReplaceChan <- []models.ScrapeResult{}
@@ -135,7 +135,7 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 	_, err = allResultsCollection.InsertMany(context.TODO(), toInsert, &options.InsertManyOptions{})
 	if err != nil {
 		fmt.Println("Error inserting new results:", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+
 	}
 
 	// Update existing results
@@ -157,7 +157,6 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 		res, err := allResultsCollection.BulkWrite(c.Request().Context(), bulkWrites)
 		if err != nil {
 			fmt.Println("Error updating existing results:", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 		fmt.Printf("Write result: %v", res.MatchedCount)
 	}
@@ -168,7 +167,6 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 		_, err := groupCollection.UpdateOne(c.Request().Context(), groupQuery, bson.M{"$set": bson.M{"endpoints": relevantGroup.Endpoints}})
 		if err != nil {
 			fmt.Println("Error updating group:", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
 

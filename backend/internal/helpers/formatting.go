@@ -88,7 +88,7 @@ func CastPriceStringToFloat(priceStr string) float64 {
 }
 
 func GetFullUrl(endpointUrl, urlToDetails string) string {
-	fmt.Printf("Endpoint URL: %s, URL to details: %s\n", endpointUrl, urlToDetails)
+	fmt.Printf("Endpoint URL: %s \n, URL to details: %s\n", endpointUrl, urlToDetails)
 	if strings.HasPrefix(urlToDetails, "http") {
 		return urlToDetails
 	}

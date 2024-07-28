@@ -20,7 +20,14 @@ services:
       - ./backend/logs:/app/logs
     ports:
       - "3457:3457"
-    entrypoint: ["/bin/wait-for-it.sh", "chromium", "3455", "--", "air"]
+    entrypoint:
+      [
+        "/bin/wait-for-it.sh",
+        "chromium",
+        "3455",
+        "--",
+        "air"
+      ]
 
   chromium:
     image: browserless/chrome:latest
@@ -37,9 +44,9 @@ services:
       - DEMO_MODE=false
       - DEFAULT_LAUNCH_ARGS=["--no-sandbox", "--window-size=1920,1080", "--start-fullscreen", "--disable-setuid-sandbox", "--no-first-run", "--no-zygote", "--disable-extensions"]
       - KEEP_ALIVE=true
-      - CONNECTION_TIMEOUT=600000
+      - CONNECTION_TIMEOUT=-1
       - PREBOOT_CHROME=true
-      - MAX_CONCURRENT_SESSIONS=5
+      - MAX_CONCURRENT_SESSIONS=1
     ports:
       - "3455:3455"
     volumes:

@@ -46,7 +46,6 @@ func (sc ScrapeGroup) GetFieldById(id string) *Field {
 		}
 	}
 	return nil
-
 }
 
 func (sg *ScrapeGroup) DeleteEndpoint(id string) {

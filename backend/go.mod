@@ -1,6 +1,6 @@
 module scrapeit
 
-go 1.21.4
+go 1.22.5
 
 require (
 	github.com/go-rod/rod v0.116.0

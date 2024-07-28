@@ -16,60 +16,49 @@ var (
 	mu sync.Mutex
 )
 
+var (
+	browser     *rod.Browser
+	browserOnce sync.Once
+)
+
 func GetBrowser() *rod.Browser {
-	rodBrowserWsURL := os.Getenv("ROD_BROWSER_WS_URL")
-	if rodBrowserWsURL == "" {
-		panic("ROD_BROWSER_WS_URL is not set")
-	}
-
-	mu.Lock()
-	defer mu.Unlock()
-
-	browser := rod.New().ControlURL(rodBrowserWsURL).MustConnect().DefaultDevice(devices.LaptopWithHiDPIScreen)
+	browserOnce.Do(func() {
+		rodBrowserWsURL := os.Getenv("ROD_BROWSER_WS_URL")
+		if rodBrowserWsURL == "" {
+			panic("ROD_BROWSER_WS_URL is not set")
+		}
+		browser = rod.New().ControlURL(rodBrowserWsURL).MustConnect().DefaultDevice(devices.LaptopWithHiDPIScreen)
+	})
 
 	return browser
 }
 
-func GetStealthPage(browser *rod.Browser, url string, elementToWaitFor string) (*rod.Page, error) {
+func GetStealthPage(ctx context.Context, browser *rod.Browser, url string, elementToWaitFor string) (*rod.Page, error) {
 	page := stealth.MustPage(browser)
 	page.MustSetViewport(1920, 1080, 2.0, false)
-	// Navigate to the URL
-	if err := page.Navigate(url); err != nil {
+
+	if err := page.Context(ctx).Navigate(url); err != nil {
 		return page, fmt.Errorf("error navigating: %w", err)
 	}
 
-	// Wait for load and stability (max 1 minute)
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-	defer cancel()
-
-	err := page.Context(ctx).WaitLoad()
-	if err != nil {
+	if err := page.Context(ctx).WaitLoad(); err != nil {
 		return page, fmt.Errorf("error waiting for load: %w", err)
 	}
 
-	// Wait for the specific element (max 10 seconds)
-	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
-	_, err = page.Context(ctx).Element(elementToWaitFor)
+	_, err := page.Context(ctx).Element(elementToWaitFor)
 	if err != nil {
 		fmt.Println("Error finding element: ", err)
 		fmt.Println("Element to wait for: ", elementToWaitFor)
-		// Capture a screenshot for debugging
 		page.MustScreenshot("error_screenshot.png")
-
 		return page, fmt.Errorf("error finding element %s: %w", elementToWaitFor, err)
 	}
 
 	return page, nil
 }
-
 func ScrapeTest() (map[string]string, error) {
 	browser := GetBrowser()
 
-	defer browser.Close()
-
-	page, err := GetStealthPage(browser, "https://app.zenrows.com/register", ".min-h-screen.flex.bg-secondary")
+	page, err := GetStealthPage(context.Background(), browser, "https://app.zenrows.com/register", ".min-h-screen.flex.bg-secondary")
 	if err != nil {
 		fmt.Println(err)
 		return nil, err

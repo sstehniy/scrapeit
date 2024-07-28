@@ -1,12 +1,12 @@
 /* eslint-disable no-undef */
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
-  theme: {
-    extend: {},
-  },
-  daisyui: {
-    themes: ["business"],
-  },
-  plugins: [require("daisyui")],
+	content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+	theme: {
+		extend: {},
+	},
+	daisyui: {
+		themes: ["business"],
+	},
+	plugins: [require("daisyui")],
 };

@@ -1,11 +1,11 @@
-import { FC, useMemo } from "react";
-import { FieldType, ScrapeGroup, ScrapeResult } from "../../types";
 import {
 	createColumnHelper,
 	flexRender,
 	getCoreRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
+import { FC, useMemo } from "react";
+import { FieldType, ScrapeGroup, ScrapeResult } from "../../types";
 import { getBaseUrl } from "../../util/url";
 import { getColoredEndpointPill } from "../ColoredEndpointPill";
 

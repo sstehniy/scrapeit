@@ -1,6 +1,6 @@
 import type { FC } from "react";
-import type { ScrapeGroup } from "../../types";
 import { NavLink } from "react-router-dom";
+import type { ScrapeGroup } from "../../types";
 import { getBaseUrl } from "../../util/url";
 import { WithTooltip } from "../ui/WithTooltip";
 

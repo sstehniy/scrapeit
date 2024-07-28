@@ -127,5 +127,8 @@
 				}
 			}
 		}
-	]
+	],
+	"formatter": {
+		"enabled": true
+	}
 }

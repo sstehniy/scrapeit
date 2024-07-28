@@ -1,9 +1,4 @@
 import { type FC, useEffect, useState } from "react";
-import type {
-	SearchConfig,
-	SearchFilter,
-	SearchSort,
-} from "../../views/GroupView";
 import {
 	type Endpoint,
 	type ExportType,
@@ -11,12 +6,17 @@ import {
 	FieldType,
 	type ScrapeGroup,
 } from "../../types";
+import type {
+	SearchConfig,
+	SearchFilter,
+	SearchSort,
+} from "../../views/GroupView";
 import { TextInput } from "../ui/TextInput";
 import "./index.css";
-import axios from "axios";
-import { ConfigureExportModal } from "../modals/ConfigureExport";
 import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 import { toast } from "react-toastify";
+import { ConfigureExportModal } from "../modals/ConfigureExport";
 
 type ResultsFiltersProps = {
 	params: SearchConfig;

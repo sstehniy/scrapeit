@@ -2,13 +2,13 @@
 /** eslint-disable unused-imports/no-unused-vars */
 /** eslint-disable no-empty */
 import { FC, useCallback, useEffect, useRef, useState } from "react";
+import Sortable from "sortablejs";
 import { v4 } from "uuid";
 import { Field, FieldType } from "../../types";
 import { FieldChange } from "../../views/GroupView";
 import { Button } from "../ui/Button";
 import { Modal, ModalProps } from "../ui/Modal";
 import { TextInput } from "../ui/TextInput";
-import Sortable from "sortablejs";
 
 type ConfigureGroupSchemaProps = Pick<ModalProps, "isOpen" | "onClose"> & {
 	onConfirm: (fields: Field[], fieldChanges: FieldChange[]) => void;

@@ -1,13 +1,13 @@
 import { type FC, useState } from "react";
-import { Modal, type ModalProps } from "../ui/Modal";
+import { v4 } from "uuid";
 import {
 	FieldType,
 	NotificationCondition,
 	type NotificationConfig,
 	type ScrapeGroup,
 } from "../../types";
+import { Modal, type ModalProps } from "../ui/Modal";
 import { TextInput } from "../ui/TextInput";
-import { v4 } from "uuid";
 
 type ConfigureGroupNotificationModalProps = Pick<
 	ModalProps,

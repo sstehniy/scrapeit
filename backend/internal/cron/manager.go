@@ -84,6 +84,7 @@ func (cm *CronManager) AddJob(job CronManagerJob) {
 				cm.mu.Unlock()
 			}()
 
+			cm.logger.Info("Job running for", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID)
 			err := addedJob.Job()
 			if err != nil {
 				cm.logger.Error("Error running job", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID, "error", err)

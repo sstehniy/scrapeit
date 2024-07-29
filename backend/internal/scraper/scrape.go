@@ -92,8 +92,9 @@ func GetStealthPage(ctx context.Context, browser *rod.Browser, url string, eleme
 		}
 
 		cookies = UserAgentWithCookies{
-			Cookie:    response.Solution.Cookies,
-			UserAgent: response.Solution.UserAgent,
+			Cookie:      response.Solution.Cookies,
+			UserAgent:   response.Solution.UserAgent,
+			LastUpdated: time.Now(),
 		}
 		// Save the new cookies
 		SetCookies(store, baseURL, cookies)
@@ -119,12 +120,13 @@ func GetStealthPage(ctx context.Context, browser *rod.Browser, url string, eleme
 
 	// Set the User-Agent if provided
 	if cookies.UserAgent != "" {
+		fmt.Printf("Setting User-Agent: %s\n", cookies.UserAgent)
 		page.MustSetUserAgent(&proto.NetworkSetUserAgentOverride{
 			UserAgent: cookies.UserAgent,
 		})
 	}
 
-	navCtx, navCancel := context.WithTimeout(ctx, 1*time.Minute)
+	navCtx, navCancel := context.WithTimeout(ctx, 10*time.Second)
 	defer navCancel()
 
 	if err := page.Context(navCtx).Navigate(url); err != nil {
@@ -136,7 +138,7 @@ func GetStealthPage(ctx context.Context, browser *rod.Browser, url string, eleme
 		return nil, err
 	}
 
-	loadCtx, loadCancel := context.WithTimeout(ctx, 1*time.Minute)
+	loadCtx, loadCancel := context.WithTimeout(ctx, 10*time.Second)
 	defer loadCancel()
 
 	if err := page.Context(loadCtx).WaitLoad(); err != nil {
@@ -148,7 +150,7 @@ func GetStealthPage(ctx context.Context, browser *rod.Browser, url string, eleme
 		return nil, err
 	}
 
-	elementCtx, elementCancel := context.WithTimeout(ctx, 1*time.Minute)
+	elementCtx, elementCancel := context.WithTimeout(ctx, 10*time.Second)
 	defer elementCancel()
 
 	_, err = page.Context(elementCtx).Element(elementToWaitFor)

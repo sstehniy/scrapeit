@@ -2,6 +2,7 @@ package scraper
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -19,8 +20,9 @@ type Cookie struct {
 }
 
 type UserAgentWithCookies struct {
-	Cookie    []Cookie
-	UserAgent string
+	Cookie      []Cookie
+	UserAgent   string
+	LastUpdated time.Time
 }
 
 type CookieStore struct {
@@ -61,12 +63,13 @@ func GetValidCookies(store *CookieStore, url string) (UserAgentWithCookies, bool
 	if !exists {
 		return UserAgentWithCookies{}, false
 	}
-	for _, c := range cookies.Cookie {
-		if c.Expiry > time.Now().Unix() {
-			return cookies, true
-		}
+	if time.Since(cookies.LastUpdated) > 2*time.Minute {
+		fmt.Println("Cookies are expired for URL: ", url)
+		return UserAgentWithCookies{}, false
 	}
-	return UserAgentWithCookies{}, false
+	fmt.Println("Using cookies for URL: ", url)
+	return cookies, true
+
 }
 
 func SetCookies(store *CookieStore, url string, input UserAgentWithCookies) {

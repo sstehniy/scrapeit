@@ -17,6 +17,16 @@ install_docker() {
     echo "Docker installed successfully. Please log out and log back in to apply group changes."
 }
 
+# Function to get public IP address
+get_public_ip() {
+    PUBLIC_IP=$(curl -s https://api.ipify.org)
+    if [ -z "$PUBLIC_IP" ]; then
+        echo "Error: Unable to retrieve public IP address."
+        exit 1
+    fi
+    echo "Public IP address: $PUBLIC_IP"
+}
+
 # Function to create or update .env file
 create_env_file() {
     local env_file=".env"
@@ -32,10 +42,14 @@ create_env_file() {
         read -p "Enter your Telegram Bot Token: " TELEGRAM_BOT_TOKEN
     fi
 
+    # Get public IP
+    get_public_ip
+
     # Write variables to .env file
     cat > "$env_file" << EOF
 OPENAI_API_KEY=$OPENAI_API_KEY
 TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
+PUBLIC_IP=$PUBLIC_IP
 EOF
 
     echo ".env file created/updated successfully."
@@ -52,9 +66,9 @@ else
     echo "Docker is already installed."
 fi
 
-# Check if docker-compose is installed
-if ! command_exists docker compose; then
-    echo "Error: docker-compose is not installed. Please install it and run this script again."
+# Check if docker compose is installed
+if ! command_exists docker; then
+    echo "Error: Docker is not installed or not in PATH. Please install Docker and run this script again."
     exit 1
 fi
 
@@ -67,10 +81,11 @@ if [ ! -f "docker-compose.yml" ]; then
     exit 1
 fi
 
-# Start the project with docker-compose
-echo "Starting the project with docker-compose..."
+# Start the project with docker compose
+echo "Starting the project with docker compose..."
 docker compose up --build -d
 
 echo "Project started successfully in the background."
 echo "To view logs, use: docker compose logs -f"
 echo "To stop the project, use: docker compose down"
+echo "Open http://$PUBLIC_IP:3456 in your browser to view the project."

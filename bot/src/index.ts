@@ -78,25 +78,131 @@ type RequestBody = {
 	groupName: string;
 };
 
+const MAX_MESSAGES_PER_SECOND = 20;
+let messageCount = 0;
+let lastResetTime = Date.now();
+
+async function sendMessageWithDebounce(
+	bot: Telegraf,
+	userId: string,
+	method: string,
+	...args: any[]
+) {
+	const now = Date.now();
+	if (now - lastResetTime >= 750) {
+		// Reset the counter every second
+		messageCount = 0;
+		lastResetTime = now;
+	}
+
+	if (messageCount >= MAX_MESSAGES_PER_SECOND) {
+		// If the limit is reached, wait until the next second
+		await new Promise((resolve) =>
+			setTimeout(resolve, 2000 - (now - lastResetTime)),
+		);
+		messageCount = 0;
+		lastResetTime = Date.now();
+	}
+
+	messageCount++;
+	// Call the appropriate method on the bot instance
+	return (bot.telegram as any)[method](userId, ...args);
+}
+
+async function sendResultsAsMediaGroup(
+	userId: string,
+	chunk: { endpointName: string; status: string; results: SearchResult[] },
+	mainMessage: string,
+) {
+	const resultsWithImages = chunk.results.filter((result) => result.imageUrl);
+	const textOnlyResults = chunk.results.filter((result) => !result.imageUrl);
+
+	// Split results with images into groups of 10
+	const mediaGroups = splitIntoMediaGroups(resultsWithImages);
+
+	// Send each media group as individual photos with a message
+	for (const group of mediaGroups) {
+		// Include the main message before the first media group
+		if (group === mediaGroups[0]) {
+			try {
+				await sendMessageWithDebounce(bot, userId, "sendMessage", mainMessage);
+			} catch (error) {
+				console.log({ error });
+			}
+		}
+
+		for (const result of group) {
+			const formattedResult = `&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;\nResults for endpoint: ${chunk.endpointName}\n\n${formatSingleResult(result)}\n&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;`;
+
+			try {
+				// Attempt to send the photo with the caption
+				await sendMessageWithDebounce(
+					bot,
+					userId,
+					"sendPhoto",
+					result.imageUrl!,
+					{
+						caption: formattedResult,
+						parse_mode: "HTML",
+					},
+				);
+			} catch (error) {
+				console.log({ error });
+
+				// If sending the photo fails, send the result as a text message
+				try {
+					await sendMessageWithDebounce(
+						bot,
+						userId,
+						"sendMessage",
+						formattedResult,
+						{
+							parse_mode: "HTML",
+							link_preview_options: {
+								is_disabled: true,
+							},
+						},
+					);
+				} catch (error) {
+					console.log({ error });
+				}
+			}
+		}
+	}
+
+	// Send text-only results
+	if (textOnlyResults.length > 0) {
+		const textMessage = `-------------\nResults for endpoint: ${chunk.endpointName}\n\n<b>${chunk.status} results:</b>\n\n${textOnlyResults.map(formatSingleResult).join("")}\n-------------`;
+		try {
+			await sendMessageWithDebounce(bot, userId, "sendMessage", textMessage, {
+				parse_mode: "HTML",
+				link_preview_options: {
+					is_disabled: true,
+				},
+			});
+		} catch (error) {
+			console.log({ error });
+		}
+	}
+}
+
 app.post("/send-notification", async (c) => {
 	const body = await c.req.json<RequestBody>();
-	// await Bun.write("./test.json", JSON.stringify(body, null, 2));
-
 	const activeUsers = await redis.keys("user:*");
 
 	const formattedResultChunks = formatResults(body);
-	const mainMessage = formatMainMessage(body.groupName, body.filters);
 
 	for (const user of activeUsers) {
 		const userId = user.split(":")[1];
-		await bot.telegram.sendMessage(userId, ">>>>>>>>>>>>>>>>");
-		await bot.telegram.sendMessage(userId, mainMessage);
+		// Send main message with group name and filters
+		const mainMessage = formatMainMessage(body.groupName, body.filters);
+		await sendMessageWithDebounce(bot, userId, "sendMessage", mainMessage);
+
 		for (const chunk of formattedResultChunks) {
 			if (chunk.results.length > 0) {
-				await sendResultsAsMediaGroup(userId, chunk);
+				await sendResultsAsMediaGroup(userId, chunk, mainMessage);
 			}
 		}
-		await bot.telegram.sendMessage(userId, "<<<<<<<<<<<<<<");
 	}
 
 	return c.json({ success: true });
@@ -108,41 +214,6 @@ const formatMainMessage = (groupName: string, filters: SearchFilter[]) => {
 	});
 	return `New results in GROUP ${groupName} with filters: ${filterText.join(", ")}`;
 };
-
-async function sendResultsAsMediaGroup(
-	userId: string,
-	chunk: { endpointName: string; status: string; results: SearchResult[] },
-) {
-	const resultsWithImages = chunk.results.filter((result) => result.imageUrl);
-	const textOnlyResults = chunk.results.filter((result) => !result.imageUrl);
-
-	// Split results with images into groups of 10
-	const mediaGroups = splitIntoMediaGroups(resultsWithImages);
-
-	// Send each media group
-	for (const group of mediaGroups) {
-		const mediaGroupPayload = group.map((result) => ({
-			type: "photo" as const,
-			// biome-ignore lint/style/noNonNullAssertion: <explanation>
-			media: result.imageUrl!,
-			caption: formatSingleResult(result),
-			parse_mode: "HTML" as const,
-		}));
-
-		await bot.telegram.sendMediaGroup(userId, mediaGroupPayload);
-	}
-
-	// Send text-only results
-	if (textOnlyResults.length > 0) {
-		const textMessage = `<b>Results for endpoint: ${chunk.endpointName}</b>\n\n<b>${chunk.status} results:</b>\n\n${textOnlyResults.map(formatSingleResult).join("")}`;
-		await bot.telegram.sendMessage(userId, textMessage, {
-			parse_mode: "HTML",
-			link_preview_options: {
-				is_disabled: true,
-			},
-		});
-	}
-}
 
 function splitIntoMediaGroups(results: SearchResult[]): SearchResult[][] {
 	const MAX_MEDIA_GROUP_SIZE = 10;

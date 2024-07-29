@@ -186,7 +186,7 @@ func ScrapeEndpointsHandler(c echo.Context) error {
 		}
 		fmt.Println("Here is the result", notificationConfigs)
 		if len(notificationConfigs) > 0 {
-			helpers.HandleNotifyResults(notificationConfigs, *relevantGroup, results, toReplaceResults)
+			go helpers.HandleNotifyResults(notificationConfigs, *relevantGroup, results, toReplaceResults)
 		}
 	}
 

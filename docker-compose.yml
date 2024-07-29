@@ -5,11 +5,13 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+
   golang-scraper:
     build:
       context: ./backend
     depends_on:
       - chromium
+      - flaresolverr
     environment:
       - ROD_BROWSER_WS_URL=ws://chromium:3455
       - MONGO_URI=mongodb://mongodb:27017/scraper
@@ -52,6 +54,7 @@ services:
     volumes:
       - ./chrome-cache:/tmp/chrome-cache
       - ./user-data-dir:/tmp/user-data-dir
+
   frontend:
     build:
       context: ./client
@@ -62,6 +65,7 @@ services:
       - "3456:3456"
     depends_on:
       - golang-scraper
+
   redis:
     image: redis:latest
     restart: always
@@ -83,6 +87,14 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     ports:
       - "5005:5005"
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    ports:
+      - "8191:8191"
+    environment:
+      - LOG_LEVEL=info
+    restart: unless-stopped
 
 volumes:
   mongo-data:

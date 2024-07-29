@@ -109,11 +109,11 @@ const (
 
 type PaginationConfig struct {
 	Type             string  `json:"type" bson:"type"`
-	Parameter        string  `json:"parameter,omitempty" bson:"parameter,omitempty"`
-	Start            int     `json:"start,omitempty" bson:"start,omitempty"`
-	End              int     `json:"end,omitempty" bson:"end,omitempty"`
-	Step             int     `json:"step,omitempty" bson:"step,omitempty"`
-	UrlRegexToInsert *string `json:"urlRegexToInsert,omitempty" bson:"urlRegexToInsert,omitempty"`
+	Parameter        string  `json:"parameter" bson:"parameter"`
+	Start            int     `json:"start" bson:"start"`
+	End              int     `json:"end" bson:"end"`
+	Step             int     `json:"step" bson:"step"`
+	UrlRegexToInsert *string `json:"urlRegexToInsert" bson:"urlRegexToInsert"`
 }
 
 type ScrapeStatus string

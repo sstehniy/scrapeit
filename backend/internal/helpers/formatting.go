@@ -104,3 +104,11 @@ func GetFullUrl(endpointUrl, urlToDetails string) string {
 	return host + "/" + urlToDetails
 
 }
+
+func GetBaseURL(fullURL string) string {
+	u, err := url.Parse(fullURL)
+	if err != nil {
+		return ""
+	}
+	return u.Scheme + "://" + u.Host
+}

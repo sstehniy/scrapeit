@@ -284,7 +284,7 @@ func scrapeTestPreviewsWithDetails(endpointToScrape models.Endpoint, relevantGro
 	resultsChan := make(chan models.ScrapeResultTest)
 	sem := make(chan struct{}, 2)
 	wg := sync.WaitGroup{}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 	page, err := GetStealthPage(ctx, browser, endpointToScrape.URL, endpointToScrape.MainElementSelector)
 	if err != nil {

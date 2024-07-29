@@ -1,0 +1,144 @@
+{
+    "cookies": {
+        "https://www.ausliebezumduft.de": {
+            "Cookie": [
+                {
+                    "domain": "www.ausliebezumduft.de",
+                    "expiry": 1722297909,
+                    "httpOnly": false,
+                    "name": "section_data_ids",
+                    "path": "/",
+                    "sameSite": "Lax",
+                    "secure": true,
+                    "value": "{%22uptain_section%22:1722211509}"
+                },
+                {
+                    "domain": ".www.ausliebezumduft.de",
+                    "expiry": 1722297911,
+                    "httpOnly": false,
+                    "name": "form_key",
+                    "path": "/",
+                    "sameSite": "Lax",
+                    "secure": true,
+                    "value": "hXXChjnDm371t7BM"
+                },
+                {
+                    "domain": "www.ausliebezumduft.de",
+                    "expiry": 1722297909,
+                    "httpOnly": false,
+                    "name": "mage-cache-sessid",
+                    "path": "/",
+                    "sameSite": "Lax",
+                    "secure": true,
+                    "value": "true"
+                },
+                {
+                    "domain": "www.ausliebezumduft.de",
+                    "expiry": 1722297909,
+                    "httpOnly": false,
+                    "name": "mage-cache-storage",
+                    "path": "/",
+                    "sameSite": "Lax",
+                    "secure": true,
+                    "value": "{}"
+                },
+                {
+                    "domain": "www.ausliebezumduft.de",
+                    "expiry": 1722297909,
+                    "httpOnly": false,
+                    "name": "mage-messages",
+                    "path": "/",
+                    "sameSite": "Strict",
+                    "secure": true,
+                    "value": ""
+                },
+                {
+                    "domain": "www.ausliebezumduft.de",
+                    "expiry": 1722297909,
+                    "httpOnly": false,
+                    "name": "mage-cache-storage-section-invalidation",
+                    "path": "/",
+                    "sameSite": "Lax",
+                    "secure": true,
+                    "value": "{}"
+                },
+                {
+                    "domain": ".www.ausliebezumduft.de",
+                    "expiry": 1722297911,
+                    "httpOnly": true,
+                    "name": "PHPSESSID",
+                    "path": "/",
+                    "sameSite": "Lax",
+                    "secure": true,
+                    "value": "5099ebbbb02dbac5ebc1198283bfab35"
+                },
+                {
+                    "domain": "www.ausliebezumduft.de",
+                    "expiry": 1722297909,
+                    "httpOnly": false,
+                    "name": "form_key",
+                    "path": "/",
+                    "sameSite": "Lax",
+                    "secure": true,
+                    "value": "hXXChjnDm371t7BM"
+                },
+                {
+                    "domain": "www.ausliebezumduft.de",
+                    "expiry": 0,
+                    "httpOnly": true,
+                    "name": "searchReport-log",
+                    "path": "/",
+                    "sameSite": "Lax",
+                    "secure": true,
+                    "value": "0"
+                }
+            ],
+            "UserAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        "https://www.flaconi.de": {
+            "Cookie": [
+                {
+                    "domain": ".flaconi.de",
+                    "expiry": 1753747518,
+                    "httpOnly": true,
+                    "name": "cf_clearance",
+                    "path": "/",
+                    "sameSite": "None",
+                    "secure": true,
+                    "value": "LUTXFT5dkXVTBE.4YRgxojKDu_eP.JBooLWeDslDV8w-1722211518-1.0.1.1-fxMpwmIoNO7DffFm6hTtvWWfQnQ1zXIvYxGDWf8CmblwSE5sFcPTnPwzFgOlPkCMs3OeuJHv6rUk.33dTdQITg"
+                },
+                {
+                    "domain": "www.flaconi.de",
+                    "expiry": 1722213318,
+                    "httpOnly": false,
+                    "name": "nr-user-session",
+                    "path": "/",
+                    "sameSite": "Lax",
+                    "secure": false,
+                    "value": "a6ba9e31-91dd-440a-9f32-88f85add633b"
+                },
+                {
+                    "domain": ".flaconi.de",
+                    "expiry": 1722213317,
+                    "httpOnly": true,
+                    "name": "__cf_bm",
+                    "path": "/",
+                    "sameSite": "None",
+                    "secure": true,
+                    "value": "oyS0RiGKXWnLswsaXi19YewGsmqITRAVhHtzyRbI_bc-1722211517-1.0.1.1-jiRzB2UdFacQuZ6jE2pdEbcV9QmLv99lO5KcHhbCtkX3olcucD1or8Tm6UAgYpQN.eDkuSIajXYC14V20PMiEg"
+                },
+                {
+                    "domain": "www.flaconi.de",
+                    "expiry": 0,
+                    "httpOnly": true,
+                    "name": "FCSESSID0815",
+                    "path": "/",
+                    "sameSite": "Lax",
+                    "secure": true,
+                    "value": "e2687396603bb4e43dd4c9c49714c61f"
+                }
+            ],
+            "UserAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+    }
+}

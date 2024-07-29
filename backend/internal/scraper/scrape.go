@@ -1,14 +1,21 @@
 package scraper
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
 	"os"
+	"scrapeit/internal/helpers"
 	"sync"
 	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/devices"
+	"github.com/go-rod/rod/lib/proto"
 	"github.com/go-rod/stealth"
 )
 
@@ -34,23 +41,126 @@ func GetBrowser() *rod.Browser {
 }
 
 func GetStealthPage(ctx context.Context, browser *rod.Browser, url string, elementToWaitFor string) (*rod.Page, error) {
+	// Load the cookie store
+	store, err := LoadCookieStore()
+	if err != nil {
+		log.Fatalf("Failed to load cookie store: %v", err)
+		return nil, err
+	}
+
+	// Check if we have valid cookies
+	baseURL := helpers.GetBaseURL(url)
+	cookies, valid := GetValidCookies(store, baseURL)
+	// Parse the JSON response
+	var response struct {
+		Status   string `json:"status"`
+		Message  string `json:"message"`
+		Solution struct {
+			URL       string            `json:"url"`
+			Status    int               `json:"status"`
+			Headers   map[string]string `json:"headers"`
+			Response  string            `json:"response"`
+			Cookies   []Cookie          `json:"cookies"`
+			UserAgent string            `json:"userAgent"`
+		} `json:"solution"`
+	}
+
+	if !valid {
+		// Make the request to get cookies if not valid
+		resp, err := http.Post("http://flaresolverr:8191/v1", "application/json", bytes.NewBuffer([]byte(fmt.Sprintf(`{
+			"cmd": "request.get",
+			"url": "%s",
+			"maxTimeout": 30000,
+			"returnOnlyCookies": false
+		}`, url))))
+		if err != nil {
+			log.Fatalf("Failed to make request: %v", err)
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		// Read the response body
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatalf("Failed to read response body: %v", err)
+			return nil, err
+		}
+
+		if err := json.Unmarshal(body, &response); err != nil {
+			log.Fatalf("Failed to unmarshal JSON response: %v", err)
+			return nil, err
+		}
+
+		cookies = UserAgentWithCookies{
+			Cookie:    response.Solution.Cookies,
+			UserAgent: response.Solution.UserAgent,
+		}
+		// Save the new cookies
+		SetCookies(store, baseURL, cookies)
+	}
+
 	page := stealth.MustPage(browser)
 	page.MustSetViewport(1920, 1080, 2.0, false)
 
-	if err := page.Context(ctx).Navigate(url); err != nil {
-		return page, fmt.Errorf("error navigating: %w", err)
+	cookiesToSet := make([]*proto.NetworkCookieParam, len(cookies.Cookie))
+	for idx, c := range cookies.Cookie {
+		cookiesToSet[idx] = &proto.NetworkCookieParam{
+			Name:     c.Name,
+			Value:    c.Value,
+			Domain:   c.Domain,
+			Path:     c.Path,
+			Expires:  proto.TimeSinceEpoch(float64(c.Expiry)),
+			Secure:   c.Secure,
+			HTTPOnly: c.HttpOnly,
+			SameSite: proto.NetworkCookieSameSite(c.SameSite),
+		}
+	}
+	page.MustSetCookies(cookiesToSet...)
+
+	// Set the User-Agent if provided
+	if cookies.UserAgent != "" {
+		page.MustSetUserAgent(&proto.NetworkSetUserAgentOverride{
+			UserAgent: cookies.UserAgent,
+		})
 	}
 
-	if err := page.Context(ctx).WaitLoad(); err != nil {
-		return page, fmt.Errorf("error waiting for load: %w", err)
+	navCtx, navCancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer navCancel()
+
+	if err := page.Context(navCtx).Navigate(url); err != nil {
+		if err == context.DeadlineExceeded {
+			log.Printf("Timeout reached while navigating to %s: %v", url, err)
+		} else {
+			log.Printf("Error navigating to %s: %v", url, err)
+		}
+		return nil, err
 	}
 
-	_, err := page.Context(ctx).Element(elementToWaitFor)
+	loadCtx, loadCancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer loadCancel()
+
+	if err := page.Context(loadCtx).WaitLoad(); err != nil {
+		if err == context.DeadlineExceeded {
+			log.Printf("Timeout reached while waiting for page to load: %v", err)
+		} else {
+			log.Printf("Error waiting for page to load: %v", err)
+		}
+		return nil, err
+	}
+
+	elementCtx, elementCancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer elementCancel()
+
+	_, err = page.Context(elementCtx).Element(elementToWaitFor)
 	if err != nil {
-		fmt.Println("Error finding element: ", err)
-		fmt.Println("Element to wait for: ", elementToWaitFor)
-		page.MustScreenshot("error_screenshot.png")
-		return page, fmt.Errorf("error finding element %s: %w", elementToWaitFor, err)
+		if err == context.DeadlineExceeded {
+			log.Printf("Timeout reached while waiting for element %s: %v", elementToWaitFor, err)
+			page.MustScreenshot("timeout_screenshot.png")
+		} else {
+			log.Printf("Error finding element %s: %v", elementToWaitFor, err)
+			page.MustScreenshot("error_screenshot.png")
+		}
+		return nil, err
 	}
 
 	return page, nil

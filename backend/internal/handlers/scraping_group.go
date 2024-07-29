@@ -45,10 +45,7 @@ func getGroupById(ctx context.Context, groupId string, client *mongo.Client) (mo
 
 func GetScrapingGroup(c echo.Context) error {
 	groupId := c.Param("id")
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
+	dbClient, _ := models.GetDbClient()
 	group, err := getGroupById(c.Request().Context(), groupId, dbClient)
 
 	if err != nil {

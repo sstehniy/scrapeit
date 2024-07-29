@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"scrapeit/internal/cron"
+	"scrapeit/internal/models"
 
 	"github.com/labstack/echo/v4"
 
@@ -31,14 +32,8 @@ func deleteScrapingGroupEndpointResults(dbClient *mongo.Client, groupId, endpoin
 }
 
 func DeleteScrapingGroupEndpointResults(c echo.Context) error {
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
-	cronManager, ok := c.Get("cron").(*cron.CronManager)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
-	}
+	dbClient, _ := models.GetDbClient()
+	cronManager := cron.GetCronManager()
 
 	groupId := c.Param("groupId")
 	if groupId == "" {

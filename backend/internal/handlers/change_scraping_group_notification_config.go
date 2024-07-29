@@ -8,7 +8,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ChangeScrapingGroupNotificationConfigRequest []models.NotificationConfig
@@ -20,10 +19,7 @@ func ChangeScrapingGroupNotificationConfig(c echo.Context) error {
 	}
 
 	groupId := c.Param("id")
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get database client"})
-	}
+	dbClient, _ := models.GetDbClient()
 
 	groupNotificationConfigCollection := dbClient.Database("scrapeit").Collection("notification_configs")
 

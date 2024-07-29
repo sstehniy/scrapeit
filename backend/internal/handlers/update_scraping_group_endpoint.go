@@ -18,14 +18,8 @@ type UpdateScrapingGroupEndpointRequest struct {
 }
 
 func UpdateScrapingGroupEndpoint(c echo.Context) error {
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
-	cronManager, ok := c.Get("cron").(*cron.CronManager)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
-	}
+	dbClient, _ := models.GetDbClient()
+	cronManager := cron.GetCronManager()
 	groupIdString := c.Param("groupId")
 	endpointId := c.Param("endpointId")
 

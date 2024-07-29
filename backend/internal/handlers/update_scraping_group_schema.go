@@ -23,14 +23,8 @@ type UpdateScrapingGroupSchemaRequest struct {
 }
 
 func UpdateScrapingGroupSchema(c echo.Context) error {
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
-	cronManager, ok := c.Get("cron").(*cron.CronManager)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
-	}
+	dbClient, _ := models.GetDbClient()
+	cronManager := cron.GetCronManager()
 
 	var req UpdateScrapingGroupSchemaRequest
 	if err := c.Bind(&req); err != nil {

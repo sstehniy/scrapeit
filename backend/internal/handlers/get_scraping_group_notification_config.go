@@ -49,10 +49,7 @@ func getGroupNotificationConfigById(ctx context.Context, groupId string, client 
 
 func GetScrapingGroupNotificationConfig(c echo.Context) error {
 	groupId := c.Param("id")
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
+	dbClient, _ := models.GetDbClient()
 	groupNotificationConfigResult, err := getGroupNotificationConfigById(c.Request().Context(), groupId, dbClient)
 
 	if err != nil {

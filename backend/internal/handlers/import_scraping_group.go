@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ImportScrapingGroupBody struct {
@@ -28,10 +27,7 @@ func ImportScrapingGroup(e echo.Context) error {
 		body.Group.Endpoints[idx].ID = uuid.New().String()
 	}
 
-	dbClient, ok := e.Get("db").(*mongo.Client)
-	if !ok {
-		return e.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get database client"})
-	}
+	dbClient, _ := models.GetDbClient()
 
 	groupCollection := dbClient.Database("scrapeit").Collection("scrape_groups")
 

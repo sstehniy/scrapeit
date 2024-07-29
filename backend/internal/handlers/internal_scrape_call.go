@@ -35,8 +35,7 @@ func HandleCallInternalScrapeEndpoint(e *echo.Echo, groupId, endpointId string, 
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	customContext := e.NewContext(req, rec)
-	customContext.Set("db", db)
-	customContext.Set("cron", cronmanager)
+
 	if err := ScrapeEndpointHandler(customContext); err != nil {
 		fmt.Println("Error handling request in internal scrape endpoint:", err)
 		return err

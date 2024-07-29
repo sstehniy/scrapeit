@@ -1,12 +1,16 @@
 package cron
 
 import (
+	"context"
 	"fmt"
+	"scrapeit/internal/models"
 	taskqueue "scrapeit/internal/task-queue"
 	"sync"
 	"time"
 
 	"github.com/robfig/cron/v3"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Logger interface {
@@ -40,15 +44,27 @@ type CronManager struct {
 	logger    Logger
 }
 
+var (
+	cronmanager *CronManager
+	once        sync.Once
+)
+
 func NewCronManager(logger Logger, maxConcurrentTasks, numWorkers int) *CronManager {
-	cm := &CronManager{
-		Jobs:      []*CronManagerJob{},
-		TaskQueue: taskqueue.NewTaskQueue(maxConcurrentTasks, numWorkers),
-		cron:      cron.New(),
-		logger:    logger,
-	}
-	cm.cron.Start() // Start the cron scheduler
-	return cm
+	once.Do(func() {
+		cm := &CronManager{
+			Jobs:      []*CronManagerJob{},
+			TaskQueue: taskqueue.NewTaskQueue(maxConcurrentTasks, numWorkers),
+			cron:      cron.New(),
+			logger:    logger,
+		}
+		cm.cron.Start()
+		cronmanager = cm
+	})
+	return cronmanager
+}
+
+func GetCronManager() *CronManager {
+	return cronmanager
 }
 
 func (cm *CronManager) AddJob(job CronManagerJob) {
@@ -58,8 +74,39 @@ func (cm *CronManager) AddJob(job CronManagerJob) {
 	cm.Jobs = append(cm.Jobs, &job)
 	addedJob := cm.getJob(job.GroupID, job.EndpointID)
 	cm.logger.Info("Adding new job", "groupId", job.GroupID, "endpointId", job.EndpointID, "interval", job.Interval)
+	dbClinet, _ := models.GetDbClient()
 
 	entryId, err := cm.cron.AddFunc(addedJob.Interval, func() {
+		// check if endpoint is running
+		groupObjId, err := primitive.ObjectIDFromHex(addedJob.GroupID)
+		if err != nil {
+			cm.logger.Error("Error getting group object id", "groupId", addedJob.GroupID, "error", err)
+			return
+		}
+		groupCollection := dbClinet.Database("scrapeit").Collection("scrape_groups")
+		groupQuery := bson.M{"_id": groupObjId, "endpoints.id": addedJob.EndpointID}
+		groupResult := groupCollection.FindOne(context.Background(), groupQuery)
+		if groupResult.Err() != nil {
+			cm.logger.Error("Error getting group", "groupId", addedJob.GroupID, "error", groupResult.Err())
+			return
+		}
+		var group models.ScrapeGroup
+		err = groupResult.Decode(&group)
+		if err != nil {
+			cm.logger.Error("Error decoding group", "groupId", addedJob.GroupID, "error", err)
+			return
+		}
+
+		endpoint := group.GetEndpointById(addedJob.EndpointID)
+		if endpoint == nil {
+			cm.logger.Error("Endpoint not found", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID)
+			return
+		}
+		if endpoint.Status == models.ScrapeStatusRunning {
+			cm.logger.Info("Endpoint already running", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID)
+			return
+		}
+
 		if !addedJob.Active {
 			cm.logger.Info("Job inactive", "groupId", addedJob.GroupID, "endpointId", addedJob.EndpointID)
 			return

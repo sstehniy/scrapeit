@@ -27,15 +27,9 @@ func deleteScrapingGroup(ctx context.Context, groupId primitive.ObjectID, client
 
 func DeleteScrapingGroup(c echo.Context) error {
 	groupId := c.Param("id")
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get database client"})
-	}
+	dbClient, _ := models.GetDbClient()
 
-	cronManager, ok := c.Get("cron").(*cron.CronManager)
-	if !ok {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get cron manager"})
-	}
+	cronManager := cron.GetCronManager()
 
 	groupIdObj, err := primitive.ObjectIDFromHex(groupId)
 

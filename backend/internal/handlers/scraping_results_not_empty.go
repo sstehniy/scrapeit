@@ -3,11 +3,11 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"scrapeit/internal/models"
 
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type GetScrapingResultsNotEmptyResponse struct {
@@ -15,10 +15,7 @@ type GetScrapingResultsNotEmptyResponse struct {
 }
 
 func GetScrapingResultsNotEmpty(c echo.Context) error {
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
+	dbClient, _ := models.GetDbClient()
 	groupId := c.Param("groupId")
 	groupObjId, err := primitive.ObjectIDFromHex(groupId)
 	if err != nil {

@@ -83,14 +83,6 @@ func main() {
 		Format: "method=${method}, uri=${uri}, status=${status}\n",
 	}))
 	e.Use(middleware.Recover())
-	// pass the db client to the context
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			c.Set("db", DbClient)
-			c.Set("cron", cronManager)
-			return next(c)
-		}
-	})
 
 	// prepopulateScrapeGroups(DbClient)
 
@@ -194,6 +186,11 @@ func setupCronJobs(e *echo.Echo, cronManager *cron.CronManager, client *mongo.Cl
 		}
 
 		for _, endpoint := range group.Endpoints {
+			// update query to set endpoint status to idle
+			_, err := collection.UpdateOne(context.Background(), bson.M{"_id": group.ID, "endpoints.id": endpoint.ID}, bson.M{"$set": bson.M{"endpoints.$.status": "idle"}})
+			if err != nil {
+				fmt.Println("Error updating group endpoint status:", err)
+			}
 
 			if endpoint.Active {
 				cronManager.AddJob(cron.CronManagerJob{

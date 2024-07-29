@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,58 +13,40 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var (
+	db   *mongo.Client
+	once sync.Once
+)
+
 func GetDbClient() (*mongo.Client, error) {
-	// Get MongoDB URI from environment variable
-	mongoURI := os.Getenv("MONGO_URI")
-	if mongoURI == "" {
-		return nil, fmt.Errorf("MONGO_URI environment variable is not set")
-	}
 
-	fmt.Printf("Attempting to connect to MongoDB at %s...\n", mongoURI)
+	once.Do(func() {
+		// Get MongoDB URI from environment variable
+		mongoURI := os.Getenv("MONGO_URI")
+		if mongoURI == "" {
+			log.Fatalf("MONGO_URI environment variable is not set")
+		}
 
-	// Configure the client to use a longer timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+		fmt.Printf("Attempting to connect to MongoDB at %s...\n", mongoURI)
 
-	// Configure the client options and disable logging
-	clientOptions := options.Client().
-		ApplyURI(mongoURI)
+		// Configure the client to use a longer timeout
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
 
-	// Connect to MongoDB
-	client, err := mongo.Connect(ctx, clientOptions)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to MongoDB: %v", err)
-	}
+		// Configure the client options and disable logging
+		clientOptions := options.Client().
+			ApplyURI(mongoURI)
 
-	scrapeResultsCollection := client.Database("scrapeit").Collection("scrape_results")
-	err = createFullTextSearchIndex(scrapeResultsCollection, "scrape_results_fulltext")
-	if err != nil {
-		log.Fatalf("Failed to create full-text search index: %v", err)
-	} else {
-		fmt.Println("Full-text search index created successfully.")
-	}
+		// Connect to MongoDB
+		client, err := mongo.Connect(ctx, clientOptions)
+		if err != nil {
+			log.Fatalf("failed to connect to MongoDB: %v", err)
+		}
 
-	archivedScrapeResultsCollection := client.Database("scraper").Collection("archived_scrape_results")
-	err = createFullTextSearchIndex(archivedScrapeResultsCollection, "archived_scrape_results_fulltext")
+		db = client
+	})
 
-	if err != nil {
-		log.Fatalf("Failed to create full-text search index: %v", err)
-	} else {
-		fmt.Println("Full-text search index created successfully.")
-	}
-
-	fmt.Println("Connection established, attempting to ping...")
-
-	// Ping the database
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to ping MongoDB: %v", err)
-	} else {
-		fmt.Println("Ping successful")
-	}
-
-	fmt.Println("Connected to MongoDB!")
-	return client, nil
+	return db, nil
 }
 
 func createFullTextSearchIndex(collection *mongo.Collection, indexName string) error {

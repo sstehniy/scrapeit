@@ -40,10 +40,7 @@ func ScrapeEndpointHandler(c echo.Context) error {
 	}
 
 	groupQuery := bson.M{"_id": groupId}
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
+	dbClient, _ := models.GetDbClient()
 	groupCollection := dbClient.Database("scrapeit").Collection("scrape_groups")
 	groupResult := groupCollection.FindOne(c.Request().Context(), groupQuery)
 	if groupResult.Err() != nil {

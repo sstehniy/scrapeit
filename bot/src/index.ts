@@ -105,6 +105,7 @@ async function sendMessageWithDebounce(
 	}
 
 	messageCount++;
+	console.log({ args });
 	// Call the appropriate method on the bot instance
 	return (bot.telegram as any)[method](userId, ...args);
 }
@@ -123,9 +124,9 @@ async function sendResultsAsMediaGroup(
 	// Send each media group as individual photos with a message
 	for (const group of mediaGroups) {
 		for (const result of group) {
-			const formattedResult = `&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;\nResults for endpoint: ${chunk.endpointName}\n${
+			const formattedResult = `-------------\nResults for endpoint: ${chunk.endpointName}\n${
 				mainMessage
-			}\n${formatSingleResult(result)}\n&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;`;
+			}\n${formatSingleResult(result)}\n-------------`;
 
 			try {
 				// Attempt to send the photo with the caption
@@ -135,12 +136,12 @@ async function sendResultsAsMediaGroup(
 					"sendPhoto",
 					result.imageUrl!,
 					{
-						caption: formattedResult,
+						caption: formattedResult, // Escape HTML special characters
 						parse_mode: "HTML",
 					},
 				);
 			} catch (error) {
-				console.log({ error });
+				console.log({ "Error sendPhoto Message": error });
 
 				// If sending the photo fails, send the result as a text message
 				try {
@@ -148,16 +149,14 @@ async function sendResultsAsMediaGroup(
 						bot,
 						userId,
 						"sendMessage",
-						formattedResult,
+						formattedResult, // Escape HTML special characters
 						{
 							parse_mode: "HTML",
-							link_preview_options: {
-								is_disabled: true,
-							},
+							disable_web_page_preview: true,
 						},
 					);
 				} catch (error) {
-					console.log({ error });
+					console.log({ "Error sendMessage Message": error });
 				}
 			}
 		}
@@ -167,14 +166,12 @@ async function sendResultsAsMediaGroup(
 	if (textOnlyResults.length > 0) {
 		const textMessage = `-------------\nResults for endpoint: ${chunk.endpointName}\n${
 			mainMessage
-		}\n<b>${chunk.status} results:</b>\n\n${textOnlyResults.map(formatSingleResult).join("")}\n-------------`;
+		}\n<b>${chunk.status} results:</b>\n${textOnlyResults.map(formatSingleResult).join("")}\n-------------`;
 
 		try {
 			await sendMessageWithDebounce(bot, userId, "sendMessage", textMessage, {
 				parse_mode: "HTML",
-				link_preview_options: {
-					is_disabled: true,
-				},
+				disable_web_page_preview: true,
 			});
 		} catch (error) {
 			console.log({ error });
@@ -184,6 +181,7 @@ async function sendResultsAsMediaGroup(
 
 app.post("/send-notification", async (c) => {
 	const body = await c.req.json<RequestBody>();
+
 	const activeUsers = await redis.keys("user:*");
 
 	const formattedResultChunks = formatResults(body);
@@ -205,9 +203,9 @@ app.post("/send-notification", async (c) => {
 
 const formatMainMessage = (groupName: string, filters: SearchFilter[]) => {
 	const filterText = filters.map((filter) => {
-		return `${filter.fieldName} ${filter.operator} ${filter.value}`;
+		return `${escapeText(filter.fieldName)} ${escapeText(filter.operator)} ${escapeText(filter.value)}`;
 	});
-	return `GROUP: ${groupName}\nFilters: ${filterText.join(", ")}\n`;
+	return `GROUP: ${escapeText(groupName)}\nFilters: ${filterText.join(", ")}\n`;
 };
 
 function splitIntoMediaGroups(results: SearchResult[]): SearchResult[][] {
@@ -263,9 +261,25 @@ function formatSingleResult(result: SearchResult): string {
 		return value;
 	};
 	const fields = result.fields
-		.map((field) => `<b>${field.fieldName}</b>: ${cutValue(field.value)}`)
+		.map(
+			(field) =>
+				`<b>${escapeText(field.fieldName)}</b>: ${escapeText(cutValue(field.value))}`,
+		)
 		.join("\n");
-	return `<b><a href="${result.url}">URL</a></b>\n${fields}\n\n`;
+	return `<b><a href="${result.url}">URL</a></b>\n${fields}\n`;
+}
+
+function escapeText(text: unknown): string {
+	if (typeof text !== "string") {
+		console.log({ text });
+		return text as string;
+	}
+	return text
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
 }
 
 export default {

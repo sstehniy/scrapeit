@@ -22,10 +22,7 @@ type ExportGroupResultsHandlerRequest struct {
 }
 
 func ExportGroupResultsHandler(c echo.Context) error {
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
+	dbClient, _ := models.GetDbClient()
 	groupIdString := c.Param("groupId")
 	groupId, err := primitive.ObjectIDFromHex(groupIdString)
 	if err != nil {

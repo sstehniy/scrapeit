@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"scrapeit/internal/models"
 
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
@@ -11,10 +12,7 @@ import (
 func VersionTagExists(c echo.Context) error {
 	versionTag := c.Param("versionTag")
 
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
+	dbClient, _ := models.GetDbClient()
 
 	groupCollection := dbClient.Database("scrapeit").Collection("scrape_groups")
 	groupResult := groupCollection.FindOne(c.Request().Context(), bson.M{"versionTag": versionTag})

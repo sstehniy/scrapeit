@@ -9,7 +9,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type CreateScrapingGroupRequest struct {
@@ -35,10 +34,7 @@ func CreateScrapingGroupEndpoint(c echo.Context) error {
 	}
 
 	groupQuery := bson.M{"_id": groupId}
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
+	dbClient, _ := models.GetDbClient()
 	groupCollection := dbClient.Database("scrapeit").Collection("scrape_groups")
 	groupResult := groupCollection.FindOne(c.Request().Context(), groupQuery)
 	if groupResult.Err() != nil {
@@ -60,10 +56,7 @@ func CreateScrapingGroupEndpoint(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	cronManager, ok := c.Get("cron").(*cron.CronManager)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
-	}
+	cronManager := cron.GetCronManager()
 
 	if body.NewEndpoint.Active {
 		cronManager.AddJob(cron.CronManagerJob{

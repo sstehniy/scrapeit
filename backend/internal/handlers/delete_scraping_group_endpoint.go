@@ -45,14 +45,8 @@ func deleteScrapingGroupEndpoint(dbClient *mongo.Client, groupId, endpointId str
 }
 
 func DeleteScrapingGroupEndpoint(c echo.Context) error {
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
-	cronManager, ok := c.Get("cron").(*cron.CronManager)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get cron manager")
-	}
+	dbClient, _ := models.GetDbClient()
+	cronManager := cron.GetCronManager()
 
 	groupId := c.Param("groupId")
 	if groupId == "" {

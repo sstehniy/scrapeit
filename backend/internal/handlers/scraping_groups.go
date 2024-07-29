@@ -8,14 +8,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func GetScrapingGroups(c echo.Context) error {
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
+	dbClient, _ := models.GetDbClient()
 
 	allGroups := []models.ScrapeGroup{}
 
@@ -38,10 +34,7 @@ func GetScrapingGroups(c echo.Context) error {
 }
 
 func CreateScrapingGroup(c echo.Context) error {
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
+	dbClient, _ := models.GetDbClient()
 	body := map[string]interface{}{}
 	if err := c.Bind(&body); err != nil {
 		return err

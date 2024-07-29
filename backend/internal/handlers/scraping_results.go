@@ -225,10 +225,7 @@ func getScrapeResults(
 }
 
 func GetScrapingResults(c echo.Context) error {
-	dbClient, ok := c.Get("db").(*mongo.Client)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get database client")
-	}
+	dbClient, _ := models.GetDbClient()
 
 	var body GetScrapingResultsRequest
 	if err := c.Bind(&body); err != nil {

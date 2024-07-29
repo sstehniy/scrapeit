@@ -27,19 +27,32 @@ get_public_ip() {
     echo "Public IP address: $PUBLIC_IP"
 }
 
+# Function to read existing .env file
+read_env_file() {
+    if [ -f ".env" ]; then
+        source .env
+    fi
+}
+
 # Function to create or update .env file
 create_env_file() {
     local env_file=".env"
-    echo "Creating/Updating .env file..."
+    echo "Checking .env file..."
     
+    read_env_file
+
     # Check if OPENAI_API_KEY is set
     if [ -z "$OPENAI_API_KEY" ]; then
         read -p "Enter your OpenAI API Key: " OPENAI_API_KEY
+    else
+        echo "OPENAI_API_KEY is already set."
     fi
 
     # Check if TELEGRAM_BOT_TOKEN is set
     if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
         read -p "Enter your Telegram Bot Token: " TELEGRAM_BOT_TOKEN
+    else
+        echo "TELEGRAM_BOT_TOKEN is already set."
     fi
 
     # Get public IP

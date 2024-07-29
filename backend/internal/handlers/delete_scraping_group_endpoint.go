@@ -67,7 +67,7 @@ func DeleteScrapingGroupEndpoint(c echo.Context) error {
 		})
 	}
 
-	cronManager.DestroyJob(groupId, endpointId)
+	go cronManager.DestroyJob(groupId, endpointId)
 
 	err := deleteScrapingGroupEndpoint(dbClient, groupId, endpointId)
 	if err != nil {

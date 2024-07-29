@@ -55,7 +55,7 @@ func UpdateScrapingGroupEndpoint(c echo.Context) error {
 
 	newEndpoint := req.Endpoint
 
-	cronManager.DestroyJob(groupIdString, endpointId)
+	go cronManager.DestroyJob(groupIdString, endpointId)
 
 	oldEndpoint := group.GetEndpointById(endpointId)
 	if oldEndpoint == nil {
@@ -118,5 +118,7 @@ func UpdateScrapingGroupEndpoint(c echo.Context) error {
 		})
 	}
 
-	return c.String(http.StatusOK, "UpdateScrapingGroupEndpoint")
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message": "Successfully updated scraping group",
+	})
 }

@@ -122,17 +122,10 @@ async function sendResultsAsMediaGroup(
 
 	// Send each media group as individual photos with a message
 	for (const group of mediaGroups) {
-		// Include the main message before the first media group
-		if (group === mediaGroups[0]) {
-			try {
-				await sendMessageWithDebounce(bot, userId, "sendMessage", mainMessage);
-			} catch (error) {
-				console.log({ error });
-			}
-		}
-
 		for (const result of group) {
-			const formattedResult = `&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;\nResults for endpoint: ${chunk.endpointName}\n\n${formatSingleResult(result)}\n&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;`;
+			const formattedResult = `&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;\nResults for endpoint: ${chunk.endpointName}\n${
+				mainMessage
+			}\n${formatSingleResult(result)}\n&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;`;
 
 			try {
 				// Attempt to send the photo with the caption
@@ -172,7 +165,10 @@ async function sendResultsAsMediaGroup(
 
 	// Send text-only results
 	if (textOnlyResults.length > 0) {
-		const textMessage = `-------------\nResults for endpoint: ${chunk.endpointName}\n\n<b>${chunk.status} results:</b>\n\n${textOnlyResults.map(formatSingleResult).join("")}\n-------------`;
+		const textMessage = `-------------\nResults for endpoint: ${chunk.endpointName}\n${
+			mainMessage
+		}\n<b>${chunk.status} results:</b>\n\n${textOnlyResults.map(formatSingleResult).join("")}\n-------------`;
+
 		try {
 			await sendMessageWithDebounce(bot, userId, "sendMessage", textMessage, {
 				parse_mode: "HTML",
@@ -196,7 +192,6 @@ app.post("/send-notification", async (c) => {
 		const userId = user.split(":")[1];
 		// Send main message with group name and filters
 		const mainMessage = formatMainMessage(body.groupName, body.filters);
-		await sendMessageWithDebounce(bot, userId, "sendMessage", mainMessage);
 
 		for (const chunk of formattedResultChunks) {
 			if (chunk.results.length > 0) {
@@ -212,7 +207,7 @@ const formatMainMessage = (groupName: string, filters: SearchFilter[]) => {
 	const filterText = filters.map((filter) => {
 		return `${filter.fieldName} ${filter.operator} ${filter.value}`;
 	});
-	return `New results in GROUP ${groupName} with filters: ${filterText.join(", ")}`;
+	return `GROUP: ${groupName}\nFilters: ${filterText.join(", ")}\n`;
 };
 
 function splitIntoMediaGroups(results: SearchResult[]): SearchResult[][] {

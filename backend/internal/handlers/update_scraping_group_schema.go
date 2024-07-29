@@ -59,9 +59,11 @@ func UpdateScrapingGroupSchema(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get updated group")
 	}
 
-	for _, endpoint := range group.Endpoints {
-		cronManager.DestroyJob(group.ID.Hex(), endpoint.ID)
-	}
+	go func() {
+		for _, endpoint := range group.Endpoints {
+			cronManager.DestroyJob(group.ID.Hex(), endpoint.ID)
+		}
+	}()
 
 	if req.ShouldArchive {
 

@@ -51,11 +51,13 @@ func DeleteScrapingGroup(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Group not found"})
 	}
 
-	for _, endpoint := range group.Endpoints {
-		if endpoint.Active {
-			cronManager.DestroyJob(group.ID.Hex(), endpoint.ID)
+	go func() {
+		for _, endpoint := range group.Endpoints {
+			if endpoint.Active {
+				go cronManager.DestroyJob(group.ID.Hex(), endpoint.ID)
+			}
 		}
-	}
+	}()
 
 	err = deleteScrapingGroup(c.Request().Context(), groupIdObj, dbClient)
 

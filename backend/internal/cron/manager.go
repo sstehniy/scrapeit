@@ -11,6 +11,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/exp/rand"
 )
 
 type Logger interface {
@@ -54,8 +55,12 @@ func NewCronManager(logger Logger, maxConcurrentTasks, numWorkers int) *CronMana
 		cm := &CronManager{
 			Jobs:      []*CronManagerJob{},
 			TaskQueue: taskqueue.NewTaskQueue(maxConcurrentTasks, numWorkers),
-			cron:      cron.New(),
-			logger:    logger,
+			cron: cron.New(
+				cron.WithChain(
+					cron.SkipIfStillRunning(cron.DefaultLogger),
+				),
+			),
+			logger: logger,
 		}
 		cm.cron.Start()
 		cronmanager = cm
@@ -77,6 +82,8 @@ func (cm *CronManager) AddJob(job CronManagerJob) {
 	dbClinet, _ := models.GetDbClient()
 
 	entryId, err := cm.cron.AddFunc(addedJob.Interval, func() {
+		time.Sleep(time.Duration(rand.Intn(60)) * time.Second)
+
 		// check if endpoint is running
 		groupObjId, err := primitive.ObjectIDFromHex(addedJob.GroupID)
 		if err != nil {

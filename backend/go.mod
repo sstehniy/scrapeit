@@ -13,6 +13,7 @@ require (
 	github.com/sashabaranov/go-openai v1.26.2
 	github.com/xuri/excelize/v2 v2.8.1
 	go.mongodb.org/mongo-driver v1.16.0
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 )
 
 require (

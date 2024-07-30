@@ -5,15 +5,15 @@ FROM node:current-slim
 WORKDIR /app
 
 # Copy the package.json and package-lock.json files to the working directory
-COPY package.json  ./
+COPY . .
 
 RUN rm -rf node_modules
+RUN rm -rf package-lock.json
 
 # Install dependencies
 RUN npm install --legacy-peer-deps
 
 # Copy the rest of the application files to the working directory
-COPY . .
 
 # Expose the port the app runs on
 EXPOSE 3456

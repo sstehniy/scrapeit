@@ -55,6 +55,21 @@ create_env_file() {
         echo "TELEGRAM_BOT_TOKEN is already set."
     fi
 
+    # Check if MONGO_INITDB_ROOT_USERNAME is set
+    if [ -z "$MONGO_INITDB_ROOT_USERNAME" ]; then
+        read -p "Enter your MongoDB Root Username: " MONGO_INITDB_ROOT_USERNAME
+    else
+        echo "MONGO_INITDB_ROOT_USERNAME is already set."
+    fi
+
+    # Check if MONGO_INITDB_ROOT_PASSWORD is set
+    if [ -z "$MONGO_INITDB_ROOT_PASSWORD" ]; then
+        read -sp "Enter your MongoDB Root Password: " MONGO_INITDB_ROOT_PASSWORD
+        echo
+    else
+        echo "MONGO_INITDB_ROOT_PASSWORD is already set."
+    fi
+
     # Get public IP
     get_public_ip
 
@@ -62,6 +77,8 @@ create_env_file() {
     cat > "$env_file" << EOF
 OPENAI_API_KEY=$OPENAI_API_KEY
 TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
+MONGO_INITDB_ROOT_USERNAME=$MONGO_INITDB_ROOT_USERNAME
+MONGO_INITDB_ROOT_PASSWORD=$MONGO_INITDB_ROOT_PASSWORD
 PUBLIC_IP=$PUBLIC_IP
 EOF
 
@@ -80,8 +97,8 @@ else
 fi
 
 # Check if docker compose is installed
-if ! command_exists docker; then
-    echo "Error: Docker is not installed or not in PATH. Please install Docker and run this script again."
+if ! command_exists docker compose; then
+    echo "Error: Docker Compose is not installed or not in PATH. Please install Docker Compose and run this script again."
     exit 1
 fi
 
@@ -96,9 +113,9 @@ fi
 
 # Start the project with docker compose
 echo "Starting the project with docker compose..."
-docker compose up --build -d
+sudo docker compose up --build -d
 
 echo "Project started successfully in the background."
 echo "To view logs, use: docker compose logs -f"
-echo "To stop the project, use: docker compose down"
+echo "To stop the project, use: docker compose stop"
 echo "Open http://$PUBLIC_IP:3456 in your browser to view the project."

@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   mongodb:
     image: mongo:latest
@@ -5,6 +7,9 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
 
   golang-scraper:
     build:
@@ -14,7 +19,7 @@ services:
       - flaresolverr
     environment:
       - ROD_BROWSER_WS_URL=ws://chromium:3455
-      - MONGO_URI=mongodb://mongodb:27017/scraper
+      - MONGO_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/scraper?authSource=admin
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:
       - ./backend:/app
@@ -97,5 +102,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  mongo-data:
-  redis-data:
+  mongo-data: {}
+  redis-data: {}

@@ -1,16 +1,11 @@
-version: '3.8'
-
 services:
   mongodb:
     image: mongo:latest
     ports:
       - "27017:27017"
     volumes:
-      - mongo-data:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
-
+      - ./mongo-data:/data/db
+    
   golang-scraper:
     build:
       context: ./backend
@@ -19,7 +14,7 @@ services:
       - flaresolverr
     environment:
       - ROD_BROWSER_WS_URL=ws://chromium:3455
-      - MONGO_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/scrapeit?authSource=admin
+      - MONGO_URI=mongodb://mongodb:27017/scrapeit
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:
       - ./backend:/app
@@ -77,7 +72,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis-data:/data
+      - ./redis-data:/data
 
   bot:
     build:
@@ -101,6 +96,3 @@ services:
       - LOG_LEVEL=info
     restart: unless-stopped
 
-volumes:
-  mongo-data: {}
-  redis-data: {}

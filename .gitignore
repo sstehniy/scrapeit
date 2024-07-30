@@ -1,6 +1,6 @@
 .vscode/
 .env
 mongo-data
-
+redis-data
 # every image
 *.png

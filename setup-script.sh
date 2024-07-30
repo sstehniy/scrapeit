@@ -55,20 +55,6 @@ create_env_file() {
         echo "TELEGRAM_BOT_TOKEN is already set."
     fi
 
-    # Check if MONGO_INITDB_ROOT_USERNAME is set
-    if [ -z "$MONGO_INITDB_ROOT_USERNAME" ]; then
-        read -p "Enter your MongoDB Root Username: " MONGO_INITDB_ROOT_USERNAME
-    else
-        echo "MONGO_INITDB_ROOT_USERNAME is already set."
-    fi
-
-    # Check if MONGO_INITDB_ROOT_PASSWORD is set
-    if [ -z "$MONGO_INITDB_ROOT_PASSWORD" ]; then
-        read -sp "Enter your MongoDB Root Password: " MONGO_INITDB_ROOT_PASSWORD
-        echo
-    else
-        echo "MONGO_INITDB_ROOT_PASSWORD is already set."
-    fi
 
     # Get public IP
     get_public_ip
@@ -77,8 +63,6 @@ create_env_file() {
     cat > "$env_file" << EOF
 OPENAI_API_KEY=$OPENAI_API_KEY
 TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
-MONGO_INITDB_ROOT_USERNAME=$MONGO_INITDB_ROOT_USERNAME
-MONGO_INITDB_ROOT_PASSWORD=$MONGO_INITDB_ROOT_PASSWORD
 PUBLIC_IP=$PUBLIC_IP
 EOF
 

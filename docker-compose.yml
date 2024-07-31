@@ -9,11 +9,14 @@ services:
   golang-scraper:
     build:
       context: ./backend
+      args:
+        - CHOMIUM_DOMAIN=${CHOMIUM_DOMAIN}
     depends_on:
       - chromium
       - flaresolverr
     environment:
-      - ROD_BROWSER_WS_URL=ws://chromium:3455
+      - ROD_BROWSER_WS_URL=ws://${CHOMIUM_DOMAIN}:3455
+      - FLARESOLVER_URL=http://flaresolverr:8191
       - MONGO_URI=mongodb://mongodb:27017/scrapeit
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:

@@ -33,4 +33,4 @@ ENV CHROMIUM_PORT=${CHROMIUM_PORT}
 ENV CHROMIUM_DOMAIN=${CHROMIUM_DOMAIN}
 
 # Command to wait for dependencies and then run the executable
-CMD ["./main"]
+CMD wait-for-it.sh ${CHROMIUM_DOMAIN} ${CHROMIUM_PORT} -- ./main

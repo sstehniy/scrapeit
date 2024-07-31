@@ -9,6 +9,7 @@ services:
   golang-scraper:
     build:
       context: ./backend
+      dockerfile: Dockerfile.prod
       args:
         - CHROMIUM_DOMAIN=${CHROMIUM_DOMAIN}
         - CHROMIUM_PORT=${CHROMIUM_PORT}

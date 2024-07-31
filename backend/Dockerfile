@@ -24,6 +24,12 @@ RUN chmod +x /bin/wait-for-it.sh
 # Expose port 3457 to the outside world
 EXPOSE 3457
 
+ARG CHROMIUM_PORT
+
 ARG CHROMIUM_DOMAIN
+
+RUN echo "Chromium port: ${CHROMIUM_PORT}"
+RUN echo "Chromium domain: ${CHROMIUM_DOMAIN}"
+
 # Command to run Air for hot-reloading
-CMD ["wait-for-it.sh", CHOMIUM_DOMAIN, "3455", "--", "air"]
+CMD ["wait-for-it.sh", "${CHROMIUM_DOMAIN}", "${CHROMIUM_PORT}", "--", "air"]

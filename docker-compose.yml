@@ -10,12 +10,15 @@ services:
     build:
       context: ./backend
       args:
-        - CHOMIUM_DOMAIN=${CHOMIUM_DOMAIN}
+        - CHROMIUM_DOMAIN=${CHROMIUM_DOMAIN}
+        - CHROMIUM_PORT=${CHROMIUM_PORT}
     depends_on:
       - chromium
       - flaresolverr
     environment:
-      - ROD_BROWSER_WS_URL=ws://${CHOMIUM_DOMAIN}:3455
+      - CHROMIUM_DOMAIN=${CHROMIUM_DOMAIN}
+      - CHROMIUM_PORT=${CHROMIUM_PORT}
+      - ROD_BROWSER_WS_URL=ws://${CHROMIUM_DOMAIN}:${CHROMIUM_PORT}
       - FLARESOLVER_URL=http://flaresolverr:8191
       - MONGO_URI=mongodb://mongodb:27017/scrapeit
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -25,14 +28,7 @@ services:
       - ./backend/logs:/app/logs
     ports:
       - "3457:3457"
-    entrypoint:
-      [
-        "/bin/wait-for-it.sh",
-        "${CHOMIUM_DOMAIN}",
-        "3455",
-        "--",
-        "air"
-      ]
+    entrypoint: ["./wait-for-it.sh", "${CHROMIUM_DOMAIN}", "${CHROMIUM_PORT}", "--", "air"]
 
   chromium:
     image: browserless/chrome:latest

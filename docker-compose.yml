@@ -28,7 +28,7 @@ services:
     entrypoint:
       [
         "/bin/wait-for-it.sh",
-        "chromium",
+        "${CHOMIUM_DOMAIN}",
         "3455",
         "--",
         "air"

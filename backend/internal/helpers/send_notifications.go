@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"scrapeit/internal/models"
 )
 
@@ -170,7 +171,11 @@ func sendNotification(
 	}
 	// os.WriteFile("notification_request.json", marschaledBody, 0644)
 	client := &http.Client{}
-	req, err := http.NewRequest("POST", "http://bot:5005/send-notification", bytes.NewBuffer(marschaledBody))
+	bot_url := os.Getenv("BOT_URL")
+	if bot_url == "" {
+		bot_url = "http://bot:5005"
+	}
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/send-notification", bot_url), bytes.NewBuffer(marschaledBody))
 	if err != nil {
 		fmt.Println("Error creating notification request:", err)
 		return

@@ -31,5 +31,9 @@ ARG CHROMIUM_DOMAIN
 RUN echo "Chromium port: ${CHROMIUM_PORT}"
 RUN echo "Chromium domain: ${CHROMIUM_DOMAIN}"
 
+ENV CHROMIUM_PORT=${CHROMIUM_PORT}
+ENV CHROMIUM_DOMAIN=${CHROMIUM_DOMAIN}
+
+
 # Command to run Air for hot-reloading
-CMD ["wait-for-it.sh", "${CHROMIUM_DOMAIN}", "${CHROMIUM_PORT}", "--", "air"]
+CMD wait-for-it.sh ${CHROMIUM_DOMAIN} ${CHROMIUM_PORT} -- air

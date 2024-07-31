@@ -28,7 +28,6 @@ services:
       - ./backend/logs:/app/logs
     ports:
       - "3457:3457"
-    entrypoint: ["./wait-for-it.sh", "${CHROMIUM_DOMAIN}", "${CHROMIUM_PORT}", "--", "air"]
 
   chromium:
     image: browserless/chrome:latest

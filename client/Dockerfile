@@ -11,7 +11,7 @@ RUN rm -rf node_modules
 RUN rm -rf package-lock.json
 
 # Install dependencies
-RUN npm install --legacy-peer-deps
+RUN npm install
 
 # Copy the rest of the application files to the working directory
 COPY . .

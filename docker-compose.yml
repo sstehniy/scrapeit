@@ -64,6 +64,8 @@ services:
     volumes:
       - ./client:/app
       - /app/node_modules
+    environment:
+      - BACKEND_URL=http://golang-scraper:3457
     ports:
       - "3456:3456"
     depends_on:

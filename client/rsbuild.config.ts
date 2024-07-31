@@ -1,6 +1,9 @@
 import { defineConfig } from "@rsbuild/core";
 import { pluginReact } from "@rsbuild/plugin-react";
 
+// @ts-ignore
+console.log("BACKEND_URL", process.env.BACKEND_URL);
+
 export default defineConfig({
 	html: {
 		template: "./index.html",
@@ -25,7 +28,8 @@ export default defineConfig({
 		host: "0.0.0.0",
 		proxy: {
 			"/api": {
-				target: "http://golang-scraper:3457",
+				// @ts-ignore
+				target: process.env.BACKEND_URL,
 				changeOrigin: true,
 				pathRewrite: (path) => path.replace(/^\/api/, ""),
 				secure: false,

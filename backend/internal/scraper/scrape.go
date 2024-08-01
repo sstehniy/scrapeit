@@ -34,7 +34,13 @@ func GetBrowser() *rod.Browser {
 		if rodBrowserWsURL == "" {
 			panic("ROD_BROWSER_WS_URL is not set")
 		}
+		err := rod.New().ControlURL(rodBrowserWsURL).Connect()
+		if err != nil {
+			fmt.Println("Error connecting to browser: ", err)
+			panic(err)
+		}
 		browser = rod.New().ControlURL(rodBrowserWsURL).MustConnect().DefaultDevice(devices.LaptopWithHiDPIScreen)
+		browser.MustIgnoreCertErrors(true)
 	})
 
 	return browser

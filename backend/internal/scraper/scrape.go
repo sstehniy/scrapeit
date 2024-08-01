@@ -73,12 +73,17 @@ func GetStealthPage(ctx context.Context, browser *rod.Browser, url string, eleme
 	}
 
 	if !valid {
+		flaresolverrURL := os.Getenv("FLARESOLVER_URL")
+		if flaresolverrURL == "" {
+			log.Fatalf("FLARESOLVER_URL is not set")
+			return nil, fmt.Errorf("FLARESOLVER_URL is not set")
+		}
 		// Make the request to get cookies if not valid
-		resp, err := http.Post("http://flaresolverr:8191/v1", "application/json", bytes.NewBuffer([]byte(fmt.Sprintf(`{
+		resp, err := http.Post(fmt.Sprintf("%s/v1", flaresolverrURL), "application/json", bytes.NewBuffer([]byte(fmt.Sprintf(`{
 			"cmd": "request.get",
 			"url": "%s",
 			"maxTimeout": 30000,
-			"returnOnlyCookies": false
+			"returnOnlyCookies": true
 		}`, url))))
 		if err != nil {
 			log.Fatalf("Failed to make request: %v", err)

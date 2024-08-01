@@ -5,7 +5,7 @@ services:
       - "27017:27017"
     volumes:
       - ./mongo-data:/data/db
-    
+
   golang-scraper:
     build:
       context: ./backend
@@ -20,9 +20,10 @@ services:
       - CHROMIUM_DOMAIN=${CHROMIUM_DOMAIN}
       - CHROMIUM_PORT=${CHROMIUM_PORT}
       - ROD_BROWSER_WS_URL=ws://${CHROMIUM_DOMAIN}:${CHROMIUM_PORT}
-      - FLARESOLVER_URL=http://flaresolverr:8191
-      - MONGO_URI=mongodb://mongodb:27017/scrapeit
+      - FLARESOLVER_URL=${FLARESOLVER_URL}
+      - MONGO_URI=${MONGO_URI}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - BOT_URL=${BOT_URL}
     volumes:
       - ./backend:/app
       - /app/tmp
@@ -41,7 +42,7 @@ services:
           memory: 2G
     environment:
       - DEBUG=browserless:*
-      - PORT=3455
+      - PORT=${CHROMIUM_PORT}
       - DEMO_MODE=false
       - DEFAULT_LAUNCH_ARGS=["--no-sandbox", "--window-size=1920,1080", "--start-fullscreen", "--disable-setuid-sandbox", "--no-first-run", "--no-zygote", "--disable-extensions"]
       - KEEP_ALIVE=true
@@ -84,7 +85,7 @@ services:
     depends_on:
       - golang-scraper
     environment:
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=${REDIS_URL}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     ports:
       - "5005:5005"
@@ -96,4 +97,3 @@ services:
     environment:
       - LOG_LEVEL=info
     restart: unless-stopped
-

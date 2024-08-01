@@ -43,7 +43,7 @@ type ExtractRequestWithEvaluation struct {
 }
 
 func getSystemPromptFromFile() string {
-	file, err := os.ReadFile("/app/internal/ai/system_prompt.txt")
+	file, err := os.ReadFile("./system_prompt.txt")
 	if err != nil {
 		fmt.Println(err)
 		return ""
@@ -52,7 +52,7 @@ func getSystemPromptFromFile() string {
 }
 
 func getEvalSystemPrompt() string {
-	file, err := os.ReadFile("/app/internal/ai/evaluation_prompt.txt")
+	file, err := os.ReadFile("./evaluation_prompt.txt")
 	if err != nil {
 		fmt.Println(err)
 		return ""
@@ -61,7 +61,7 @@ func getEvalSystemPrompt() string {
 }
 
 func getSystemPromptWithEval() string {
-	file, err := os.ReadFile("/app/internal/ai/system_prompt_with_eval.txt")
+	file, err := os.ReadFile("./system_prompt_with_eval.txt")
 	if err != nil {
 		fmt.Println(err)
 		return ""

@@ -12,7 +12,8 @@ Unique Identifier: Pay special attention to the field "Unique Identifier for Res
 Learning from Past Attempts: Review previous outputs and their evaluation results. Address any issues that were identified and try to improve upon successful extractions.
 
 Input:
-jsonCopy{
+```json
+{
   "HTML": "<div>... [HTML content] ...</div>",
   "FieldsToExtractSelectorsFor": [
     {"name": "Unique Identifier for Result", "key": "unique_identifier", "type": "text"},
@@ -47,8 +48,10 @@ jsonCopy{
     ...
   ]
 }
+```
 Expected Response Format:
-jsonCopy{
+```json
+{
   "fields": [
     {
       "field": "unique_identifier",
@@ -60,6 +63,7 @@ jsonCopy{
     ...
   ]
 }
+```
 Important Notes:
 
 Complex Structures: If the HTML structure is complex or nested, consider using child (>) or descendant ( ) combinators in selectors as appropriate.
@@ -72,7 +76,8 @@ Continuous Improvement: While not explicitly included in the output, strive to i
 
 Example:
 Given the following previous attempt and evaluation:
-jsonCopy{
+```json
+{
   "Output": {
     "fields": [
       {
@@ -94,8 +99,10 @@ jsonCopy{
     ]
   }
 }
+```
 Your new output might look like:
-jsonCopy{
+```json
+{
   "fields": [
     {
       "field": "price",
@@ -106,5 +113,6 @@ jsonCopy{
     }
   ]
 }
+```
 In this example, the regex for the price field has been updated to account for thousands separators, addressing the issue identified in the previous evaluation.
 Remember to address all issues from previous attempts and strive for continuous improvement in your extraction strategy, even though these improvements are not explicitly included in the output format.

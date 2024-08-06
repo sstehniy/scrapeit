@@ -11,7 +11,8 @@ Advanced Selectors: You can use data attributes, nth-child, or nth-of-type pseud
 Unique Identifier: Pay special attention to the field "Unique Identifier for Result". The selector you provide for this field will be used to identify scrape results after initial extraction to determine if a result is new or already seen. This could be a data attribute or a link href (choose href if no other options found).
 
 Example Input:
-jsonCopy{
+```json
+{
   "HTML": "<div data-someAttribute=\"unique_identifier\" class=\"some-class\"><span class=\"title_text\">Some title</span><span class=\"price_text\">633 $</span><img class=\"image\" src=\"...\" /><div class=\"stat\">some data</div><div class=\"stat\">some other data</div></div>",
   "FieldsToExtractSelectorsFor": [
     {"name": "Unique Identifier for Result", "key": "unique_identifier", "type": "text"},
@@ -23,8 +24,10 @@ jsonCopy{
     {"name": "Second Stat", "key": "stat2", "type": "text"}
   ]
 }
+```
 Expected Response Format:
-jsonCopy{
+```json
+{
   "fields": [
     {
       "field": "unique_identifier",
@@ -77,6 +80,7 @@ jsonCopy{
     }
   ]
 }
+```
 Important Notes:
 
 Complex Structures: If the HTML structure is complex or nested, consider using child (>) or descendant ( ) combinators in selectors as appropriate.

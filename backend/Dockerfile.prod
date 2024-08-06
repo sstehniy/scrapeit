@@ -26,6 +26,17 @@ RUN go build -o main ./cmd
 # Expose port 3457 to the outside world
 EXPOSE 3457
 
+ARG CHROMIUM_PORT
+
+ARG CHROMIUM_DOMAIN
+
+RUN echo "Chromium port: ${CHROMIUM_PORT}"
+RUN echo "Chromium domain: ${CHROMIUM_DOMAIN}"
+
+ENV CHROMIUM_PORT=${CHROMIUM_PORT}
+ENV CHROMIUM_DOMAIN=${CHROMIUM_DOMAIN}
+
+
 
 # Command to wait for dependencies and then run the executable
-CMD ["./main"]
+CMD wait-for-it.sh ${CHROMIUM_DOMAIN} ${CHROMIUM_PORT} -- ./main

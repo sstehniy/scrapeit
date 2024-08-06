@@ -43,7 +43,7 @@ type ExtractRequestWithEvaluation struct {
 }
 
 func getSystemPromptFromFile() string {
-	file, err := os.ReadFile("./system_prompt.txt")
+	file, err := os.ReadFile("/app/internal/ai/system_prompt.txt")
 	if err != nil {
 		fmt.Println(err)
 		return ""
@@ -52,7 +52,7 @@ func getSystemPromptFromFile() string {
 }
 
 func getEvalSystemPrompt() string {
-	file, err := os.ReadFile("./evaluation_prompt.txt")
+	file, err := os.ReadFile("/app/internal/ai/evaluation_prompt.txt")
 	if err != nil {
 		fmt.Println(err)
 		return ""
@@ -61,18 +61,13 @@ func getEvalSystemPrompt() string {
 }
 
 func getSystemPromptWithEval() string {
-	file, err := os.ReadFile("./system_prompt_with_eval.txt")
+	file, err := os.ReadFile("/app/internal/ai/system_prompt_with_eval.txt")
 	if err != nil {
 		fmt.Println(err)
 		return ""
 	}
 	return string(file)
 }
-
-// func logToFile(prefix string, content string) error {
-// 	fileName := fmt.Sprintf("%s.log", prefix)
-// 	return os.WriteFile(fileName, []byte(content), 0644)
-// }
 
 func makeOpenAICall(dialogue []openai.ChatCompletionMessage, output interface{}, prefix string) (int, int, error) {
 	ctx := context.Background()
@@ -87,12 +82,6 @@ func makeOpenAICall(dialogue []openai.ChatCompletionMessage, output interface{},
 		fmt.Printf("Input Token count for request: %d\n", tokenCount)
 	}
 
-	// Log the request
-	// requestJSON, _ := json.MarshalIndent(dialogue, "", "  ")
-	// if err := logToFile(prefix+"_request", string(requestJSON)); err != nil {
-	// 	fmt.Printf("Error logging request: %v\n", err)
-	// }
-
 	resp, err := client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
 		Model:    "gpt-4o",
 		Messages: dialogue,
@@ -105,12 +94,6 @@ func makeOpenAICall(dialogue []openai.ChatCompletionMessage, output interface{},
 		fmt.Println(err)
 		return 0, 0, err
 	}
-
-	// Log the response
-	// responseJSON, _ := json.MarshalIndent(resp.Choices[0].Message.Content, "", "  ")
-	// if err := logToFile(prefix+"_response", string(responseJSON)); err != nil {
-	// 	fmt.Printf("Error logging response: %v\n", err)
-	// }
 
 	outputTokens, err := countTokens([]openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleAssistant, Content: resp.Choices[0].Message.Content}}, "gpt-4o")
 
@@ -144,7 +127,6 @@ func ExtractSelectors(html string, fieldsToExtract []models.FieldToExtractSelect
 
 	fmt.Printf(`{HTML: %v, FieldsToExtractSelectorsFor:
     %v}`, html, fieldsToExtractString)
-
 	dialogue := []openai.ChatCompletionMessage{
 		{
 			Role:    openai.ChatMessageRoleSystem,
@@ -286,7 +268,7 @@ func ExtractSelectors(html string, fieldsToExtract []models.FieldToExtractSelect
 		}
 	}
 
-	return initialResponse, float32(totalInputTokens)*0.15/1000000 + float32(totalOutputTokens)*0.6/1000000, nil
+	return initialResponse, float32(totalInputTokens)*5/1000000 + float32(totalOutputTokens)*15/1000000, nil
 }
 
 func countTokens(messages []openai.ChatCompletionMessage, model string) (int, error) {

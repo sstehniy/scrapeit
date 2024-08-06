@@ -55,11 +55,17 @@ func main() {
 			browser.MustClose()
 		}
 	}()
+	os.Remove("/app/logs/cron.log")
 
+	logFile, err := os.OpenFile("/app/logs/cron.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Println("Error opening log file:", err)
+		return
+	}
 	cronManager := cron.NewCronManager(&SimpleLogger{
 		logger: log.New(
 			// std
-			os.Stdout,
+			logFile,
 			"", log.LstdFlags),
 	}, 4, 4)
 

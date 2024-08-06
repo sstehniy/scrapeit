@@ -9,7 +9,7 @@ services:
   golang-scraper:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
       args:
         - CHROMIUM_DOMAIN=${CHROMIUM_DOMAIN}
         - CHROMIUM_PORT=${CHROMIUM_PORT}
@@ -58,7 +58,7 @@ services:
   frontend:
     build:
       context: ./client
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
       args:
         - BACKEND_URL=${BACKEND_URL}
     volumes:

@@ -35,7 +35,6 @@ export const FloatingAIChat = () => {
 
 const FloatingButton = ({ onClick }: { onClick: () => void }) => {
 	return (
-		// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 		<div
 			onClick={onClick}
 			className="fixed bottom-0 right-0 p-3 m-3 bg-blue-500 text-white rounded-full cursor-pointer z-[100000]"
